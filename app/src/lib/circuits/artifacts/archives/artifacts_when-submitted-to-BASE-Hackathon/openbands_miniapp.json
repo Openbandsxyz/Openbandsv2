@@ -1,0 +1,165 @@
+{
+    "noir_version": "1.0.0-beta.3+ceaa1986628197bd1170147f6a07f0f98d21030a",
+    "hash": 12468048671472514492,
+    "abi": {
+        "parameters": [
+            {
+                "name": "partial_data",
+                "type": {
+                    "kind": "struct",
+                    "path": "std::collections::bounded_vec::BoundedVec",
+                    "fields": [
+                        {
+                            "name": "storage",
+                            "type": {
+                                "kind": "array",
+                                "length": 640,
+                                "type": {
+                                    "kind": "integer",
+                                    "sign": "unsigned",
+                                    "width": 8
+                                }
+                            }
+                        },
+                        {
+                            "name": "len",
+                            "type": {
+                                "kind": "integer",
+                                "sign": "unsigned",
+                                "width": 32
+                            }
+                        }
+                    ]
+                },
+                "visibility": "private"
+            },
+            {
+                "name": "partial_hash",
+                "type": {
+                    "kind": "array",
+                    "length": 8,
+                    "type": {
+                        "kind": "integer",
+                        "sign": "unsigned",
+                        "width": 32
+                    }
+                },
+                "visibility": "private"
+            },
+            {
+                "name": "full_data_length",
+                "type": {
+                    "kind": "integer",
+                    "sign": "unsigned",
+                    "width": 32
+                },
+                "visibility": "private"
+            },
+            {
+                "name": "base64_decode_offset",
+                "type": {
+                    "kind": "integer",
+                    "sign": "unsigned",
+                    "width": 32
+                },
+                "visibility": "private"
+            },
+            {
+                "name": "jwt_pubkey_modulus_limbs",
+                "type": {
+                    "kind": "array",
+                    "length": 18,
+                    "type": {
+                        "kind": "integer",
+                        "sign": "unsigned",
+                        "width": 128
+                    }
+                },
+                "visibility": "private"
+            },
+            {
+                "name": "jwt_pubkey_redc_params_limbs",
+                "type": {
+                    "kind": "array",
+                    "length": 18,
+                    "type": {
+                        "kind": "integer",
+                        "sign": "unsigned",
+                        "width": 128
+                    }
+                },
+                "visibility": "private"
+            },
+            {
+                "name": "jwt_signature_limbs",
+                "type": {
+                    "kind": "array",
+                    "length": 18,
+                    "type": {
+                        "kind": "integer",
+                        "sign": "unsigned",
+                        "width": 128
+                    }
+                },
+                "visibility": "private"
+            },
+            {
+                "name": "domain",
+                "type": {
+                    "kind": "struct",
+                    "path": "std::collections::bounded_vec::BoundedVec",
+                    "fields": [
+                        {
+                            "name": "storage",
+                            "type": {
+                                "kind": "array",
+                                "length": 64,
+                                "type": {
+                                    "kind": "integer",
+                                    "sign": "unsigned",
+                                    "width": 8
+                                }
+                            }
+                        },
+                        {
+                            "name": "len",
+                            "type": {
+                                "kind": "integer",
+                                "sign": "unsigned",
+                                "width": 32
+                            }
+                        }
+                    ]
+                },
+                "visibility": "public"
+            }
+        ],
+        "return_type": {
+            "abi_type": {
+                "kind": "field"
+            },
+            "visibility": "public"
+        },
+        "error_types": {}
+    },
+    "bytecode": "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",
+    "debug_symbols": "7ZNNCoMwEIXvkrWL/NRM9SqllKhRAiGRGAtFvHujNDa00l7AXd7Ml2/xYCbUyGrsbsq0dkDlZULa1sIra0KaEABeh0MvzJIHL5xH5YlTnCFpmvAEwuYMtUpLVHIyZ18wZZGlBX+jsIOynEctxRtK8z0rkCJqgbHfMAGIYgJF/gfGm5lgfk7haxYaIUcjH43Qo5GkkRAqp7RW3S29pTC+C6dEpeUrtqOpk61/9HET//fO1rIZnVxM6y7onw==",
+    "file_map": {
+        "25": {
+            "source": "use crate::default::Default;\nuse crate::hash::Hasher;\n\ncomptime global RATE: u32 = 3;\n\npub struct Poseidon2 {\n    cache: [Field; 3],\n    state: [Field; 4],\n    cache_size: u32,\n    squeeze_mode: bool, // 0 => absorb, 1 => squeeze\n}\n\nimpl Poseidon2 {\n    #[no_predicates]\n    pub fn hash<let N: u32>(input: [Field; N], message_size: u32) -> Field {\n        Poseidon2::hash_internal(input, message_size, message_size != N)\n    }\n\n    pub fn new(iv: Field) -> Poseidon2 {\n        let mut result =\n            Poseidon2 { cache: [0; 3], state: [0; 4], cache_size: 0, squeeze_mode: false };\n        result.state[RATE] = iv;\n        result\n    }\n\n    fn perform_duplex(&mut self) {\n        // add the cache into sponge state\n        for i in 0..RATE {\n            // We effectively zero-pad the cache by only adding to the state\n            // cache that is less than the specified `cache_size`\n            if i < self.cache_size {\n                self.state[i] += self.cache[i];\n            }\n        }\n        self.state = crate::hash::poseidon2_permutation(self.state, 4);\n    }\n\n    fn absorb(&mut self, input: Field) {\n        assert(!self.squeeze_mode);\n        if self.cache_size == RATE {\n            // If we're absorbing, and the cache is full, apply the sponge permutation to compress the cache\n            self.perform_duplex();\n            self.cache[0] = input;\n            self.cache_size = 1;\n        } else {\n            // If we're absorbing, and the cache is not full, add the input into the cache\n            self.cache[self.cache_size] = input;\n            self.cache_size += 1;\n        }\n    }\n\n    fn squeeze(&mut self) -> Field {\n        assert(!self.squeeze_mode);\n        // If we're in absorb mode, apply sponge permutation to compress the cache.\n        self.perform_duplex();\n        self.squeeze_mode = true;\n\n        // Pop one item off the top of the permutation and return it.\n        self.state[0]\n    }\n\n    fn hash_internal<let N: u32>(\n        input: [Field; N],\n        in_len: u32,\n        is_variable_length: bool,\n    ) -> Field {\n        let two_pow_64 = 18446744073709551616;\n        let iv: Field = (in_len as Field) * two_pow_64;\n        let mut sponge = Poseidon2::new(iv);\n        for i in 0..input.len() {\n            if i < in_len {\n                sponge.absorb(input[i]);\n            }\n        }\n\n        // In the case where the hash preimage is variable-length, we append `1` to the end of the input, to distinguish\n        // from fixed-length hashes. (the combination of this additional field element + the hash IV ensures\n        // fixed-length and variable-length hashes do not collide)\n        if is_variable_length {\n            sponge.absorb(1);\n        }\n        sponge.squeeze()\n    }\n}\n\npub struct Poseidon2Hasher {\n    _state: [Field],\n}\n\nimpl Hasher for Poseidon2Hasher {\n    fn finish(self) -> Field {\n        let iv: Field = (self._state.len() as Field) * 18446744073709551616; // iv = (self._state.len() << 64)\n        let mut sponge = Poseidon2::new(iv);\n        for i in 0..self._state.len() {\n            sponge.absorb(self._state[i]);\n        }\n        sponge.squeeze()\n    }\n\n    fn write(&mut self, input: Field) {\n        self._state = self._state.push_back(input);\n    }\n}\n\nimpl Default for Poseidon2Hasher {\n    fn default() -> Self {\n        Poseidon2Hasher { _state: &[] }\n    }\n}\n",
+            "path": "std/hash/poseidon2.nr"
+        },
+        "61": {
+            "source": "mod zk_jwt;\nmod tests;\n\nuse zk_jwt::{\n    extra_zeros_removal::{remove_extra_zeros_from_partial_data},\n    utils::{decimal_string_to_field, get_domain_start_index_in_email},\n    nullifier_generator::{\n        generate_nullifier_with_poseidon2,\n        generate_nullifier_with_pedersen,\n    },\n};\n\nuse jwt::JWT;\nuse std::hash::poseidon2::Poseidon2;\n\nglobal MAX_PARTIAL_DATA_LENGTH: u32 = 640; // signed data length after partial SHA\nglobal MAX_DOMAIN_LENGTH: u32 = 64;\nglobal MAX_EMAIL_LENGTH: u32 = 128;\nglobal NONCE_LENGTH: u32 = 77;\n\n/**\n * @brief Verify JWT signature (RSA/SHA256 only) and validate hd and nonce fields\n *\n * @param partial_data: OIDC JWT (id_token) base64 data (`$header.$payload`) as byte array of ascii characters\n *                      We do partial SHA on the data up to hd field outside of the circuit, to reduce constraints\n *                      This field only contains the bytes after partial SHA; padded to MAX_PARTIAL_DATA_LENGTH\n * @param partial_hash: The 256-bit partial hash of the `data`\n * @param full_data_length: The full length of the `data` (before partial SHA)\n * @param b64_offset: Offset needed in `partial_data` to make the payloadB64 a multiple of 4\n *                    Signed data is $header.$payload. $payload might not be a multiple of 4 in `partial_data`, so we need to offset\n *                    Not attack-able by giving an incorrect offset, as string match of hd and nonce will fail\n * @param jwt_pubkey_modulus_limbs: RSA public key modulus limbs (2048-bit split into 18 limbs)\n * @param jwt_pubkey_redc_params_limbs: RSA reduction parameters limbs\n * @param jwt_signature_limbs: RSA signature limbs\n * @param domain: Domain name (`hd` key) as a byte array of ascii characters padded to MAX_DOMAIN_LENGTH\n * @param ephemeral_pubkey: Public key of the ephemeral keypair that is used to sign messages\n * @param ephemeral_pubkey_salt: Salt of the ephemeral keypair that is used to sign messages\n * @param ephemeral_pubkey_expiry: Expiry of the ephemeral keypair that is used to sign messages\n * @param nonce: JWT `nonce` as a byte array of ascii characters - 32 bytes\n **/\nfn main(\n    partial_data: BoundedVec<u8, MAX_PARTIAL_DATA_LENGTH>,\n    partial_hash: [u32; 8],\n    full_data_length: u32,\n    base64_decode_offset: u32,\n    jwt_pubkey_modulus_limbs: [u128; 18],\n    jwt_pubkey_redc_params_limbs: [u128; 18],\n    jwt_signature_limbs: [u128; 18],\n    domain: pub BoundedVec<u8, MAX_DOMAIN_LENGTH>\n    //ephemeral_pubkey: pub Field,\n    //ephemeral_pubkey_salt: Field,\n    //ephemeral_pubkey_expiry: pub u32,\n) -> pub Field {\n    // // @dev - Remove extra zeros, which are added to an original \"partial_data\" when it is inputted from the frontend, from an original \"partial_data\"\n    // let _partial_data: BoundedVec<u8, MAX_PARTIAL_DATA_LENGTH> = unsafe { remove_extra_zeros_from_partial_data(partial_data) };\n    // //println(f\"_partial_data: {_partial_data}\\n\");\n\n    // // Init JWT struct and verify signature\n    // let jwt = JWT::init_with_partial_hash(\n    //     //partial_data,\n    //     _partial_data,\n    //     partial_hash,\n    //     full_data_length,\n    //     base64_decode_offset,\n    //     jwt_pubkey_modulus_limbs,\n    //     jwt_pubkey_redc_params_limbs,\n    //     jwt_signature_limbs,\n    // );\n    // jwt.verify();\n\n    // // Get nonce claim\n    // let nonce: BoundedVec<u8, NONCE_LENGTH> = jwt.get_claim_string(\"nonce\".as_bytes());\n    // let nonce_field: Field = decimal_string_to_field(nonce.storage());\n\n    // // Verify nonce is the hash(ephemeral_pubkey, ephemeral_pubkey_salt, ephemeral_pubkey_expiry)\n    // let ephemeral_pubkey_hash = Poseidon2::hash(\n    //     [ephemeral_pubkey, ephemeral_pubkey_salt, ephemeral_pubkey_expiry as Field],\n    //     3,\n    // );\n\n    // assert(nonce_field == ephemeral_pubkey_hash, \"invalid nonce\");\n\n    // // Assert email_verified claim\n    // jwt.assert_claim_bool(\"email_verified\".as_bytes(), true);\n\n    // // Get email claim\n    // let email: BoundedVec<u8, MAX_EMAIL_LENGTH> = jwt.get_claim_string(\"email\".as_bytes());\n\n    // // Get domain start_index from email claim - unconstrained, but we verify the domain bytes below\n    // let domain_start_index = unsafe { get_domain_start_index_in_email(email) };\n\n    // // Verify domain passed is present in the email claim after the @\n    // assert(email.storage()[domain_start_index - 1] == 64, \"char before domain is not '@'\");\n    // for i in 0..MAX_DOMAIN_LENGTH {\n    //     assert(email.storage()[domain_start_index + i] == domain.storage()[i], \"invalid domain\");\n    // }\n\n    // @dev - Calculate a nullifier\n    let nullifier = generate_nullifier_with_poseidon2([full_data_length as Field, base64_decode_offset as Field]);\n    //let nullifier = generate_nullifier_with_pedersen([full_data_length as Field, base64_decode_offset as Field]);\n    //let nullifier = generate_nullifier([ephemeral_pubkey_hash, full_data_length as Field, base64_decode_offset as Field]);\n    //let nullifier: Field = 1; // [NOTE]: This is a test value\n\n    // @dev - Return the nullifier\n    nullifier\n}\n",
+            "path": "/Users/unomasanori/Projects/actual-projects/OpenBands/Openbands-Miniapp/Openbands-Miniapp_ZK-circuit_and_contracts/circuits/src/main.nr"
+        },
+        "67": {
+            "source": "use std::hash::poseidon2::Poseidon2;\nuse std::hash::pedersen_hash;\n\n/** \n * @notice - Calculate a nullifier using Poseidon2 hash\n */\npub fn generate_nullifier_with_poseidon2(inputs: [Field; _]) -> Field {\n    let nullifier_hash = Poseidon2::hash(\n        inputs,\n        inputs.len() as u32\n    );\n    nullifier_hash\n}\n\n/** \n * @notice - Calculate a nullifier using Pedersen hash\n */\npub fn generate_nullifier_with_pedersen(inputs: [Field; _]) -> Field {\n    let nullifier_hash = pedersen_hash(\n        inputs\n    );\n    nullifier_hash\n}",
+            "path": "/Users/unomasanori/Projects/actual-projects/OpenBands/Openbands-Miniapp/Openbands-Miniapp_ZK-circuit_and_contracts/circuits/src/zk_jwt/nullifier_generator.nr"
+        }
+    },
+    "names": [
+        "main"
+    ],
+    "brillig_names": []
+}

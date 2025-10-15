@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Next.js
+.next/
+out/
+
+# Build artifacts
+dist/
+coverage/
+
+# Env files
+.env*
+!.env.example
+
+# OS/Editor
+.DS_Store
+*.log
+.vercel/
+
+
