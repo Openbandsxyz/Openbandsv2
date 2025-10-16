@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { SignInPanel } from '@/components/SignInPanel';
+import { SelfVerifyPlayground } from '@/components/zkpassports/self/SelfVerifyPlayground'; // @dev - Self.xyz QRcode SDK playground
 
 // Mock badge data - in real implementation, this would come from Supabase
 const mockBadges = [
@@ -189,6 +190,7 @@ export default function BadgesPage() {
                   </button>
                 </div>
                 <SignInPanel />
+                {/* <SelfVerifyPlayground /> */}
               </div>
             </div>
           </div>
