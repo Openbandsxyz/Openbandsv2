@@ -18,18 +18,18 @@ const geistMono = Geist_Mono({
 export async function generateMetadata(): Promise<Metadata> {
   const URL = process.env.NEXT_PUBLIC_URL;
   const BASE = URL ? URL.replace(/\/$/, "") : undefined;
-  const projectName = process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME
+  const projectName = process.env.NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME || "Openbands v2";
   
   return {
     title: projectName,
-    description: process.env.NEXT_PUBLIC_APP_DESCRIPTION,
+    description: process.env.NEXT_PUBLIC_APP_DESCRIPTION || "Decentralized community platform for verified citizens",
     other: {
       // Per Mini Apps docs, expose fc:miniapp (not fc:frame) and use version "1"
       // https://miniapps.farcaster.xyz/docs/guides/agents-checklist
       // https://miniapps.farcaster.xyz/docs/guides/discovery
       'fc:miniapp': JSON.stringify({
         version: '1',
-        imageUrl: process.env.NEXT_PUBLIC_APP_HERO_IMAGE,
+        imageUrl: process.env.NEXT_PUBLIC_APP_HERO_IMAGE || `${BASE}/hero.png`,
         button: {
           title: process.env.NEXT_PUBLIC_APP_BUTTON_TITLE,
           action: {
@@ -45,7 +45,7 @@ export async function generateMetadata(): Promise<Metadata> {
       // https://docs.base.org/cookbook/minikit/add-frame-metadata#add-frame-metadata
       'fc:frame': JSON.stringify({
         version: 'next',
-        imageUrl: process.env.NEXT_PUBLIC_APP_HERO_IMAGE,
+        imageUrl: process.env.NEXT_PUBLIC_APP_HERO_IMAGE || `${BASE}/hero.png`,
         button: {
           title: process.env.NEXT_PUBLIC_APP_BUTTON_TITLE,
           action: {
