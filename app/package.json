@@ -13,6 +13,7 @@
     "@coinbase/onchainkit": "^0.38.19",
     "@noir-lang/noir_js": "^1.0.0-beta.11",
     "@rainbow-me/rainbowkit": "^2.2.8",
+    "@react-native-async-storage/async-storage": "^1.24.0",
     "@react-oauth/google": "^0.12.2",
     "@supabase/supabase-js": "^2.55.0",
     "buffer": "^6.0.3",
