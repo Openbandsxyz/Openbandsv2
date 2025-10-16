@@ -76,6 +76,22 @@ const nextConfig: NextConfig = {
     config.resolve.fallback = {
       buffer: require.resolve("buffer/"), // @dev - This is for preventing from the "buf.writeBigUInt64BE is not function" error, which is caused by the bb.js v0.87.0
     };
+    
+    // Fix for OnchainKit module resolution issues
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@/core/network/constants': false,
+      '@/swap/constants': false,
+      '@/core/network/definitions/swap': false,
+    };
+    
+    // Ignore problematic OnchainKit modules during build
+    config.externals = config.externals || [];
+    config.externals.push({
+      '@/core/network/constants': 'commonjs @/core/network/constants',
+      '@/swap/constants': 'commonjs @/swap/constants',
+    });
+    
     return config;
   }
 };
