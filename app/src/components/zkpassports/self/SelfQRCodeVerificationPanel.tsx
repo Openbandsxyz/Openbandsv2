@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import { SelfVerifyPlayground } from '@/components/zkpassports/self/SelfVerifyPlayground'
 
 interface SelfQRCodeVerificationPanelProps {
@@ -12,6 +13,7 @@ export const SelfQRCodeVerificationPanel = ({
   isMobile = false,
   onClose 
 }: SelfQRCodeVerificationPanelProps) => {
+  const [showVerification, setShowVerification] = useState(false)
   
   const getVerificationTitle = () => {
     switch (selectedAttribute) {
@@ -54,32 +56,70 @@ export const SelfQRCodeVerificationPanel = ({
         </div>
       )}
       
-      {/* QR Code Verification Section */}
-      <div style={{ 
-        background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-        padding: '24px', 
-        borderRadius: '16px',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-        border: '1px solid #e9ecef'
-      }}>
-        <h3 style={{ 
-          marginBottom: '8px', 
-          color: '#495057',
-          fontSize: '18px',
-          fontWeight: '600'
-        }}>
-          🛡️ {getVerificationTitle()} (Self.xyz)
-        </h3>
-        <p style={{ 
-          color: '#6c757d', 
-          fontSize: '14px', 
-          marginBottom: '20px',
-          lineHeight: '1.5'
-        }}>
-          {getVerificationDescription()}
-        </p>
-        <SelfVerifyPlayground isMobile={isMobile} />
-      </div>
+      {/* Verification Section */}
+      {!showVerification ? (
+        /* Connect Button Interface */
+        <div className="bg-white border border-gray-200 rounded-lg p-6 hover:border-gray-300 transition-colors">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              {/* Self.xyz Logo/Icon */}
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              
+              {/* Content */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Self
+                </h3>
+                <p className="text-sm text-gray-600">
+                  {getVerificationDescription()}
+                </p>
+              </div>
+            </div>
+            
+            {/* Connect Button */}
+            <button
+              onClick={() => setShowVerification(true)}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              Connect
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* QR Code Verification Interface */
+        <div className="space-y-4">
+          {/* Back Button */}
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setShowVerification(false)}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              <span className="text-sm">Back to verification options</span>
+            </button>
+          </div>
+          
+          {/* QR Code Section */}
+          <div className="bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6">
+            <div className="text-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                🛡️ {getVerificationTitle()}
+              </h3>
+              <p className="text-sm text-gray-600">
+                Scan the QR code with your Self mobile app to verify your identity
+              </p>
+            </div>
+            
+            <SelfVerifyPlayground isMobile={isMobile} />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
