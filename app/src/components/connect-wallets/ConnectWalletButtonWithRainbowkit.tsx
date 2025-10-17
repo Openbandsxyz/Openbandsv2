@@ -9,7 +9,7 @@ import {
   RainbowKitProvider,
 } from '@rainbow-me/rainbowkit';
 import { WagmiProvider, Config, useAccount, useDisconnect } from 'wagmi';
-import { base } from 'wagmi/chains';
+import { base, celo } from 'wagmi/chains';
 import {
   QueryClientProvider,
   QueryClient,
@@ -29,9 +29,9 @@ export function setConfigAndQueryClient(): { config: Config, queryClient: QueryC
 
   // Set up config for RainbowKit
   const config = getDefaultConfig({
-    appName: 'OpenBands MiniApp',
+    appName: 'OpenBands v2',
     projectId: PROJECT_ID,
-    chains: [base],
+    chains: [base, celo], // Support both Base and Celo networks
     //chains: [mainnet, polygon, optimism, arbitrum, base],
     ssr: true, // If your dApp uses server side rendering (SSR)
   });
