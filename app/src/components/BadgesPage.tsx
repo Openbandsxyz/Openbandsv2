@@ -27,13 +27,17 @@ export default function BadgesPage() {
   const [selectedAttribute, setSelectedAttribute] = useState<string | null>(null);
   const [badges, setBadges] = useState(mockBadges);
   const [isMobile, setIsMobile] = useState(false);
+  const [showQRVerification, setShowQRVerification] = useState(false);
 
   const handleAttributeSelect = (attribute: string) => {
     if (!isAuthenticated) {
       setShowSignIn(true);
     } else {
       setSelectedAttribute(attribute);
-      // Handle attribute verification logic here
+      // Show QR verification for nationality and age verification
+      if (attribute === 'nationality' || attribute === 'age') {
+        setShowQRVerification(true);
+      }
       console.log('Selected attribute:', attribute);
     }
   };
@@ -216,6 +220,60 @@ export default function BadgesPage() {
                     lineHeight: '1.5'
                   }}>
                     Verify your identity using your passport with Self.xyz protocol
+                  </p>
+                  <SelfVerifyPlayground isMobile={isMobile} />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* QR Verification Modal */}
+        {showQRVerification && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setShowQRVerification(false)} />
+            <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold">
+                    {selectedAttribute === 'nationality' ? 'Nationality Verification' : 'Age Verification'}
+                  </h2>
+                  <button
+                    onClick={() => setShowQRVerification(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                {/* QR Code Verification Section */}
+                <div style={{ 
+                  background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+                  padding: '24px', 
+                  borderRadius: '16px',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                  border: '1px solid #e9ecef'
+                }}>
+                  <h3 style={{ 
+                    marginBottom: '8px', 
+                    color: '#495057',
+                    fontSize: '18px',
+                    fontWeight: '600'
+                  }}>
+                    🛡️ {selectedAttribute === 'nationality' ? 'Nationality' : 'Age'} Verification (Self.xyz)
+                  </h3>
+                  <p style={{ 
+                    color: '#6c757d', 
+                    fontSize: '14px', 
+                    marginBottom: '20px',
+                    lineHeight: '1.5'
+                  }}>
+                    {selectedAttribute === 'nationality' 
+                      ? 'Verify your nationality using your passport with Self.xyz protocol'
+                      : 'Verify your age (18+) using your passport with Self.xyz protocol'
+                    }
                   </p>
                   <SelfVerifyPlayground isMobile={isMobile} />
                 </div>
