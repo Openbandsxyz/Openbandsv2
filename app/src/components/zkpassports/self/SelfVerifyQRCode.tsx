@@ -22,8 +22,8 @@ export const SelfVerifyQRCode = ({ isMobile = false }: SelfVerifyQRCodeProps) =>
     try {
       const appConfig: any = {
         version: 2,
-        appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || 'Self.xyz QR Demo',
-        scope: process.env.NEXT_PUBLIC_SELF_SCOPE || 'selfxyz-demo',
+        appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || 'OpenBands.xyz v2 - Passport verification with Self.xyz',
+        scope: process.env.NEXT_PUBLIC_SELF_SCOPE || 'OpenBands.xyz v2 - Passport verification with Self.xyz',
         endpoint: `${process.env.NEXT_PUBLIC_SELF_ENDPOINT || 'https://api.self.xyz'}`,
         logoBase64: 'https://i.postimg.cc/mrmVf9hm/self.png',
         userId,
