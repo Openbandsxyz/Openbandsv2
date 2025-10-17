@@ -165,18 +165,6 @@ export default function BadgesPage() {
                 </button>
               </div>
             </div>
-
-            {/* Next Button */}
-            {selectedAttribute && (
-              <div className="mt-8">
-                <button
-                  onClick={handleNext}
-                  className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-                >
-                  Continue with {selectedAttribute === 'nationality' ? 'Nationality' : selectedAttribute === 'age' ? 'Age' : 'Email'} Verification
-                </button>
-              </div>
-            )}
           </div>
         </div>
 
