@@ -19,8 +19,13 @@ export default function HomePage() {
             The trusted anon forum for everyone
             </h2>
             <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+<<<<<<< HEAD
               Prove real world attestations without revealing your identity.<br/>
               Join communities with verified peers.<br/> No room for bots, fakes and misinformation.
+=======
+              Join verified workplace conversations without giving up your privacy. 
+              With zero-knowledge proofs, your identity stays yours — all that&apos;s revealed is the company you work for.
+>>>>>>> self.xyz-QRcode-widget
             </p>
           </div>
         </div>
@@ -59,7 +64,7 @@ export default function HomePage() {
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Authentic</h3>
             <p className="text-gray-600 text-sm">
-              Join communities with verified peers. No room for bots, fakes and misinformation.
+              See what&apos;s trending inside your company, filter by New or Hot.
             </p>
           </div>
 

@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { SignInPanel } from '@/components/SignInPanel';
+import { SelfQRCodeVerificationPanel } from '@/components/zkpassports/self/SelfQRCodeVerificationPanel';
 
 // Mock badge data - in real implementation, this would come from Supabase
 const mockBadges = [
@@ -25,15 +26,22 @@ export default function BadgesPage() {
   const [showAddBadge, setShowAddBadge] = useState(false);
   const [selectedAttribute, setSelectedAttribute] = useState<string | null>(null);
   const [badges, setBadges] = useState(mockBadges);
+  const [isMobile] = useState(false);
+  const [showQRVerification, setShowQRVerification] = useState(false);
 
   const handleAttributeSelect = (attribute: string) => {
-    if (!isAuthenticated) {
+    console.log('handleAttributeSelect called with:', attribute, 'isAuthenticated:', isAuthenticated);
+    setSelectedAttribute(attribute);
+    
+    // Show QR verification directly for nationality and age verification (no authentication required)
+    if (attribute === 'nationality' || attribute === 'age') {
+      console.log('Showing QR verification for:', attribute);
+      setShowQRVerification(true);
+    } else if (!isAuthenticated) {
+      // For other attributes, show sign-in if not authenticated
       setShowSignIn(true);
-    } else {
-      setSelectedAttribute(attribute);
-      // Handle attribute verification logic here
-      console.log('Selected attribute:', attribute);
     }
+    console.log('Selected attribute:', attribute);
   };
 
   const handleNext = () => {
@@ -89,6 +97,7 @@ export default function BadgesPage() {
               </h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                
                 {/* Nationality Option */}
                 <button
                   onClick={() => handleAttributeSelect('nationality')}
@@ -156,18 +165,6 @@ export default function BadgesPage() {
                 </button>
               </div>
             </div>
-
-            {/* Next Button */}
-            {selectedAttribute && (
-              <div className="mt-8">
-                <button
-                  onClick={handleNext}
-                  className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-                >
-                  Continue with {selectedAttribute === 'nationality' ? 'Nationality' : selectedAttribute === 'age' ? 'Age' : 'Email'} Verification
-                </button>
-              </div>
-            )}
           </div>
         </div>
 
@@ -189,6 +186,22 @@ export default function BadgesPage() {
                   </button>
                 </div>
                 <SignInPanel />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* QR Verification Modal */}
+        {showQRVerification && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setShowQRVerification(false)} />
+            <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full">
+              <div className="p-6">
+                <SelfQRCodeVerificationPanel 
+                  selectedAttribute={selectedAttribute}
+                  isMobile={isMobile}
+                  onClose={() => setShowQRVerification(false)}
+                />
               </div>
             </div>
           </div>
@@ -218,7 +231,7 @@ export default function BadgesPage() {
               </svg>
             </div>
             <h3 className="text-base font-semibold text-gray-900 mb-2">No badges yet</h3>
-            <p className="text-sm text-gray-600 mb-4">You haven't verified any attributes yet. Add your first badge to get started.</p>
+            <p className="text-sm text-gray-600 mb-4">You haven&apos;t verified any attributes yet. Add your first badge to get started.</p>
           </div>
         ) : (
           <div className="bg-gray-50 rounded-lg border">
