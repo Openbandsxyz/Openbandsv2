@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { countries, SelfQRcodeWrapper } from '@selfxyz/qrcode'
 import { SelfAppBuilder } from '@selfxyz/qrcode'
-import { useAppKitAccount, useAppKitNetwork } from '@reown/appkit/react'
+import { useAccount, useChainId, useSwitchChain } from 'wagmi'
 import { VerificationStatusDisplay, VerificationStatus } from './VerificationStatusDisplay'
 
 interface SelfVerifyPlaygroundProps {
@@ -14,14 +14,15 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
   const [universalLink, setUniversalLink] = useState("")
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>({
     status: 'idle',
-    message: 'Connect your wallet and switch to Celo network to begin identity verification'
+    message: 'Connect your wallet to begin identity verification'
   })
-  const { address, isConnected } = useAppKitAccount()
-  const { caipNetworkId, switchNetwork } = useAppKitNetwork()
+  const { address, isConnected } = useAccount()
+  const chainId = useChainId()
+  const { switchChain } = useSwitchChain()
 
   // Check if we're on Celo network (for display purposes)
-  const isOnCeloNetwork = caipNetworkId?.includes('42220') // Celo Mainnet chain ID
-  const isOnBaseNetwork = caipNetworkId?.includes('8453')  // Base Mainnet chain ID
+  const isOnCeloNetwork = chainId === 42220 // Celo Mainnet chain ID
+  const isOnBaseNetwork = chainId === 8453  // Base Mainnet chain ID
 
   useEffect(() => {
     if (!isConnected || !address) {
@@ -135,7 +136,7 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
   const handleSwitchToCelo = async () => {
     try {
       // Switch to Celo network (chain ID 42220)
-      await switchNetwork({ chainId: 42220 })
+      switchChain({ chainId: 42220 })
     } catch (error) {
       console.error('Failed to switch network:', error)
     }

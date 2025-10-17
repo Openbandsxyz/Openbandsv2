@@ -2,13 +2,13 @@
 import { useEffect, useState } from 'react'
 import { countries, SelfQRcodeWrapper, SelfApp } from '@selfxyz/qrcode'
 import { SelfAppBuilder } from '@selfxyz/qrcode'
-import { useAppKitAccount } from '@reown/appkit/react'
+import { useAccount } from 'wagmi'
 
 export const SelfVerifyButton = () => {
   const [selfApp, setSelfApp] = useState<SelfApp | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isVerified, setIsVerified] = useState(false)
-  const { address, isConnected } = useAppKitAccount()
+  const { address, isConnected } = useAccount()
 
   useEffect(() => {
     // Use the connected wallet address if available, otherwise use a demo address

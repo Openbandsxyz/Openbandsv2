@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import ConnectWalletButtonWithRainbowkit from '@/components/connect-wallets/ConnectWalletButtonWithRainbowkit';
-import { useAppKitAccount, useAppKitNetwork } from '@reown/appkit/react';
+import { useAccount, useChainId } from 'wagmi';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -16,22 +16,22 @@ export default function Layout({ children, activeTab = 'home', onTabChange, onCo
   const [showCommunities, setShowCommunities] = useState(false);
   
   // Get wallet connection and network information
-  const { isConnected } = useAppKitAccount();
-  const { caipNetworkId } = useAppKitNetwork();
+  const { isConnected } = useAccount();
+  const chainId = useChainId();
   
   // Helper function to get network name from chain ID
-  const getNetworkName = (caipNetworkId: string | undefined) => {
-    if (!caipNetworkId) return 'Unknown';
-    if (caipNetworkId.includes('8453')) return 'Base';
-    if (caipNetworkId.includes('42220')) return 'Celo';
-    if (caipNetworkId.includes('1')) return 'Ethereum';
-    if (caipNetworkId.includes('137')) return 'Polygon';
-    if (caipNetworkId.includes('42161')) return 'Arbitrum';
-    if (caipNetworkId.includes('10')) return 'Optimism';
+  const getNetworkName = (chainId: number | undefined) => {
+    if (!chainId) return 'Unknown';
+    if (chainId === 8453) return 'Base';
+    if (chainId === 42220) return 'Celo';
+    if (chainId === 1) return 'Ethereum';
+    if (chainId === 137) return 'Polygon';
+    if (chainId === 42161) return 'Arbitrum';
+    if (chainId === 10) return 'Optimism';
     return 'Other Network';
   };
   
-  const networkName = getNetworkName(caipNetworkId);
+  const networkName = getNetworkName(chainId);
 
   const communities = [
     { name: 'United States', code: 'US', flag: '🇺🇸' },

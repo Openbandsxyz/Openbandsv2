@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { countries, SelfQRcodeWrapper } from '@selfxyz/qrcode'
 import { SelfAppBuilder } from '@selfxyz/qrcode'
-import { useAppKitAccount } from '@reown/appkit/react'
+import { useAccount } from 'wagmi'
 
 interface SelfVerifyQRCodeProps {
   isMobile?: boolean
@@ -13,7 +13,7 @@ export const SelfVerifyQRCode = ({ isMobile = false }: SelfVerifyQRCodeProps) =>
   const [universalLink, setUniversalLink] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [isVerified, setIsVerified] = useState(false)
-  const { address, isConnected } = useAppKitAccount()
+  const { address, isConnected } = useAccount()
 
   useEffect(() => {
     // Use the connected wallet address if available, otherwise use a demo address

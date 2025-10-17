@@ -29,7 +29,7 @@ export function setConfigAndQueryClient(): { config: Config, queryClient: QueryC
 
   // Set up config for RainbowKit
   const config = getDefaultConfig({
-    appName: 'OpenBands MiniApp',
+    appName: 'OpenBands v2',
     projectId: PROJECT_ID,
     chains: [base, celo], // Support both Base and Celo networks
     //chains: [mainnet, polygon, optimism, arbitrum, base],
