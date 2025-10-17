@@ -19,13 +19,8 @@ export default function HomePage() {
             The trusted anon forum for everyone
             </h2>
             <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-<<<<<<< HEAD
               Prove real world attestations without revealing your identity.<br/>
-              Join communities with verified peers.<br/> No room for bots, fakes and misinformation.
-=======
-              Join verified workplace conversations without giving up your privacy. 
-              With zero-knowledge proofs, your identity stays yours — all that&apos;s revealed is the company you work for.
->>>>>>> self.xyz-QRcode-widget
+              Join communities with verified peers.<br/> No room for bots, fakes and misinformation.              
             </p>
           </div>
         </div>
