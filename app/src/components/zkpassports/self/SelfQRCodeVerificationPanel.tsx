@@ -61,38 +61,37 @@ export const SelfQRCodeVerificationPanel = ({
       {!showVerification ? (
         /* Connect Button Interface */
         <div className="bg-white border border-gray-200 rounded-lg p-6 hover:border-gray-300 transition-colors">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              {/* Self.xyz Official Logo */}
-              <div className="w-12 h-12 bg-white rounded-lg border border-gray-200 flex items-center justify-center p-2">
-                <Image 
-                  src="https://i.postimg.cc/mrmVf9hm/self.png" 
-                  alt="Self.xyz Logo" 
-                  width={32}
-                  height={32}
-                  className="object-contain"
-                />
-              </div>
-              
-              {/* Content */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Self
-                </h3>
-                <p className="text-sm text-gray-600">
-                  {getVerificationDescription()}
-                </p>
-              </div>
+          {/* Header Section */}
+          <div className="flex items-center space-x-4 mb-4">
+            {/* Self.xyz Official Logo */}
+            <div className="w-12 h-12 bg-white rounded-lg border border-gray-200 flex items-center justify-center p-2">
+              <Image 
+                src="https://i.postimg.cc/mrmVf9hm/self.png" 
+                alt="Self.xyz Logo" 
+                width={32}
+                height={32}
+                className="object-contain"
+              />
             </div>
             
-            {/* Connect Button */}
-            <button
-              onClick={() => setShowVerification(true)}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              Connect
-            </button>
+            {/* Content */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Self
+              </h3>
+              <p className="text-sm text-gray-600">
+                {getVerificationDescription()}
+              </p>
+            </div>
           </div>
+          
+          {/* Connect Button */}
+          <button
+            onClick={() => setShowVerification(true)}
+            className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            Connect with Self.xyz
+          </button>
         </div>
       ) : (
         /* QR Code Verification Interface */
