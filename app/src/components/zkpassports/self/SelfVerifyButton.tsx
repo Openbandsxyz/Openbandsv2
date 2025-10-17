@@ -1,11 +1,11 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { countries, SelfQRcodeWrapper } from '@selfxyz/qrcode'
+import { countries, SelfQRcodeWrapper, SelfApp } from '@selfxyz/qrcode'
 import { SelfAppBuilder } from '@selfxyz/qrcode'
 import { useAppKitAccount } from '@reown/appkit/react'
 
 export const SelfVerifyButton = () => {
-  const [selfApp, setSelfApp] = useState<any | null>(null)
+  const [selfApp, setSelfApp] = useState<SelfApp | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isVerified, setIsVerified] = useState(false)
   const { address, isConnected } = useAppKitAccount()
@@ -49,7 +49,7 @@ export const SelfVerifyButton = () => {
     setIsVerified(true)
   }
 
-  const handleVerificationError = (error: any) => {
+  const handleVerificationError = (error: { error_code?: string; reason?: string }) => {
     console.error('Error: Failed to verify identity', error)
     setIsVerified(false)
   }

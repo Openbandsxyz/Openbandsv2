@@ -25,7 +25,7 @@ export default function HomePage() {
             </h2>
             <p className="text-xl text-gray-600 mb-8 leading-relaxed">
               Join verified workplace conversations without giving up your privacy. 
-              With zero-knowledge proofs, your identity stays yours — all that's revealed is the company you work for.
+              With zero-knowledge proofs, your identity stays yours — all that&apos;s revealed is the company you work for.
             </p>
             
             {!isAuthenticated && (
@@ -76,7 +76,7 @@ export default function HomePage() {
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Company-first feeds</h3>
             <p className="text-gray-600 text-sm">
-              See what's trending inside your company, filter by New or Hot.
+              See what&apos;s trending inside your company, filter by New or Hot.
             </p>
           </div>
 
