@@ -195,34 +195,6 @@ export default function BadgesPage() {
                   </button>
                 </div>
                 <SignInPanel />
-                {/* <SelfVerifyPlayground /> */}
-
-                {/* New Self.xyz Identity Verification Section */}
-                <div style={{ 
-                  background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-                  padding: '24px', 
-                  borderRadius: '16px',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                  border: '1px solid #e9ecef'
-                }}>
-                  <h3 style={{ 
-                    marginBottom: '8px', 
-                    color: '#495057',
-                    fontSize: '18px',
-                    fontWeight: '600'
-                  }}>
-                    🛡️ Identity Verification (Self.xyz)
-                  </h3>
-                  <p style={{ 
-                    color: '#6c757d', 
-                    fontSize: '14px', 
-                    marginBottom: '20px',
-                    lineHeight: '1.5'
-                  }}>
-                    Verify your identity using your passport with Self.xyz protocol
-                  </p>
-                  <SelfVerifyPlayground isMobile={isMobile} />
-                </div>
               </div>
             </div>
           </div>

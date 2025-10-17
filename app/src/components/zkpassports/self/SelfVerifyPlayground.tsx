@@ -141,10 +141,8 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
 
   const handleSwitchToCelo = async () => {
     try {
-      // Import the celo network from config and switch to it
-      const { networks } = await import('@/config')
-      const celoNetwork = networks[0] // Assuming Celo is the first network in the config
-      await switchNetwork(celoNetwork)
+      // Switch to Celo network (chain ID 42220)
+      await switchNetwork({ chainId: 42220 })
     } catch (error) {
       console.error('Failed to switch network:', error)
     }
