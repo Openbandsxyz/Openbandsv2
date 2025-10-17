@@ -115,9 +115,6 @@ export const SelfQRCodeVerificationPanel = ({
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
                 🛡️ {getVerificationTitle()}
               </h3>
-              <p className="text-sm text-gray-600">
-                Scan the QR code with your Self mobile app to verify your identity
-              </p>
             </div>
             
             <SelfVerifyPlayground isMobile={isMobile} />
