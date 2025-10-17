@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { SignInPanel } from '@/components/SignInPanel';
-import { SelfQRCodeVerificationPanel } from '@/components/SelfQRCodeVerificationPanel';
+import { SelfQRCodeVerificationPanel } from '@/components/zkpassports/self/SelfQRCodeVerificationPanel';
 
 // Mock badge data - in real implementation, this would come from Supabase
 const mockBadges = [
