@@ -19,8 +19,9 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
   const { address, isConnected } = useAppKitAccount()
   const { caipNetworkId, switchNetwork } = useAppKitNetwork()
 
-  // Check if we're on Celo network
+  // Check if we're on Celo network (for display purposes)
   const isOnCeloNetwork = caipNetworkId?.includes('42220') // Celo Mainnet chain ID
+  const isOnBaseNetwork = caipNetworkId?.includes('8453')  // Base Mainnet chain ID
 
   useEffect(() => {
     if (!isConnected || !address) {
@@ -31,17 +32,9 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
       return
     }
 
-    if (!isOnCeloNetwork) {
-      setVerificationStatus({
-        status: 'idle',
-        message: 'Please switch to Celo network for Self.xyz verification'
-      })
-      return
-    }
-
-    // Initialize Self.xyz app when wallet is connected and on correct network
+    // Initialize Self.xyz app regardless of network since verification is off-chain
     initializeSelfApp()
-  }, [address, isConnected, isOnCeloNetwork, isMobile])
+  }, [address, isConnected, isMobile])
 
   const initializeSelfApp = async () => {
     if (!address) return
@@ -167,24 +160,20 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
 
         {/* Network Status */}
         {isConnected && (
-          <div className={`network-status ${isOnCeloNetwork ? 'connected' : 'warning'}`}>
+          <div className={`network-status ${isOnCeloNetwork || isOnBaseNetwork ? 'connected' : 'warning'}`}>
             <div>
               <strong>Network Status:</strong>{' '}
               {isOnCeloNetwork ? (
                 <span>✅ Connected to Celo</span>
+              ) : isOnBaseNetwork ? (
+                <span>✅ Connected to Base</span>
               ) : (
-                <span>⚠️ Please switch to Celo network</span>
+                <span>⚠️ Connected to other network</span>
               )}
             </div>
-            {!isOnCeloNetwork && (
-              <button
-                onClick={handleSwitchToCelo}
-                className="playground-button"
-                style={{ padding: '6px 12px', fontSize: '12px' }}
-              >
-                Switch to Celo
-              </button>
-            )}
+            <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+              Identity verification works on any network
+            </div>
           </div>
         )}
 
@@ -233,7 +222,7 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
                 maxWidth: '280px',
                 lineHeight: '1.4'
               }}>
-                📱 Don't have the Self app?<br/>
+                📱 Don&apos;t have the Self app?<br/>
                 Download it from your app store to get started
               </p>
             </div>
