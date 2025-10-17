@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { SignInPanel } from '@/components/SignInPanel';
-import { SelfVerifyPlayground } from '@/components/zkpassports/self/SelfVerifyPlayground'; // @dev - Self.xyz QRcode SDK playground
+import { SelfQRCodeVerificationPanel } from '@/components/SelfQRCodeVerificationPanel';
 
 // Mock badge data - in real implementation, this would come from Supabase
 const mockBadges = [
@@ -26,20 +26,22 @@ export default function BadgesPage() {
   const [showAddBadge, setShowAddBadge] = useState(false);
   const [selectedAttribute, setSelectedAttribute] = useState<string | null>(null);
   const [badges, setBadges] = useState(mockBadges);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile] = useState(false);
   const [showQRVerification, setShowQRVerification] = useState(false);
 
   const handleAttributeSelect = (attribute: string) => {
-    if (!isAuthenticated) {
+    console.log('handleAttributeSelect called with:', attribute, 'isAuthenticated:', isAuthenticated);
+    setSelectedAttribute(attribute);
+    
+    // Show QR verification directly for nationality and age verification (no authentication required)
+    if (attribute === 'nationality' || attribute === 'age') {
+      console.log('Showing QR verification for:', attribute);
+      setShowQRVerification(true);
+    } else if (!isAuthenticated) {
+      // For other attributes, show sign-in if not authenticated
       setShowSignIn(true);
-    } else {
-      setSelectedAttribute(attribute);
-      // Show QR verification for nationality and age verification
-      if (attribute === 'nationality' || attribute === 'age') {
-        setShowQRVerification(true);
-      }
-      console.log('Selected attribute:', attribute);
     }
+    console.log('Selected attribute:', attribute);
   };
 
   const handleNext = () => {
@@ -95,6 +97,7 @@ export default function BadgesPage() {
               </h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                
                 {/* Nationality Option */}
                 <button
                   onClick={() => handleAttributeSelect('nationality')}
@@ -206,49 +209,11 @@ export default function BadgesPage() {
             <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setShowQRVerification(false)} />
             <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full">
               <div className="p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold">
-                    {selectedAttribute === 'nationality' ? 'Nationality Verification' : 'Age Verification'}
-                  </h2>
-                  <button
-                    onClick={() => setShowQRVerification(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                
-                {/* QR Code Verification Section */}
-                <div style={{ 
-                  background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-                  padding: '24px', 
-                  borderRadius: '16px',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                  border: '1px solid #e9ecef'
-                }}>
-                  <h3 style={{ 
-                    marginBottom: '8px', 
-                    color: '#495057',
-                    fontSize: '18px',
-                    fontWeight: '600'
-                  }}>
-                    🛡️ {selectedAttribute === 'nationality' ? 'Nationality' : 'Age'} Verification (Self.xyz)
-                  </h3>
-                  <p style={{ 
-                    color: '#6c757d', 
-                    fontSize: '14px', 
-                    marginBottom: '20px',
-                    lineHeight: '1.5'
-                  }}>
-                    {selectedAttribute === 'nationality' 
-                      ? 'Verify your nationality using your passport with Self.xyz protocol'
-                      : 'Verify your age (18+) using your passport with Self.xyz protocol'
-                    }
-                  </p>
-                  <SelfVerifyPlayground isMobile={isMobile} />
-                </div>
+                <SelfQRCodeVerificationPanel 
+                  selectedAttribute={selectedAttribute}
+                  isMobile={isMobile}
+                  onClose={() => setShowQRVerification(false)}
+                />
               </div>
             </div>
           </div>
@@ -278,7 +243,7 @@ export default function BadgesPage() {
               </svg>
             </div>
             <h3 className="text-base font-semibold text-gray-900 mb-2">No badges yet</h3>
-            <p className="text-sm text-gray-600 mb-4">You haven't verified any attributes yet. Add your first badge to get started.</p>
+            <p className="text-sm text-gray-600 mb-4">You haven&apos;t verified any attributes yet. Add your first badge to get started.</p>
           </div>
         ) : (
           <div className="bg-gray-50 rounded-lg border">
