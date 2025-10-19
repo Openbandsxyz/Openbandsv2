@@ -24,6 +24,7 @@ export default function Layout({ children, activeTab = 'home', onTabChange, onCo
     if (!chainId) return 'Unknown';
     if (chainId === 8453) return 'Base';
     if (chainId === 42220) return 'Celo';
+    if (chainId === 84532) return 'Base Sepolia';
     if (chainId === 1) return 'Ethereum';
     if (chainId === 137) return 'Polygon';
     if (chainId === 42161) return 'Arbitrum';

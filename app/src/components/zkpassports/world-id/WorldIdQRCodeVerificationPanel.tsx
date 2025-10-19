@@ -6,13 +6,11 @@ import { WorldIdVerification } from '@/components/zkpassports/world-id/WorldIdVe
 
 interface WorldIdQRCodeVerificationPanelProps {
   selectedAttribute?: string | null
-  isMobile?: boolean
   onClose?: () => void
 }
 
 export const WorldIdQRCodeVerificationPanel = ({ 
   selectedAttribute, 
-  isMobile = false,
   onClose 
 }: WorldIdQRCodeVerificationPanelProps) => {
   const [showVerification, setShowVerification] = useState(false)
@@ -122,7 +120,6 @@ export const WorldIdQRCodeVerificationPanel = ({
             </div>
             
             <WorldIdVerification 
-              isMobile={isMobile}
               onSuccess={(result) => {
                 console.log("World ID verification completed:", result);
               }}

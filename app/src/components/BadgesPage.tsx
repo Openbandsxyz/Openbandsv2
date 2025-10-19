@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { SignInPanel } from '@/components/SignInPanel';
 import { SelfQRCodeVerificationPanel } from '@/components/zkpassports/self/SelfQRCodeVerificationPanel';
+import { WorldIdQRCodeVerificationPanel } from '@/components/zkpassports/world-id/WorldIdQRCodeVerificationPanel';
+import { useChainId } from 'wagmi';
 
 // Mock badge data - in real implementation, this would come from Supabase
 const mockBadges = [
@@ -22,12 +24,16 @@ const mockBadges = [
 
 export default function BadgesPage() {
   const { isAuthenticated } = useApp();
+  const chainId = useChainId();
   const [showSignIn, setShowSignIn] = useState(false);
   const [showAddBadge, setShowAddBadge] = useState(false);
   const [selectedAttribute, setSelectedAttribute] = useState<string | null>(null);
   const [badges, setBadges] = useState(mockBadges);
   const [isMobile] = useState(false);
   const [showQRVerification, setShowQRVerification] = useState(false);
+
+  // Check if user is connected to BASE Sepolia testnet (chain ID 84532)
+  const isBaseSepolia = chainId === 84532;
 
   const handleAttributeSelect = (attribute: string) => {
     console.log('handleAttributeSelect called with:', attribute, 'isAuthenticated:', isAuthenticated);
@@ -197,11 +203,18 @@ export default function BadgesPage() {
             <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setShowQRVerification(false)} />
             <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full">
               <div className="p-6">
-                <SelfQRCodeVerificationPanel 
-                  selectedAttribute={selectedAttribute}
-                  isMobile={isMobile}
-                  onClose={() => setShowQRVerification(false)}
-                />
+                {isBaseSepolia ? (
+                  <WorldIdQRCodeVerificationPanel 
+                    selectedAttribute={selectedAttribute}
+                    onClose={() => setShowQRVerification(false)}
+                  />
+                ) : (
+                  <SelfQRCodeVerificationPanel 
+                    selectedAttribute={selectedAttribute}
+                    isMobile={isMobile}
+                    onClose={() => setShowQRVerification(false)}
+                  />
+                )}
               </div>
             </div>
           </div>
