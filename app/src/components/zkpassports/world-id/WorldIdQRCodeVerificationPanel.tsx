@@ -1,7 +1,5 @@
 'use client'
-import { useState } from 'react'
-import Image from 'next/image'
-import { WorldIdVerification } from '@/components/zkpassports/world-id/WorldIdVerification'
+import { IDKitWidget, VerificationLevel, ISuccessResult } from '@worldcoin/idkit'
 
 
 interface WorldIdQRCodeVerificationPanelProps {
@@ -13,7 +11,9 @@ export const WorldIdQRCodeVerificationPanel = ({
   selectedAttribute, 
   onClose 
 }: WorldIdQRCodeVerificationPanelProps) => {
-  const [showVerification, setShowVerification] = useState(false)
+  
+  const app_id = process.env.NEXT_PUBLIC_WORLDCOIN_APP_ID || "WORLDCOIN_APP_ID is not set"
+  const action = process.env.NEXT_PUBLIC_WORLDCOIN_ACTION || "WORLDCOIN_ACTION is not set"
   
   const getVerificationTitle = () => {
     switch (selectedAttribute) {
@@ -29,12 +29,24 @@ export const WorldIdQRCodeVerificationPanel = ({
   const getVerificationDescription = () => {
     switch (selectedAttribute) {
       case 'nationality':
-        return 'Verify your nationality using your passport with Self.xyz protocol'
+        return 'Verify your nationality using your passport with World ID protocol'
       case 'age':
-        return 'Verify your age (18+) using your passport with Self.xyz protocol'
+        return 'Verify your age (18+) using your passport with World ID protocol'
       default:
-        return 'Verify your identity using your passport with Self.xyz protocol'
+        return 'Verify your identity using your passport with World ID protocol'
     }
+  }
+
+  const handleVerify = (result: ISuccessResult) => {
+    console.log("World ID verification successful:", result)
+    // Close the modal after successful verification
+    if (onClose) {
+      onClose()
+    }
+  }
+
+  const handleError = (error: Error) => {
+    console.error("World ID verification failed:", error)
   }
 
   return (
@@ -56,81 +68,55 @@ export const WorldIdQRCodeVerificationPanel = ({
         </div>
       )}
       
-      {/* Verification Section */}
-      {!showVerification ? (
-        /* Connect Button Interface */
-        <div className="bg-white border border-gray-200 rounded-lg p-6 hover:border-gray-300 transition-colors">
-          {/* Header Section */}
-          <div className="flex items-center space-x-4 mb-4">
-            {/* Self.xyz Official Logo */}
-            <div className="w-12 h-12 bg-white rounded-lg border border-gray-200 flex items-center justify-center p-2">
-              <Image 
-                src="https://i.postimg.cc/mrmVf9hm/self.png" 
-                alt="Self.xyz Logo" 
-                width={32}
-                height={32}
-                className="object-contain"
-              />
-            </div>
-            
-            {/* Content */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">
-                Self
-              </h3>
-              <p className="text-sm text-gray-600">
-                {getVerificationDescription()}
-              </p>
-            </div>
+      {/* Connect Button Interface */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6 hover:border-gray-300 transition-colors">
+        {/* Header Section */}
+        <div className="flex items-center space-x-4 mb-4">
+          {/* World ID Logo */}
+          <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center">
+            <span className="text-white text-xl font-bold">🌍</span>
           </div>
           
-          {/* Connect Button */}
-          <button
-            onClick={() => setShowVerification(true)}
-            className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            Connect with Self.xyz
-          </button>
+          {/* Content */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">
+              World ID
+            </h3>
+            <p className="text-sm text-gray-600">
+              {getVerificationDescription()}
+            </p>
+          </div>
         </div>
-      ) : (
-        /* QR Code Verification Interface */
-        <div className="space-y-4">
-          {/* Back Button */}
-          <div className="flex items-center justify-between">
+        
+        {/* Connect Button with IDKitWidget */}
+        <IDKitWidget
+          app_id={app_id}
+          action={action}
+          verification_level={VerificationLevel.SecureDocument}
+          onSuccess={handleVerify}
+          onError={handleError}
+          credential_types={["secure document"]}
+          enableTelemetry
+        >
+          {({ open }: { open: () => void }) => (
             <button
-              onClick={() => setShowVerification(false)}
-              className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors"
+              onClick={() => {
+                // Close current modal first, then open IDKitWidget modal
+                if (onClose) {
+                  onClose()
+                }
+                // Small delay to ensure modal closes before IDKit opens
+                setTimeout(() => {
+                  open()
+                }, 100)
+              }}
+              className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              <span className="text-sm">Back to verification options</span>
+              Connect with World ID
             </button>
-          </div>
-          
-          {/* QR Code Section */}
-          <div className="bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6">
-            <div className="text-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                🛡️ {getVerificationTitle()}
-              </h3>
-              <p className="text-sm text-gray-600">
-                Scan the QR code with your Self mobile app to verify your identity
-              </p>
-            </div>
-            
-            <WorldIdVerification 
-              onSuccess={(result) => {
-                console.log("World ID verification completed:", result);
-              }}
-              onError={(error) => {
-                console.error("World ID verification error:", error);
-              }}
-            />
-
-          </div>
-        </div>
-      )}
+          )}
+        </IDKitWidget>
+      </div>
     </div>
   )
 }

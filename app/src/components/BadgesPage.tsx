@@ -4,6 +4,7 @@ import { useApp } from '@/context/AppContext';
 import { SignInPanel } from '@/components/SignInPanel';
 import { SelfQRCodeVerificationPanel } from '@/components/zkpassports/self/SelfQRCodeVerificationPanel';
 import { WorldIdQRCodeVerificationPanel } from '@/components/zkpassports/world-id/WorldIdQRCodeVerificationPanel';
+import { WorldIdVerification } from '@/components/zkpassports/world-id/WorldIdVerification'
 import { useChainId } from 'wagmi';
 
 // Mock badge data - in real implementation, this would come from Supabase
@@ -204,6 +205,7 @@ export default function BadgesPage() {
             <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full">
               <div className="p-6">
                 {isBaseSepolia ? (
+                  // <WorldIdVerification />
                   <WorldIdQRCodeVerificationPanel 
                     selectedAttribute={selectedAttribute}
                     onClose={() => setShowQRVerification(false)}
