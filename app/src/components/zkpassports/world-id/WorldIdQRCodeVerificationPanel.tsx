@@ -89,15 +89,32 @@ export const WorldIdQRCodeVerificationPanel = ({
         </div>
         
         {/* Connect Button with IDKitWidget */}
-        <IDKitWidget
-          app_id={app_id}
-          action={action}
-          verification_level={VerificationLevel.SecureDocument}
-          onSuccess={handleVerify}
-          onError={handleError}
-          credential_types={["secure document"]}
-          enableTelemetry
+        <div 
+          role="region" 
+          aria-labelledby="world-id-title"
+          aria-describedby="world-id-description"
         >
+          {/* Hidden title for screen readers */}
+          <h3 id="world-id-title" className="sr-only">
+            {getVerificationTitle()} with World ID
+          </h3>
+          <p id="world-id-description" className="sr-only">
+            {getVerificationDescription()}
+          </p>
+          
+          <IDKitWidget
+            app_id={app_id}
+            action={action}
+            verification_level={VerificationLevel.SecureDocument}
+            onSuccess={handleVerify}
+            onError={handleError}
+            credential_types={["secure document"]}
+            enableTelemetry
+            // Add title for accessibility
+            title={getVerificationTitle()}
+            // Add accessibility props
+            aria-label={`${getVerificationTitle()} - World ID Verification`}
+          >
           {({ open }: { open: () => void }) => (
             <button
               onClick={() => {
@@ -116,6 +133,7 @@ export const WorldIdQRCodeVerificationPanel = ({
             </button>
           )}
         </IDKitWidget>
+        </div>
       </div>
     </div>
   )
