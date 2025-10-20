@@ -4,6 +4,7 @@ import { useApp } from '@/context/AppContext';
 import { SignInPanel } from '@/components/SignInPanel';
 import { SelfQRCodeVerificationPanel } from '@/components/zkpassports/self/SelfQRCodeVerificationPanel';
 import { WorldIdQRCodeVerificationPanel } from '@/components/zkpassports/world-id/WorldIdQRCodeVerificationPanel';
+import { WorldIdVerification } from '@/components/zkpassports/world-id/WorldIdVerification';
 import { useChainId } from 'wagmi';
 
 // Mock badge data - in real implementation, this would come from Supabase
@@ -124,6 +125,17 @@ export default function BadgesPage() {
                   <p className="text-sm text-gray-600">
                     Verify your nationality using passport credentials
                   </p>
+
+                  {isBaseSepolia && (
+                    <WorldIdVerification 
+                      onSuccess={(result) => {
+                        console.log("World ID verification completed:", result);
+                      }}
+                      onError={(error) => {
+                        console.error("World ID verification error:", error);
+                      }}
+                    />
+                  )}
                 </button>
 
                 {/* Age Option */}
@@ -146,6 +158,17 @@ export default function BadgesPage() {
                   <p className="text-sm text-gray-600">
                     Verify you are 18+ years old
                   </p>
+
+                  {isBaseSepolia && (
+                    <WorldIdVerification 
+                      onSuccess={(result) => {
+                        console.log("World ID verification completed:", result);
+                      }}
+                      onError={(error) => {
+                        console.error("World ID verification error:", error);
+                      }}
+                    />
+                  )}
                 </button>
 
                 {/* Email Option */}
@@ -197,24 +220,47 @@ export default function BadgesPage() {
           </div>
         )}
 
-        {/* QR Verification Modal */}
-        {showQRVerification && (
+        {/* QR Verification Modal for World ID on BASE */}
+        {/* 
+        {isBaseSepolia && (
+          // <WorldIdVerification 
+          //   onSuccess={(result) => {
+          //     console.log("World ID verification completed:", result);
+          //   }}
+          //   onError={(error) => {
+          //     console.error("World ID verification error:", error);
+          //   }}
+          // />
+
+          // <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          //   <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setShowQRVerification(false)} />
+          //   <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full">
+          //     <div className="p-6">
+          //       <WorldIdVerification 
+          //         onSuccess={(result) => {
+          //           console.log("World ID verification completed:", result);
+          //         }}
+          //         onError={(error) => {
+          //           console.error("World ID verification error:", error);
+          //         }}
+          //       />
+          //     </div>
+          //   </div>
+          // </div>
+        )}
+        */}
+
+        {/* QR Verification Modal for Self.xyz on Celo */}
+        {showQRVerification && !isBaseSepolia && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setShowQRVerification(false)} />
             <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full">
               <div className="p-6">
-                {isBaseSepolia ? (
-                  <WorldIdQRCodeVerificationPanel 
-                    selectedAttribute={selectedAttribute}
-                    onClose={() => setShowQRVerification(false)}
-                  />
-                ) : (
-                  <SelfQRCodeVerificationPanel 
-                    selectedAttribute={selectedAttribute}
-                    isMobile={isMobile}
-                    onClose={() => setShowQRVerification(false)}
-                  />
-                )}
+                <SelfQRCodeVerificationPanel 
+                  selectedAttribute={selectedAttribute}
+                  isMobile={isMobile}
+                  onClose={() => setShowQRVerification(false)}
+                />
               </div>
             </div>
           </div>

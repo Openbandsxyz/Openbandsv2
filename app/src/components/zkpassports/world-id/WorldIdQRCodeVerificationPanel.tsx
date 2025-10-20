@@ -39,10 +39,8 @@ export const WorldIdQRCodeVerificationPanel = ({
 
   const handleVerify = (result: ISuccessResult) => {
     console.log("World ID verification successful:", result)
-    // Close the modal after successful verification
-    if (onClose) {
-      onClose()
-    }
+    // Modal is already closed when IDKitWidget opened
+    // Handle successful verification result here if needed
   }
 
   const handleError = (error: Error) => {
@@ -115,24 +113,22 @@ export const WorldIdQRCodeVerificationPanel = ({
             // Add accessibility props
             aria-label={`${getVerificationTitle()} - World ID Verification`}
           >
-          {({ open }: { open: () => void }) => (
-            <button
-              onClick={() => {
-                // Close current modal first, then open IDKitWidget modal
-                if (onClose) {
-                  onClose()
-                }
-                // Small delay to ensure modal closes before IDKit opens
-                setTimeout(() => {
+            {({ open }: { open: () => void }) => (
+              <button
+                onClick={() => {
+                  // Close current modal immediately when opening IDKitWidget
+                  if (onClose) {
+                    onClose()
+                  }
+                  // Open IDKitWidget modal immediately
                   open()
-                }, 100)
-              }}
-              className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              Connect with World ID
-            </button>
-          )}
-        </IDKitWidget>
+                }}
+                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                Connect with World ID
+              </button>
+            )}
+          </IDKitWidget>
         </div>
       </div>
     </div>
