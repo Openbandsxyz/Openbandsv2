@@ -24,7 +24,7 @@ export const wagmiConfig = createConfig({
     [base.id]: http('https://mainnet.base.org'),
     [celo.id]: http('https://forno.celo.org'), // Celo mainnet RPC
     [baseSepolia.id]: http('https://sepolia.base.org'), // Base Sepolia testnet RPC
-    [celoSepolia.id]: http(process.env.NEXT_PUBLIC_CELO_SEPOLIA_RPC_URL || 'https://forno.celo.org'), // Celo Sepolia testnet RPC (override via env)
+    [celoSepolia.id]: http(process.env.NEXT_PUBLIC_CELO_SEPOLIA_RPC_URL || 'https://forno.celo-sepolia.celo-testnet.org'), // Celo Sepolia testnet RPC (override via env)
     
     // [base.id]: fallback([
     //   // Primary RPC - Alchemy (if available)
