@@ -162,18 +162,8 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
         {/* Network Status */}
         {isConnected && (
           <div className={`network-status ${isOnCeloNetwork || isOnBaseNetwork ? 'connected' : 'warning'}`}>
-            <div>
-              <strong>Network Status:</strong>{' '}
-              {isOnCeloNetwork ? (
-                <span>✅ Connected to Celo</span>
-              ) : isOnBaseNetwork ? (
-                <span>✅ Connected to Base</span>
-              ) : (
-                <span>⚠️ Connected to other network</span>
-              )}
-            </div>
             <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-              Identity verification works on any network
+              Identity verification with Self.xyz works on Celo mainnet
             </div>
           </div>
         )}
@@ -187,11 +177,13 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
       </div>
 
       {/* Verification Status Display */}
+      {/* 
       <VerificationStatusDisplay
         status={verificationStatus}
         onRetry={handleRetry}
         onReset={handleReset}
-      />
+      />  
+      */}
 
       {/* QR Code or Mobile Button */}
       {selfApp && verificationStatus.status === 'waiting_for_scan' && (
