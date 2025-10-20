@@ -8,8 +8,8 @@ const celoSepolia: Chain = {
   name: 'Celo Sepolia',
   nativeCurrency: { name: 'Celo', symbol: 'CELO', decimals: 18 },
   rpcUrls: {
-    default: { http: ['https://forno.celo.org'] },
-    public: { http: ['https://forno.celo.org'] },
+    default: { http: ['https://forno.celo-sepolia.celo-testnet.org'] },
+    public: { http: ['https://forno.celo-sepolia.celo-testnet.org'] },
   },
   blockExplorers: {
     default: { name: 'Celo Explorer', url: 'https://explorer.celo.org' },
