@@ -1,12 +1,13 @@
 import { createConfig, http, fallback } from '@wagmi/core'
-import { base, celo } from '@wagmi/core/chains'
+import { base, celo, baseSepolia } from '@wagmi/core/chains'
 
 export const wagmiConfig = createConfig({
-  chains: [base, celo], // Support both Base and Celo networks
+  chains: [base, celo, baseSepolia], // Support Base, Celo networks, and Base Sepolia testnet
   //autoConnect: true, // @dev - Restores sessions (But, this ways is the Wagmi v1's way, not v2's way)
   transports: {
     [base.id]: http('https://mainnet.base.org'),
     [celo.id]: http('https://forno.celo.org'), // Celo mainnet RPC
+    [baseSepolia.id]: http('https://sepolia.base.org'), // Base Sepolia testnet RPC
     
     // [base.id]: fallback([
     //   // Primary RPC - Alchemy (if available)

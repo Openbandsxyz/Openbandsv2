@@ -9,7 +9,7 @@ import {
   RainbowKitProvider,
 } from '@rainbow-me/rainbowkit';
 import { WagmiProvider, Config, useAccount, useDisconnect } from 'wagmi';
-import { base, celo } from 'wagmi/chains';
+import { base, celo, baseSepolia } from 'wagmi/chains';
 import {
   QueryClientProvider,
   QueryClient,
@@ -31,7 +31,7 @@ export function setConfigAndQueryClient(): { config: Config, queryClient: QueryC
   const config = getDefaultConfig({
     appName: 'OpenBands v2',
     projectId: PROJECT_ID,
-    chains: [base, celo], // Support both Base and Celo networks
+    chains: [base, celo, baseSepolia], // Support Base, Celo networks, and Base Sepolia testnet
     //chains: [mainnet, polygon, optimism, arbitrum, base],
     ssr: true, // If your dApp uses server side rendering (SSR)
   });
