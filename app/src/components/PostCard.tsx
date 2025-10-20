@@ -25,9 +25,11 @@ export function PostCard({ post, onLiked }: PostCardProps) {
   // determine if the current user already liked this post (once authenticated)
   useEffect(() => {
     const check = async () => {
-      if (!isAuthenticated || !anonymousId || !supabase) return;
+      if (!isAuthenticated || !anonymousId) return;
+      const supabaseClient = supabase();
+      if (!supabaseClient) return;
       try {
-        const { data } = await supabase
+        const { data } = await supabaseClient
           .from('likes')
           .select('id')
           .eq('target_type', 'post')

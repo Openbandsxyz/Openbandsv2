@@ -10,11 +10,13 @@ import BadgesPage from '@/components/BadgesPage';
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'home' | 'badges' | 'employees' | 'communities'>('home');
   const [selectedCommunity, setSelectedCommunity] = useState<{ name: string; code: string; flag: string } | null>(null);
+  const [isClient, setIsClient] = useState(false);
 
   // MiniKit frame lifecycle: signal ready once mounted
   const { setFrameReady, isFrameReady } = useMiniKit();
 
   useEffect(() => {
+    setIsClient(true);
     if (!isFrameReady) {
       setFrameReady();
     }
@@ -40,6 +42,18 @@ export default function Home() {
     }
     return <HomePage />;
   };
+
+  // Show loading state during hydration
+  if (!isClient) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Layout activeTab={activeTab} onTabChange={setActiveTab} onCommunitySelect={handleCommunitySelect}>
