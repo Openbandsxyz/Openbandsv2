@@ -108,9 +108,8 @@ export const SelfVerifyQRCode = ({ isMobile = false }: SelfVerifyQRCodeProps) =>
         <p>Connect your wallet first to verify your identity with Self.xyz</p>
         
         <p style={{ color: '#666', fontSize: '14px', marginTop: '8px' }}>
-          NOTE: Please switch the newtork to Celo Mainnet.
-        </p> 
-       
+          NOTE: Please switch the network to Celo Mainnet.
+        </p>
       </div>
     )
   }

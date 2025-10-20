@@ -16,15 +16,19 @@ export const SelfVerifyButton = () => {
     
     try {
       const app = new SelfAppBuilder({
-        version: 2,
+        // Contract integration settings
+        //endpoint: `${process.env.NEXT_PUBLIC_SELF_ENDPOINT || 'https://api.self.xyz'}`,
+        endpoint: `${process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || 'https://api.self.xyz'}`,
+        endpointType: 'staging_celo', // Use "celo" for mainnet
+        userIdType: 'hex',            // For wallet addresses
+        version: 2,                   // Always use V2
+
+        // App details
         appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || 'Self.xyz QR Demo',
         scope: process.env.NEXT_PUBLIC_SELF_SCOPE || 'selfxyz-demo',
-        endpoint: `${process.env.NEXT_PUBLIC_SELF_ENDPOINT || 'https://api.self.xyz'}`,
+        userDefinedData: 'Identity verification via Self.xyz QR Code',
         logoBase64: 'https://i.postimg.cc/mrmVf9hm/self.png',
         userId,
-        endpointType: 'staging_celo',
-        userIdType: 'hex', // 'hex' for EVM address or 'uuid' for uuidv4
-        userDefinedData: 'Identity verification via Self.xyz QR Code',
         disclosures: {
           // What you want to verify from the user's identity
           minimumAge: 18,
