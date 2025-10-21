@@ -11,6 +11,7 @@ interface SelfVerifyPlaygroundProps {
 
 export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundProps) => {
   const [selfApp, setSelfApp] = useState<any | null>(null)
+  const [userId, setUserId] = useState<string>("")
   const [universalLink, setUniversalLink] = useState("")
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>({
     status: 'idle',
@@ -25,6 +26,9 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
   const isOnBaseNetwork = chainId === 8453  // Base Mainnet chain ID
 
   useEffect(() => {
+    // @dev - Set a user ID, which is the connected wallet address
+    setUserId(address || "");
+
     if (!isConnected || !address) {
       setVerificationStatus({
         status: 'idle',
@@ -45,30 +49,62 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
       message: 'Initializing Self.xyz verification...'
     })
 
+    // @dev - Set a fixed user ID for testing
+    setUserId("0x652579C23f87CE1F36676804BFdc40F99c5A9009");
+
     try {
+      // const appConfig: any = {
+      //   version: 2,
+      //   appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || 'Self.xyz Playground Demo',
+      //   scope: process.env.NEXT_PUBLIC_SELF_SCOPE || 'selfxyz-playground',
+      //   endpoint: `${process.env.NEXT_PUBLIC_SELF_ENDPOINT || 'https://api.staging.self.xyz'}`,
+      //   logoBase64: 'https://i.postimg.cc/mrmVf9hm/self.png',
+      //   userId: address,
+      //   endpointType: 'staging_celo',
+      //   userIdType: 'hex',
+      //   userDefinedData: `Identity verification for ${address}`,
+      //   disclosures: {
+      //     minimumAge: 18,
+      //     excludedCountries: [
+      //       countries.CUBA, 
+      //       countries.IRAN, 
+      //       countries.NORTH_KOREA, 
+      //       countries.RUSSIA
+      //     ],
+      //     nationality: true,
+      //     gender: false, // Optional
+      //     dateOfBirth: false, // Optional
+      //   },
+      // }
+
       const appConfig: any = {
-        version: 2,
-        appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || 'Self.xyz Playground Demo',
-        scope: process.env.NEXT_PUBLIC_SELF_SCOPE || 'selfxyz-playground',
-        endpoint: `${process.env.NEXT_PUBLIC_SELF_ENDPOINT || 'https://api.staging.self.xyz'}`,
-        logoBase64: 'https://i.postimg.cc/mrmVf9hm/self.png',
-        userId: address,
-        endpointType: 'staging_celo',
-        userIdType: 'hex',
-        userDefinedData: `Identity verification for ${address}`,
+        // Contract integration settings
+        endpoint: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS,
+        endpointType: "staging_celo",  // Use "celo" for mainnet
+        userIdType: "hex",             // For wallet addresses
+        version: 2,                    // Always use V2
+        
+        // App details
+        appName: "Self Workshop",
+        scope: "self-workshop",
+        userId: address,  // @dev - Connected wallet address
+        //userId: userId, // @dev - Use connected wallet address
+
         disclosures: {
-          minimumAge: 18,
-          excludedCountries: [
-            countries.CUBA, 
-            countries.IRAN, 
-            countries.NORTH_KOREA, 
-            countries.RUSSIA
-          ],
-          nationality: true,
-          gender: false, // Optional
-          dateOfBirth: false, // Optional
-        },
+            // Verification requirements (must match your contract config)
+            minimumAge: 18,
+            excludedCountries: ["USA"],  // 3-letter country codes
+            ofac: false,                 // OFAC compliance checking
+            // disclosures
+            name: true,                  // Request name disclosure
+            nationality: true,           // Request nationality disclosure
+            gender: true,                // Request gender disclosure
+            date_of_birth: true,         // Request date of birth disclosure
+            passport_number: true,       // Request passport number disclosure
+            expiry_date: true,           // Request expiry date disclosure
+        }
       }
+
 
       // Add deeplink callback for mobile
       if (isMobile) {
