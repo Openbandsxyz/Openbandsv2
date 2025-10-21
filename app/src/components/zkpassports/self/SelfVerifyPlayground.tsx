@@ -89,8 +89,7 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
         endpoint: `${process.env.NEXT_PUBLIC_SELF_ENDPOINT}`,
         logoBase64:
           "https://i.postimg.cc/mrmVf9hm/self.png", // url of a png image, base64 is accepted but not recommended
-        userId: "0x652579C23f87CE1F36676804BFdc40F99c5A9009",
-        //userId: userId,
+        userId: address,
         endpointType: "staging_celo",
         userIdType: "hex", // use 'hex' for ethereum address or 'uuid' for uuidv4
         userDefinedData: "Hello Eth Delhi!!!",
@@ -212,7 +211,7 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
         {/* Address Display */}
         {address && (
           <div className="address-display">
-            <strong>Verifying for:</strong> {address.slice(0, 6)}...{address.slice(-4)}
+            <strong>User ID to be verified:</strong> {address.slice(0, 6)}...{address.slice(-4)}
           </div>
         )}
       </div>
