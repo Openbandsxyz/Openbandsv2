@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { countries, SelfQRcodeWrapper } from '@selfxyz/qrcode'
 import { SelfAppBuilder } from '@selfxyz/qrcode'
 import { useAccount, useChainId, useSwitchChain } from 'wagmi'
@@ -17,6 +17,11 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
     status: 'idle',
     message: 'Connect your wallet to begin identity verification'
   })
+
+  // Use useMemo to cache the array to avoid creating a new array on each render
+  const excludedCountries = useMemo(() => [countries.UNITED_STATES], []);
+
+  // @dev - Wagmi
   const { address, isConnected } = useAccount() // @dev - Get connected wallet address
   const chainId = useChainId()
   const { switchChain } = useSwitchChain()
@@ -50,7 +55,7 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
     })
 
     // @dev - Set a fixed user ID for testing
-    setUserId("0x652579C23f87CE1F36676804BFdc40F99c5A9009");
+    setUserId(address);
 
     try {
       // const appConfig: any = {
@@ -77,30 +82,31 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
       //   },
       // }
 
-      const appConfig: any = {
-        // Contract integration settings
-        endpoint: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS,
-        endpointType: "staging_celo",  // Use "celo" for mainnet
-        userIdType: "hex",             // For wallet addresses
-        version: 2,                    // Always use V2
-        
-        // App details
-        appName: "Self Workshop",
-        scope: "self-workshop",
-        userId: address,  // @dev - Set the connected wallet address
-
+      const appConfig = {
+        version: 2,
+        appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || "Self Workshop",
+        scope: process.env.NEXT_PUBLIC_SELF_SCOPE || "self-workshop",
+        endpoint: `${process.env.NEXT_PUBLIC_SELF_ENDPOINT}`,
+        logoBase64:
+          "https://i.postimg.cc/mrmVf9hm/self.png", // url of a png image, base64 is accepted but not recommended
+        userId: "0x652579C23f87CE1F36676804BFdc40F99c5A9009",
+        //userId: userId,
+        endpointType: "staging_celo",
+        userIdType: "hex", // use 'hex' for ethereum address or 'uuid' for uuidv4
+        userDefinedData: "Hello Eth Delhi!!!",
         disclosures: {
-            // Verification requirements (must match your contract config)
-            minimumAge: 18,
-            excludedCountries: ["USA"],  // 3-letter country codes
-            ofac: false,                 // OFAC compliance checking
-            // disclosures
-            name: true,                  // Request name disclosure
-            nationality: true,           // Request nationality disclosure
-            gender: true,                // Request gender disclosure
-            date_of_birth: true,         // Request date of birth disclosure
-            passport_number: true,       // Request passport number disclosure
-            expiry_date: true,           // Request expiry date disclosure
+        // what you want to verify from users' identity
+          minimumAge: 18,
+          // ofac: true,
+          excludedCountries: excludedCountries,
+          // what you want users to reveal
+          // name: false,
+          // issuing_state: true,
+          // nationality: true,
+          // date_of_birth: true,
+          // passport_number: false,
+          // gender: true,
+          // expiry_date: false,
         }
       }
 
