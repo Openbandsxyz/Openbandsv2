@@ -58,35 +58,40 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
     setUserId(address);
 
     try {
-      // const appConfig: any = {
+      // const appConfig = {
       //   version: 2,
-      //   appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || 'Self.xyz Playground Demo',
-      //   scope: process.env.NEXT_PUBLIC_SELF_SCOPE || 'selfxyz-playground',
-      //   endpoint: `${process.env.NEXT_PUBLIC_SELF_ENDPOINT || 'https://api.staging.self.xyz'}`,
-      //   logoBase64: 'https://i.postimg.cc/mrmVf9hm/self.png',
+      //   appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || "OpenBands v2",
+      //   scope: process.env.NEXT_PUBLIC_SELF_SCOPE || "openbands-v2",
+      //   //scope: process.env.NEXT_PUBLIC_SELF_SCOPE || "self-workshop",
+      //   endpoint: `${process.env.NEXT_PUBLIC_SELF_ENDPOINT}`, // @dev - The ProofOfHumanity contract address
+      //   logoBase64:
+      //     "https://i.postimg.cc/mrmVf9hm/self.png", // url of a png image, base64 is accepted but not recommended
       //   userId: address,
-      //   endpointType: 'staging_celo',
-      //   userIdType: 'hex',
-      //   userDefinedData: `Identity verification for ${address}`,
+      //   endpointType: "staging_celo",
+      //   userIdType: "hex", // use 'hex' for ethereum address or 'uuid' for uuidv4
+      //   userDefinedData: "Hello Eth Delhi!!!",
       //   disclosures: {
+      //   // what you want to verify from users' identity
       //     minimumAge: 18,
-      //     excludedCountries: [
-      //       countries.CUBA, 
-      //       countries.IRAN, 
-      //       countries.NORTH_KOREA, 
-      //       countries.RUSSIA
-      //     ],
-      //     nationality: true,
-      //     gender: false, // Optional
-      //     dateOfBirth: false, // Optional
-      //   },
+      //     // ofac: true,
+      //     excludedCountries: excludedCountries,
+      //     // what you want users to reveal
+      //     // name: false,
+      //     // issuing_state: true,
+      //     // nationality: true,
+      //     // date_of_birth: true,
+      //     // passport_number: false,
+      //     // gender: true,
+      //     // expiry_date: false,
+      //   }
       // }
 
       const appConfig = {
         version: 2,
+        //appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || "OpenBands v2",
         appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || "Self Workshop",
         scope: process.env.NEXT_PUBLIC_SELF_SCOPE || "self-workshop",
-        endpoint: `${process.env.NEXT_PUBLIC_SELF_ENDPOINT}`,
+        endpoint: `${process.env.NEXT_PUBLIC_SELF_ENDPOINT}`, // @dev - The ProofOfHumanity contract address
         logoBase64:
           "https://i.postimg.cc/mrmVf9hm/self.png", // url of a png image, base64 is accepted but not recommended
         userId: address,
@@ -101,7 +106,7 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
           // what you want users to reveal
           // name: false,
           // issuing_state: true,
-          // nationality: true,
+          nationality: true,
           // date_of_birth: true,
           // passport_number: false,
           // gender: true,
