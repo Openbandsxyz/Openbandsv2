@@ -17,7 +17,7 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
     status: 'idle',
     message: 'Connect your wallet to begin identity verification'
   })
-  const { address, isConnected } = useAccount()
+  const { address, isConnected } = useAccount() // @dev - Get connected wallet address
   const chainId = useChainId()
   const { switchChain } = useSwitchChain()
 
@@ -87,8 +87,7 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
         // App details
         appName: "Self Workshop",
         scope: "self-workshop",
-        userId: address,  // @dev - Connected wallet address
-        //userId: userId, // @dev - Use connected wallet address
+        userId: address,  // @dev - Set the connected wallet address
 
         disclosures: {
             // Verification requirements (must match your contract config)

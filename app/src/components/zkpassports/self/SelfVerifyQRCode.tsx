@@ -10,6 +10,7 @@ interface SelfVerifyQRCodeProps {
 
 export const SelfVerifyQRCode = ({ isMobile = false }: SelfVerifyQRCodeProps) => {
   const [selfApp, setSelfApp] = useState<any | null>(null)
+  const [userId, setUserId] = useState<string>("")
   const [universalLink, setUniversalLink] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [isVerified, setIsVerified] = useState(false)
@@ -19,9 +20,8 @@ export const SelfVerifyQRCode = ({ isMobile = false }: SelfVerifyQRCodeProps) =>
   const excludedCountries = useMemo(() => [countries.UNITED_STATES], []);
 
   useEffect(() => {
-    // Use the connected wallet address if available, otherwise use a demo address
-    const userId = "0x652579C23f87CE1F36676804BFdc40F99c5A9009"
-    //const userId = address || 'No Wallet Connected'
+    // @dev - Set a user ID, which is the connected wallet address
+    setUserId(address || "");
     
     try {
       // const appConfig: any = {
@@ -54,8 +54,7 @@ export const SelfVerifyQRCode = ({ isMobile = false }: SelfVerifyQRCodeProps) =>
         endpoint: `${process.env.NEXT_PUBLIC_SELF_ENDPOINT}`,
         logoBase64:
           "https://i.postimg.cc/mrmVf9hm/self.png", // url of a png image, base64 is accepted but not recommended
-        //userId: "0x652579C23f87CE1F36676804BFdc40F99c5A9009",
-        userId: userId,
+        userId: address,  // @dev - Set the connected wallet address
         endpointType: "staging_celo",
         userIdType: "hex", // use 'hex' for ethereum address or 'uuid' for uuidv4
         userDefinedData: "Hello Eth Delhi!!!",
