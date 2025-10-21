@@ -18,6 +18,9 @@ import {
 import { reconnect, getConnections } from '@wagmi/core';
 import { wagmiConfig } from '@/lib/blockchains/evm/smart-contracts/wagmi/config';
 
+// Import celoSepolia from our wagmi config since it's a custom chain
+const celoSepolia = wagmiConfig.chains.find(chain => chain.id === 11142220);
+
 // @dev - Blockchain related imports
 //import { connectToEvmWallet } from '../../lib/blockchains/evm/connect-wallets/connect-to-evm-wallet';
 
@@ -31,7 +34,7 @@ export function setConfigAndQueryClient(): { config: Config, queryClient: QueryC
   const config = getDefaultConfig({
     appName: 'OpenBands v2',
     projectId: PROJECT_ID,
-    chains: [base, celo, baseSepolia], // Support Base, Celo networks, and Base Sepolia testnet
+    chains: [base, celo, baseSepolia, ...(celoSepolia ? [celoSepolia] : [])], // Support Base, Celo networks, Base Sepolia, and Celo Sepolia testnet
     //chains: [mainnet, polygon, optimism, arbitrum, base],
     ssr: true, // If your dApp uses server side rendering (SSR)
   });

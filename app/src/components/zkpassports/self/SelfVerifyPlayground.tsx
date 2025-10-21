@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { countries, SelfQRcodeWrapper } from '@selfxyz/qrcode'
 import { SelfAppBuilder } from '@selfxyz/qrcode'
 import { useAccount, useChainId, useSwitchChain } from 'wagmi'
@@ -11,12 +11,18 @@ interface SelfVerifyPlaygroundProps {
 
 export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundProps) => {
   const [selfApp, setSelfApp] = useState<any | null>(null)
+  const [userId, setUserId] = useState<string>("")
   const [universalLink, setUniversalLink] = useState("")
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>({
     status: 'idle',
     message: 'Connect your wallet to begin identity verification'
   })
-  const { address, isConnected } = useAccount()
+
+  // Use useMemo to cache the array to avoid creating a new array on each render
+  const excludedCountries = useMemo(() => [countries.UNITED_STATES], []);
+
+  // @dev - Wagmi
+  const { address, isConnected } = useAccount() // @dev - Get connected wallet address
   const chainId = useChainId()
   const { switchChain } = useSwitchChain()
 
@@ -25,6 +31,9 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
   const isOnBaseNetwork = chainId === 8453  // Base Mainnet chain ID
 
   useEffect(() => {
+    // @dev - Set a user ID, which is the connected wallet address
+    setUserId(address || "");
+
     if (!isConnected || !address) {
       setVerificationStatus({
         status: 'idle',
@@ -45,30 +54,66 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
       message: 'Initializing Self.xyz verification...'
     })
 
+    // @dev - Set a fixed user ID for testing
+    setUserId(address);
+
     try {
-      const appConfig: any = {
+      // const appConfig = {
+      //   version: 2,
+      //   appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || "OpenBands v2",
+      //   scope: process.env.NEXT_PUBLIC_SELF_SCOPE || "openbands-v2",
+      //   //scope: process.env.NEXT_PUBLIC_SELF_SCOPE || "self-workshop",
+      //   endpoint: `${process.env.NEXT_PUBLIC_SELF_ENDPOINT}`, // @dev - The ProofOfHumanity contract address
+      //   logoBase64:
+      //     "https://i.postimg.cc/mrmVf9hm/self.png", // url of a png image, base64 is accepted but not recommended
+      //   userId: address,
+      //   endpointType: "staging_celo",
+      //   userIdType: "hex", // use 'hex' for ethereum address or 'uuid' for uuidv4
+      //   userDefinedData: "Hello Eth Delhi!!!",
+      //   disclosures: {
+      //   // what you want to verify from users' identity
+      //     minimumAge: 18,
+      //     // ofac: true,
+      //     excludedCountries: excludedCountries,
+      //     // what you want users to reveal
+      //     // name: false,
+      //     // issuing_state: true,
+      //     // nationality: true,
+      //     // date_of_birth: true,
+      //     // passport_number: false,
+      //     // gender: true,
+      //     // expiry_date: false,
+      //   }
+      // }
+
+      const appConfig = {
         version: 2,
-        appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || 'Self.xyz Playground Demo',
-        scope: process.env.NEXT_PUBLIC_SELF_SCOPE || 'selfxyz-playground',
-        endpoint: `${process.env.NEXT_PUBLIC_SELF_ENDPOINT || 'https://api.staging.self.xyz'}`,
-        logoBase64: 'https://i.postimg.cc/mrmVf9hm/self.png',
+        //appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || "OpenBands v2",
+        appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || "Self Workshop",
+        scope: process.env.NEXT_PUBLIC_SELF_SCOPE || "self-workshop",
+        endpoint: `${process.env.NEXT_PUBLIC_SELF_ENDPOINT}`, // @dev - The ProofOfHumanity contract address
+        logoBase64:
+          "https://i.postimg.cc/mrmVf9hm/self.png", // url of a png image, base64 is accepted but not recommended
         userId: address,
-        endpointType: 'staging_celo',
-        userIdType: 'hex',
-        userDefinedData: `Identity verification for ${address}`,
+        endpointType: "staging_celo",
+        userIdType: "hex", // use 'hex' for ethereum address or 'uuid' for uuidv4
+        userDefinedData: "Hello Eth Delhi!!!",
         disclosures: {
+        // what you want to verify from users' identity
           minimumAge: 18,
-          excludedCountries: [
-            countries.CUBA, 
-            countries.IRAN, 
-            countries.NORTH_KOREA, 
-            countries.RUSSIA
-          ],
+          // ofac: true,
+          excludedCountries: excludedCountries,
+          // what you want users to reveal
+          // name: false,
+          // issuing_state: true,
           nationality: true,
-          gender: false, // Optional
-          dateOfBirth: false, // Optional
-        },
+          // date_of_birth: true,
+          // passport_number: false,
+          // gender: true,
+          // expiry_date: false,
+        }
       }
+
 
       // Add deeplink callback for mobile
       if (isMobile) {
@@ -171,7 +216,7 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
         {/* Address Display */}
         {address && (
           <div className="address-display">
-            <strong>Verifying for:</strong> {address.slice(0, 6)}...{address.slice(-4)}
+            <strong>User ID to be verified:</strong> {address.slice(0, 6)}...{address.slice(-4)}
           </div>
         )}
       </div>
