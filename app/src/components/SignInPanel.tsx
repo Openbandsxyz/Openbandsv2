@@ -218,6 +218,7 @@ export function SignInPanel({ onSuccess: onAuthSuccess }: { onSuccess?: () => vo
                 functionName: 'getPublicInputsOfZkJwtProof',
                 args: [nullifierFromZkJwtCircuit]
             }) as PublicInputs;
+
             //console.log(`publicInputs (from on-chain): ${JSON.stringify(publicInputsFromOnChain, null, 2)}`);
             const _walletAddressFromOnChain: string = publicInputsFromOnChain.walletAddress;
             toast.error(`Email already associated with address ${ truncateAddress(_walletAddressFromOnChain) }. Please connect with the same address to log in`);

@@ -1,8 +1,9 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import BadgesList from './badges/BadgesList';
 import AddBadgeFlow from './badges/AddBadgeFlow';
+import { useBadgeCheck } from '@/hooks/useBadgeCheck';
 
 interface Badge {
   id: string;
@@ -39,7 +40,44 @@ const mockBadges: Badge[] = [
 export default function BadgesPage() {
   const { isAuthenticated } = useApp();
   const [showAddBadge, setShowAddBadge] = useState(false);
-  const [badges, setBadges] = useState<Badge[]>(mockBadges);
+  const [badges, setBadges] = useState<Badge[]>([]);
+  const { badgeData, loading, error } = useBadgeCheck();
+
+  // Helper function to format the timestamp
+  const formatTimestamp = (isoString: string): string => {
+    try {
+      const date = new Date(isoString);
+      
+      // Format as "Month Day, Year" (e.g., "September 22, 2025")
+      const formattedDate = date.toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
+      });
+      
+      return formattedDate;
+    } catch (error) {
+      console.error('Error formatting timestamp:', error);
+      return 'On-chain verified';
+    }
+  };
+
+  // Update badges based on on-chain data
+  useEffect(() => {
+    if (badgeData.hasVerifiedBadge && badgeData.domain) {
+      const emailBadge: Badge = {
+        id: '1',
+        name: `@${badgeData.domain}`,
+        icon: 'mail',
+        verifiedAt: badgeData.createdAt 
+          ? formatTimestamp(badgeData.createdAt) 
+          : 'On-chain verified'
+      };
+      setBadges([emailBadge]);
+    } else {
+      setBadges([]);
+    }
+  }, [badgeData]);
 
   const deleteBadge = (id: string) => {
     setBadges(badges.filter(badge => badge.id !== id));
@@ -112,6 +150,24 @@ export default function BadgesPage() {
         onClose={() => setShowAddBadge(false)}
         onCreateBadge={createBadge}
       />
+    );
+  }
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-gray-600">Loading badges...</div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-red-600">Error: {error}</div>
+      </div>
     );
   }
 
