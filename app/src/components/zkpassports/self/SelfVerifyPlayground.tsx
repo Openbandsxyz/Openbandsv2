@@ -10,9 +10,10 @@ import { storeVerificationData, getProofOfHumanRecord } from '@/lib/blockchains/
 
 interface SelfVerifyPlaygroundProps {
   isMobile?: boolean
+  onVerificationSuccess?: () => void
 }
 
-export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundProps) => {
+export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }: SelfVerifyPlaygroundProps) => {
   const [selfApp, setSelfApp] = useState<any | null>(null)
   const [userId, setUserId] = useState<string>("")
   const [universalLink, setUniversalLink] = useState("")
@@ -162,6 +163,14 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
   const handleSuccessfulVerification = async() => {
     console.log('Identity verified successfully!')
 
+    // Close the modal immediately after successful verification
+    if (onVerificationSuccess) {
+      // Add a small delay to allow users to see the success message briefly
+      setTimeout(() => {
+        onVerificationSuccess();
+      }, 2000);
+    }
+
     // @dev - Test data to be called the with - when the storeVerificationData() is called.  
     const isAboveMinimumAge: boolean = true;
     const isValidNationality: boolean = true;
@@ -176,8 +185,7 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
 
       setVerificationStatus({
         status: 'success',
-        message: 'Your identity has been successfully verified and stored on-chain!',
-        details: result
+        message: 'Your identity has been successfully verified and stored on-chain!'
       })
     } catch (error) {
       console.error('Failed to store verification data on-chain:', error)
