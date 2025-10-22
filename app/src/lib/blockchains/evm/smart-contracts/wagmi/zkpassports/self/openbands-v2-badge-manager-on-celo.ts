@@ -30,9 +30,11 @@ export const openbandsV2BadgeManagerOnCeloContractConfig = {
 
 /**
  * @notice - Store verification data on the OpenbandsV2BadgeManagerOnCelo contract
- * @param userAddress - The address of the user storing the verification
- * @param verificationData - The verification data to store (e.g., ZK proof data)
- * @param attributeType - The type of attribute being verified (e.g., "nationality", "age")
+ * @param isAboveMinimumAge
+ * @param isValidNationality
+ * @param proofPayload - The ZK proof payload to store
+ * @param userContextData - Additional user context data to store
+
  * @returns Promise with transaction hash if successful
  */
 export async function storeVerificationData(

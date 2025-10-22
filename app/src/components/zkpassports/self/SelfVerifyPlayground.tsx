@@ -5,6 +5,9 @@ import { SelfAppBuilder } from '@selfxyz/qrcode'
 import { useAccount, useChainId, useSwitchChain } from 'wagmi'
 import { VerificationStatusDisplay, VerificationStatus } from './VerificationStatusDisplay'
 
+// @dev - OpenbandsV2BadgeManagerOnCelo.sol related module
+import { storeVerificationData, getProofOfHumanRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/zkpassports/self/openbands-v2-badge-manager-on-celo';
+
 interface SelfVerifyPlaygroundProps {
   isMobile?: boolean
 }
