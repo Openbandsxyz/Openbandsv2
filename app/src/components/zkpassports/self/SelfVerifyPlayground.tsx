@@ -122,6 +122,7 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
       // Add deeplink callback for mobile
       if (isMobile) {
         appConfig.deeplinkCallback = `${window.location.origin}/verification-callback`
+        console.log(`appConfig.deeplinkCallback: ${appConfig.deeplinkCallback}`)
       }
 
       const app = new SelfAppBuilder(appConfig).build()
@@ -151,29 +152,26 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
     }
   }
 
-  const handleSuccessfulVerification = async(result?: any) => {
-    console.log('Identity verified successfully!', result)
 
-    // Check if wallet is connected and address is available
-    if (!address) {
-      console.error('Wallet address not available for storing verification data')
-      setVerificationStatus({
-        status: 'error',
-        message: 'Wallet not connected. Cannot store verification data.',
-        error: 'No wallet address available'
-      })
-      return
-    }
+  // const handleSuccessfulVerification = () => {
+  //   // Persist the attestation / session result to your backend, then gate content
+  //   console.log('Verified!')
+  //   console.log('Identity verification successful - no result data is provided by Self.xyz onSuccess callback')
+  // }
+
+  const handleSuccessfulVerification = async() => {
+    console.log('Identity verified successfully!')
 
     // @dev - Test data to be called the with - when the storeVerificationData() is called.  
     const isAboveMinimumAge: boolean = true;
     const isValidNationality: boolean = true;
-    const proofPayload: Record<string, unknown> = {};
-    const userContextData: string = "User context data";
+    //const proofPayload: Record<string, unknown> = {};
+    //const userContextData: string = "User context data";
 
     try {
       // @dev - Store verification data on-chain via OpenbandsV2BadgeManagerOnCelo contract
-      const txHash: string = await storeVerificationData(isAboveMinimumAge, isValidNationality, proofPayload, userContextData);
+      const txHash: string = await storeVerificationData(isAboveMinimumAge, isValidNationality);
+      //const txHash: string = await storeVerificationData(isAboveMinimumAge, isValidNationality, proofPayload, userContextData);
       console.log('Call the storeVerificationData() in the OpenbandsV2BadgeManagerOnCelo.sol -> Transaction hash:', txHash);
 
       setVerificationStatus({
