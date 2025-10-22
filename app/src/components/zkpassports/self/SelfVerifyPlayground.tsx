@@ -5,6 +5,9 @@ import { SelfAppBuilder } from '@selfxyz/qrcode'
 import { useAccount, useChainId, useSwitchChain } from 'wagmi'
 import { VerificationStatusDisplay, VerificationStatus } from './VerificationStatusDisplay'
 
+// @dev - OpenbandsV2BadgeManagerOnCelo.sol related module
+import { storeVerificationData, getProofOfHumanRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/zkpassports/self/openbands-v2-badge-manager-on-celo';
+
 interface SelfVerifyPlaygroundProps {
   isMobile?: boolean
 }
@@ -86,7 +89,7 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
       //   }
       // }
 
-      const appConfig = {
+      const appConfig: Record<string, unknown> = {
         version: 2,
         //appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || "OpenBands v2",
         appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || "Self Workshop",
@@ -97,7 +100,8 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
         userId: address,
         endpointType: "staging_celo",
         userIdType: "hex", // use 'hex' for ethereum address or 'uuid' for uuidv4
-        userDefinedData: "Hello Eth Delhi!!!",
+        userDefinedData: "Verification for the OpenBands v2 app",
+        //userDefinedData: "Hello Eth Delhi!!!",
         disclosures: {
         // what you want to verify from users' identity
           minimumAge: 18,
@@ -118,6 +122,7 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
       // Add deeplink callback for mobile
       if (isMobile) {
         appConfig.deeplinkCallback = `${window.location.origin}/verification-callback`
+        console.log(`appConfig.deeplinkCallback: ${appConfig.deeplinkCallback}`)
       }
 
       const app = new SelfAppBuilder(appConfig).build()
@@ -147,21 +152,49 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
     }
   }
 
-  const handleSuccessfulVerification = (result?: any) => {
-    console.log('Identity verified successfully!', result)
-    setVerificationStatus({
-      status: 'success',
-      message: 'Your identity has been successfully verified!',
-      details: result
-    })
+
+  // const handleSuccessfulVerification = () => {
+  //   // Persist the attestation / session result to your backend, then gate content
+  //   console.log('Verified!')
+  //   console.log('Identity verification successful - no result data is provided by Self.xyz onSuccess callback')
+  // }
+
+  const handleSuccessfulVerification = async() => {
+    console.log('Identity verified successfully!')
+
+    // @dev - Test data to be called the with - when the storeVerificationData() is called.  
+    const isAboveMinimumAge: boolean = true;
+    const isValidNationality: boolean = true;
+    //const proofPayload: Record<string, unknown> = {};
+    //const userContextData: string = "User context data";
+
+    try {
+      // @dev - Store verification data on-chain via OpenbandsV2BadgeManagerOnCelo contract
+      const txHash: string = await storeVerificationData(isAboveMinimumAge, isValidNationality);
+      //const txHash: string = await storeVerificationData(isAboveMinimumAge, isValidNationality, proofPayload, userContextData);
+      console.log('Call the storeVerificationData() in the OpenbandsV2BadgeManagerOnCelo.sol -> Transaction hash:', txHash);
+
+      setVerificationStatus({
+        status: 'success',
+        message: 'Your identity has been successfully verified and stored on-chain!',
+        details: result
+      })
+    } catch (error) {
+      console.error('Failed to store verification data on-chain:', error)
+      setVerificationStatus({
+        status: 'error',
+        message: 'Verification successful but failed to store on-chain',
+        error: error instanceof Error ? error.message : 'Unknown error storing verification data'
+      })
+    }
   }
 
-  const handleVerificationError = (error: any) => {
+  const handleVerificationError = (error: Error | unknown) => {
     console.error('Verification failed:', error)
     setVerificationStatus({
       status: 'error',
       message: 'Identity verification failed',
-      error: error?.message || 'Unknown verification error'
+      error: error instanceof Error ? error.message : 'Unknown verification error'
     })
   }
 
