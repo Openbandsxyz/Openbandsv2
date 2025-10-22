@@ -1,9 +1,8 @@
 "use client";
 import { useState } from 'react';
 import { useApp } from '@/context/AppContext';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import ConnectWalletButtonWithRainbowkit from '@/components/connect-wallets/ConnectWalletButtonWithRainbowkit';
+import { useAccount, useChainId } from 'wagmi';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -15,7 +14,26 @@ interface LayoutProps {
 export default function Layout({ children, activeTab = 'home', onTabChange, onCommunitySelect }: LayoutProps) {
   const { isAuthenticated, anonymousId, companyDomain, signOut } = useApp();
   const [showCommunities, setShowCommunities] = useState(false);
-  const router = useRouter();
+  
+  // Get wallet connection and network information
+  const { isConnected } = useAccount();
+  const chainId = useChainId();
+  
+  // Helper function to get network name from chain ID
+  const getNetworkName = (chainId: number | undefined) => {
+    if (!chainId) return 'Unknown';
+    if (chainId === 8453) return 'Base';
+    if (chainId === 42220) return 'Celo';
+    if (chainId === 84532) return 'Base Sepolia';
+    if (chainId === 11142220) return 'Celo Sepolia';
+    if (chainId === 1) return 'Ethereum';
+    if (chainId === 137) return 'Polygon';
+    if (chainId === 42161) return 'Arbitrum';
+    if (chainId === 10) return 'Optimism';
+    return 'Other Network';
+  };
+  
+  const networkName = getNetworkName(chainId);
 
   const communities = [
     { name: 'United States', code: 'US', flag: '🇺🇸' },
@@ -144,27 +162,42 @@ export default function Layout({ children, activeTab = 'home', onTabChange, onCo
       <div className="flex-1 flex flex-col">
         {/* Top Right Wallet Button */}
         <div className="absolute top-4 right-4 z-10">
-          {isAuthenticated ? (
-            <div className="flex items-center space-x-2 bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm">
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-xs font-medium text-blue-700">{anonymousId}</span>
+          <div className="flex flex-col items-end space-y-2">
+            {/* Network Display - Show when wallet is connected */}
+            {isConnected && (
+              <div className="bg-white border border-gray-200 rounded-lg px-3 py-1 shadow-sm">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="text-xs font-medium text-gray-600">
+                    {networkName}
+                  </span>
                 </div>
-                <span className="text-sm font-medium text-gray-700">{companyDomain}</span>
               </div>
-              <button
-                onClick={signOut}
-                className="p-1 hover:bg-gray-100 rounded"
-                aria-label="Sign out"
-              >
-                <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-              </button>
-            </div>
-          ) : (
-            <ConnectWalletButtonWithRainbowkit />
-          )}
+            )}
+            
+            {/* Wallet Button / User Info */}
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-2 bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm">
+                <div className="flex items-center space-x-2">
+                  <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                    <span className="text-xs font-medium text-blue-700">{anonymousId}</span>
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">{companyDomain}</span>
+                </div>
+                <button
+                  onClick={signOut}
+                  className="p-1 hover:bg-gray-100 rounded"
+                  aria-label="Sign out"
+                >
+                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                </button>
+              </div>
+            ) : (
+              <ConnectWalletButtonWithRainbowkit />
+            )}
+          </div>
         </div>
         {children}
       </div>
