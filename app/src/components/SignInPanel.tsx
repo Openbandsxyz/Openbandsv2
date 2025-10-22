@@ -47,7 +47,7 @@ import { extractErrorMessageInString } from "@/lib/utils/try-catch-error-handlin
 /**
  * @notice - SignInPanel component
  */
-export function SignInPanel() { // @dev - For Wagmi
+export function SignInPanel({ onSuccess: onAuthSuccess }: { onSuccess?: () => void } = {}) { // @dev - For Wagmi
 //export function SignInPanel({ provider, signer }: { provider: BrowserProvider; signer: JsonRpcSigner }) { // @dev - For ethers.js
   const { signIn } = useApp();
 
@@ -201,6 +201,11 @@ export function SignInPanel() { // @dev - For Wagmi
             toast.dismiss(toastToNotifyZkJwtPublicInputsRecordingOnChain); // @dev - Dismiss the previous notification about the beginning of public inputs recording on-chain.
             toast.success("The public inputs of your zkJWT proof has been successfully stored on-chain (on BASE Mainnet)!");
             signIn(domainFromZkJwtCircuit);
+            
+            // Call the onSuccess callback if provided (for badge creation flow)
+            if (onAuthSuccess) {
+              onAuthSuccess();
+            }
           }
         } catch (error: unknown) {
           toast.dismiss(toastToNotifyZkJwtPublicInputsRecordingOnChain); // @dev - Dismiss the previous notification about the beginning of public inputs recording on-chain.
@@ -259,6 +264,11 @@ export function SignInPanel() { // @dev - For Wagmi
         ) {
           // We'll discard the email/token for privacy and just sign in anonymously
           signIn(domainFromGoogleJwt);
+          
+          // Call the onSuccess callback if provided (for badge creation flow)
+          if (onAuthSuccess) {
+            onAuthSuccess();
+          }
         }
       } else {
         //return;
@@ -301,16 +311,6 @@ export function SignInPanel() { // @dev - For Wagmi
         </div>
       )}
       <div className="w-full max-w-sm mx-auto">
-        {/* Logo/Brand */}
-        <div className="text-center mb-8">
-          <div className="w-12 h-12 mx-auto mb-4">
-            <img src="/Openbands.png" alt="Openbands" className="w-12 h-12 rounded-lg object-cover" />
-          </div>
-          <h1 className="text-xl font-bold text-gray-900 mb-2">Welcome to Openbands</h1>
-          <p className="text-gray-600 text-sm">
-            The anonymous forum for verified employees
-          </p>
-        </div>
 
         {/* Sign-in Card */}
         <div className="bg-white rounded-xl shadow-sm border p-5">
