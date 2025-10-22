@@ -97,7 +97,8 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
         userId: address,
         endpointType: "staging_celo",
         userIdType: "hex", // use 'hex' for ethereum address or 'uuid' for uuidv4
-        userDefinedData: "Hello Eth Delhi!!!",
+        userDefinedData: "Verification for the OpenBands v2 app",
+        //userDefinedData: "Hello Eth Delhi!!!",
         disclosures: {
         // what you want to verify from users' identity
           minimumAge: 18,
