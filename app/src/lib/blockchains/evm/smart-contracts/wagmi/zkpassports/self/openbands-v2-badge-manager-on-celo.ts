@@ -90,4 +90,3 @@ export async function getProofOfHumanRecord(
     throw error;
   }
 }
-

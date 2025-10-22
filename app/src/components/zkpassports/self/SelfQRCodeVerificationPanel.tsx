@@ -117,7 +117,10 @@ export const SelfQRCodeVerificationPanel = ({
               </h3>
             </div>
             
-            <SelfVerifyPlayground isMobile={isMobile} />
+            <SelfVerifyPlayground 
+              isMobile={isMobile} 
+              onVerificationSuccess={onClose}
+            />
           </div>
         </div>
       )}
