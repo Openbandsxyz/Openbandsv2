@@ -15,6 +15,7 @@ interface SelfVerifyPlaygroundProps {
 
 export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }: SelfVerifyPlaygroundProps) => {
   const [selfApp, setSelfApp] = useState<any | null>(null)
+  const [appConfig, setAppConfig] = useState<any | null>(null)
   const [userId, setUserId] = useState<string>("")
   const [universalLink, setUniversalLink] = useState("")
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>({
@@ -118,6 +119,7 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
           // expiry_date: false,
         }
       }
+      setAppConfig(appConfig);
 
 
       // Add deeplink callback for mobile
@@ -153,17 +155,10 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
     }
   }
 
-
-  // const handleSuccessfulVerification = () => {
-  //   // Persist the attestation / session result to your backend, then gate content
-  //   console.log('Verified!')
-  //   console.log('Identity verification successful - no result data is provided by Self.xyz onSuccess callback')
-  // }
-
-  const handleSuccessfulVerification = async() => {
+  const handleSuccessfulVerification = async() => { // @dev - This function would be called - once the "onSuccess" callback from the <SelfQRcodeWrapper> component is triggered
     console.log('Identity verified successfully!')
 
-    // Close the modal immediately after successful verification
+    // @dev - Close the modal immediately after successful verification
     if (onVerificationSuccess) {
       // Add a small delay to allow users to see the success message briefly
       setTimeout(() => {
@@ -171,11 +166,23 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
       }, 2000);
     }
 
-    // @dev - Test data to be called the with - when the storeVerificationData() is called.  
-    const isAboveMinimumAge: boolean = true;
-    const isValidNationality: boolean = true;
+    // @dev - The logic to judge whether each discloused data meets the criteria
+    let isAboveMinimumAge: boolean = false;
+    let isValidNationality: boolean = false;
+    if (appConfig) {
+      const { address, userId, userDefinedData, disclosures } = appConfig;
+      if (disclosures.minimumAge >= 18) {
+        isAboveMinimumAge = true;
+      }
+
+      if (disclosures.nationality == true) {
+        isValidNationality = true;
+      }
+    }
     //const proofPayload: Record<string, unknown> = {};
     //const userContextData: string = "User context data";
+    console.log('isAboveMinimumAge:', isAboveMinimumAge);
+    console.log('isValidNationality:', isValidNationality);
 
     try {
       // @dev - Store verification data on-chain via OpenbandsV2BadgeManagerOnCelo contract
