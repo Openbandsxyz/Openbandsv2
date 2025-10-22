@@ -28,19 +28,24 @@ export const openbandsV2BadgeManagerOnCeloContractConfig = {
   abi: openbandsV2BadgeManagerOnCeloAbi,
 } as const
 
+// Type for proof payload
+interface ProofPayload {
+  [key: string]: unknown;
+}
+
 /**
  * @notice - Store verification data on the OpenbandsV2BadgeManagerOnCelo contract
+ * @param userAddress - The address of the user storing the verification
  * @param isAboveMinimumAge
  * @param isValidNationality
  * @param proofPayload - The ZK proof payload to store
  * @param userContextData - Additional user context data to store
-
  * @returns Promise with transaction hash if successful
  */
 export async function storeVerificationData(
   isAboveMinimumAge: boolean, 
   isValidNationality: boolean,
-  proofPayload: any, 
+  proofPayload: ProofPayload, 
   userContextData: string,
 ): Promise<`0x${string}`> {
   try {
@@ -49,7 +54,7 @@ export async function storeVerificationData(
       address: openbandsV2BadgeManagerOnCeloContractConfig.address,
       abi: openbandsV2BadgeManagerOnCeloContractConfig.abi,
       functionName: 'storeVerificationData',
-      args: [isAboveMinimumAge, isValidNationality, proofPayload, userContextData],
+      args: [isAboveMinimumAge, isValidNationality, proofPayload, userContextData, true],
     });
 
     // Execute the actual transaction

@@ -89,7 +89,7 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
       //   }
       // }
 
-      const appConfig = {
+      const appConfig: Record<string, unknown> = {
         version: 2,
         //appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || "OpenBands v2",
         appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || "Self Workshop",
@@ -154,29 +154,49 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
   const handleSuccessfulVerification = async(result?: any) => {
     console.log('Identity verified successfully!', result)
 
+    // Check if wallet is connected and address is available
+    if (!address) {
+      console.error('Wallet address not available for storing verification data')
+      setVerificationStatus({
+        status: 'error',
+        message: 'Wallet not connected. Cannot store verification data.',
+        error: 'No wallet address available'
+      })
+      return
+    }
+
     // @dev - Test data to be called the with - when the storeVerificationData() is called.  
     const isAboveMinimumAge: boolean = true;
     const isValidNationality: boolean = true;
-    const proofPayload: any = {};
+    const proofPayload: Record<string, unknown> = {};
     const userContextData: string = "User context data";
 
-    // @dev - Store verification data on-chain via OpenbandsV2BadgeManagerOnCelo contract
-    const txHash: string = await storeVerificationData(isAboveMinimumAge, isValidNationality, proofPayload, userContextData);
-    console.log('Call the storeVerificationData() in the OpenbandsV2BadgeManagerOnCelo.sol -> Transaction hash:', txHash);
+    try {
+      // @dev - Store verification data on-chain via OpenbandsV2BadgeManagerOnCelo contract
+      const txHash: string = await storeVerificationData(isAboveMinimumAge, isValidNationality, proofPayload, userContextData);
+      console.log('Call the storeVerificationData() in the OpenbandsV2BadgeManagerOnCelo.sol -> Transaction hash:', txHash);
 
-    setVerificationStatus({
-      status: 'success',
-      message: 'Your identity has been successfully verified!',
-      details: result
-    })
+      setVerificationStatus({
+        status: 'success',
+        message: 'Your identity has been successfully verified and stored on-chain!',
+        details: result
+      })
+    } catch (error) {
+      console.error('Failed to store verification data on-chain:', error)
+      setVerificationStatus({
+        status: 'error',
+        message: 'Verification successful but failed to store on-chain',
+        error: error instanceof Error ? error.message : 'Unknown error storing verification data'
+      })
+    }
   }
 
-  const handleVerificationError = (error: any) => {
+  const handleVerificationError = (error: Error | unknown) => {
     console.error('Verification failed:', error)
     setVerificationStatus({
       status: 'error',
       message: 'Identity verification failed',
-      error: error?.message || 'Unknown verification error'
+      error: error instanceof Error ? error.message : 'Unknown verification error'
     })
   }
 
