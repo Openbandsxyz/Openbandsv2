@@ -151,8 +151,19 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
     }
   }
 
-  const handleSuccessfulVerification = (result?: any) => {
+  const handleSuccessfulVerification = async(result?: any) => {
     console.log('Identity verified successfully!', result)
+
+    // @dev - Test data to be called the with - when the storeVerificationData() is called.  
+    const isAboveMinimumAge: boolean = true;
+    const isValidNationality: boolean = true;
+    const proofPayload: any = {};
+    const userContextData: string = "User context data";
+
+    // @dev - Store verification data on-chain via OpenbandsV2BadgeManagerOnCelo contract
+    const txHash: string = await storeVerificationData(isAboveMinimumAge, isValidNationality, proofPayload, userContextData);
+    console.log('Call the storeVerificationData() in the OpenbandsV2BadgeManagerOnCelo.sol -> Transaction hash:', txHash);
+
     setVerificationStatus({
       status: 'success',
       message: 'Your identity has been successfully verified!',

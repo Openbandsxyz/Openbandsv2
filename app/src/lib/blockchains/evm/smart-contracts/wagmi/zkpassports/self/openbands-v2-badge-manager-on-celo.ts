@@ -40,8 +40,8 @@ export const openbandsV2BadgeManagerOnCeloContractConfig = {
 export async function storeVerificationData(
   isAboveMinimumAge: boolean, 
   isValidNationality: boolean,
-  proofPayload: `0x${string}`, 
-  userContextData: `0x${string}`,
+  proofPayload: any, 
+  userContextData: string,
 ): Promise<`0x${string}`> {
   try {
     // First simulate the contract call to check if it will succeed
