@@ -1,6 +1,6 @@
 "use client";
 import { useState } from 'react';
-import { useChainId } from 'wagmi';
+import { useAccount, useChainId, useSwitchChain } from 'wagmi'
 import { useApp } from '@/context/AppContext';
 import { SignInPanel } from '@/components/SignInPanel';
 import { WorldIdQRCodeVerificationPanel } from '@/components/zkpassports/world-id/WorldIdQRCodeVerificationPanel';
@@ -36,6 +36,10 @@ export default function BadgesPage() {
   const [badges, setBadges] = useState(mockBadges);
   const [isMobile] = useState(false);
   const [showQRVerification, setShowQRVerification] = useState(false);
+
+  // @dev - Wagmi
+  const { address, isConnected } = useAccount() // @dev - Get connected wallet address
+  //const chainId = useChainId()
 
   // Check if user is connected to BASE Sepolia testnet (chain ID 84532)
   const isBaseSepolia = chainId === 84532;
@@ -75,8 +79,9 @@ export default function BadgesPage() {
   const handleTestOpenbandsV2BadgeManagerOnCelo = async () => {
     try {
       // Example usage of the OpenbandsV2BadgeManagerOnCelo#getProofOfHumanRecord()
-      const userAddress = "0x652579C23f87CE1F36676804BFdc40F99c5A9009";
+      const userAddress = address;
       const proofOfHumanityRecord = await getProofOfHumanRecord(userAddress);
+      console.log("userAddress:", userAddress);
       console.log("OpenbandsV2BadgeManagerOnCelo#getProofOfHumanRecord():", proofOfHumanityRecord);
     } catch (error) {
       console.error("Error testing OpenbandsV2BadgeManagerOnCelo#getProofOfHumanRecord():", error);
@@ -381,7 +386,7 @@ export default function BadgesPage() {
         </div>
       </div>
 
-      {/* Test calling the OpenbandsV2BadgeManagerOnCelo.sol functions */}
+      {/* Test calling the getProofOfHumanRecord of the OpenbandsV2BadgeManagerOnCelo.sol */}
       <button 
         onClick={handleTestOpenbandsV2BadgeManagerOnCelo}
         className="p-2 hover:bg-gray-100 rounded-lg"
