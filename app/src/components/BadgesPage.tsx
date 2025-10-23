@@ -33,6 +33,7 @@ export default function BadgesPage() {
   const [showSignIn, setShowSignIn] = useState(false);
   const [showAddBadge, setShowAddBadge] = useState(false);
   const [selectedAttribute, setSelectedAttribute] = useState<string | null>(null);
+  //const [badges, setBadges] = useState(null);
   const [badges, setBadges] = useState(mockBadges);
   const [isMobile] = useState(false);
   const [showQRVerification, setShowQRVerification] = useState(false);
@@ -48,9 +49,31 @@ export default function BadgesPage() {
     const fetchProofOfHumanRecord = async () => {
       if (address && isConnected && !showAddBadge) {
         try {
-          console.log("Calling the getProofOfHumanRecord for address (in useEffect):", address);
+          console.log("Calling the OpenbandsV2BadgeManagerOnCelo#getProofOfHumanRecord() for address (in useEffect):", address);
           const proofOfHumanityRecord = await getProofOfHumanRecord(address);
           console.log("OpenbandsV2BadgeManagerOnCelo#getProofOfHumanRecord():", proofOfHumanityRecord);
+
+          let badgesArray = [];
+
+          if (proofOfHumanityRecord.isValidNationality == true) {
+            badgesArray.push({
+              id: '1',
+              name: 'Nationality Verified',
+              verified: proofOfHumanityRecord.createdAt,
+              icon: '🌍'
+            });
+          }
+
+          if (proofOfHumanityRecord.isAboveMinimumAge == true) {
+            badgesArray.push({
+              id: '2',
+              name: 'Age Verified',
+              verified: proofOfHumanityRecord.createdAt,
+              icon: '🌍'
+            });
+          }
+
+          setBadges(badgesArray);
         } catch (error) {
           console.error("Error automatically fetching proof of human record:", error);
         }
