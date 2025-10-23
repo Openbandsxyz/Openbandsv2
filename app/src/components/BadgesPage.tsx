@@ -1,11 +1,15 @@
 "use client";
 import { useState } from 'react';
+import { useChainId } from 'wagmi';
 import { useApp } from '@/context/AppContext';
 import { SignInPanel } from '@/components/SignInPanel';
-import { SelfQRCodeVerificationPanel } from '@/components/zkpassports/self/SelfQRCodeVerificationPanel';
 import { WorldIdQRCodeVerificationPanel } from '@/components/zkpassports/world-id/WorldIdQRCodeVerificationPanel';
 import { WorldIdVerification } from '@/components/zkpassports/world-id/WorldIdVerification';
-import { useChainId } from 'wagmi';
+import { SelfQRCodeVerificationPanel } from '@/components/zkpassports/self/SelfQRCodeVerificationPanel';
+
+// @dev - OpenbandsV2BadgeManagerOnCelo.sol related module
+import { storeVerificationData, getProofOfHumanRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/zkpassports/self/openbands-v2-badge-manager-on-celo';
+
 
 // Mock badge data - in real implementation, this would come from Supabase
 const mockBadges = [
@@ -68,6 +72,16 @@ export default function BadgesPage() {
     console.log('Deleting badge:', badgeId);
   };
 
+  const handleTestOpenbandsV2BadgeManagerOnCelo = async () => {
+    try {
+      // Example usage of the OpenbandsV2BadgeManagerOnCelo#getProofOfHumanRecord()
+      const userAddress = "0x652579C23f87CE1F36676804BFdc40F99c5A9009";
+      const proofOfHumanityRecord = await getProofOfHumanRecord(userAddress);
+      console.log("OpenbandsV2BadgeManagerOnCelo#getProofOfHumanRecord():", proofOfHumanityRecord);
+    } catch (error) {
+      console.error("Error testing OpenbandsV2BadgeManagerOnCelo#getProofOfHumanRecord():", error);
+    }
+  }
 
   // Show add badge form when "Add new badge" is clicked
   if (showAddBadge) {
@@ -366,6 +380,15 @@ export default function BadgesPage() {
           </button>
         </div>
       </div>
+
+      {/* Test calling the OpenbandsV2BadgeManagerOnCelo.sol functions */}
+      <button 
+        onClick={handleTestOpenbandsV2BadgeManagerOnCelo}
+        className="p-2 hover:bg-gray-100 rounded-lg"
+      >
+        Test OpenbandsV2BadgeManagerOnCelo#getProofOfHumanRecord()
+      </button>
+
     </div>
   );
 }
