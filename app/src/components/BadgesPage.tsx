@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAccount, useChainId, useSwitchChain } from 'wagmi'
 import { useApp } from '@/context/AppContext';
 import { SignInPanel } from '@/components/SignInPanel';
@@ -44,6 +44,25 @@ export default function BadgesPage() {
   // Check if user is connected to BASE Sepolia testnet (chain ID 84532)
   const isBaseSepolia = chainId === 84532;
 
+  useEffect(() => {
+    const fetchProofOfHumanRecord = async () => {
+      if (address && isConnected && !showAddBadge) {
+        try {
+          console.log("Calling the getProofOfHumanRecord for address (in useEffect):", address);
+          const proofOfHumanityRecord = await getProofOfHumanRecord(address);
+          console.log("OpenbandsV2BadgeManagerOnCelo#getProofOfHumanRecord():", proofOfHumanityRecord);
+        } catch (error) {
+          console.error("Error automatically fetching proof of human record:", error);
+        }
+      }
+    };
+
+    // Only fetch when showing the main badges list view (not the add badge form)
+    if (!showAddBadge) {
+      fetchProofOfHumanRecord();
+    }
+  }, [address, isConnected, showAddBadge]); // Re-run when address, connection status, or view changes
+
   const handleAttributeSelect = (attribute: string) => {
     console.log('handleAttributeSelect called with:', attribute, 'isAuthenticated:', isAuthenticated);
     setSelectedAttribute(attribute);
@@ -75,18 +94,6 @@ export default function BadgesPage() {
     setBadges(badges.filter(badge => badge.id !== badgeId));
     console.log('Deleting badge:', badgeId);
   };
-
-  const handleTestOpenbandsV2BadgeManagerOnCelo = async () => {
-    try {
-      // Example usage of the OpenbandsV2BadgeManagerOnCelo#getProofOfHumanRecord()
-      const userAddress = address;
-      const proofOfHumanityRecord = await getProofOfHumanRecord(userAddress);
-      console.log("userAddress:", userAddress);
-      console.log("OpenbandsV2BadgeManagerOnCelo#getProofOfHumanRecord():", proofOfHumanityRecord);
-    } catch (error) {
-      console.error("Error testing OpenbandsV2BadgeManagerOnCelo#getProofOfHumanRecord():", error);
-    }
-  }
 
   // Show add badge form when "Add new badge" is clicked
   if (showAddBadge) {
@@ -385,15 +392,6 @@ export default function BadgesPage() {
           </button>
         </div>
       </div>
-
-      {/* Test calling the getProofOfHumanRecord of the OpenbandsV2BadgeManagerOnCelo.sol */}
-      <button 
-        onClick={handleTestOpenbandsV2BadgeManagerOnCelo}
-        className="p-2 hover:bg-gray-100 rounded-lg"
-      >
-        Test OpenbandsV2BadgeManagerOnCelo#getProofOfHumanRecord()
-      </button>
-
     </div>
   );
 }

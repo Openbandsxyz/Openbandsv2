@@ -35,6 +35,7 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
   const isOnCeloNetwork = chainId === 42220 // Celo Mainnet chain ID
   const isOnBaseNetwork = chainId === 8453  // Base Mainnet chain ID
 
+  // Automatically call getProofOfHumanRecord when main view is shown
   useEffect(() => {
     // @dev - Set a user ID, which is the connected wallet address
     setUserId(address || "");
@@ -49,7 +50,22 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
 
     // Initialize Self.xyz app regardless of network since verification is off-chain
     initializeSelfApp()
-  }, [address, isConnected, isMobile])
+
+    const fetchProofOfHumanRecord = async () => {
+      if (address && isConnected) {
+        try {
+          console.log("Automatically calling getProofOfHumanRecord for address:", address);
+          const proofOfHumanityRecord = await getProofOfHumanRecord(address);
+          console.log("OpenbandsV2BadgeManagerOnCelo#getProofOfHumanRecord():", proofOfHumanityRecord);
+        } catch (error) {
+          console.error("Error fetching proof of human record:", error);
+        }
+      }
+    };
+
+    // @dev - Fetch proof of human record from the OpenbandsV2BadgeManagerOnCelo contract
+    fetchProofOfHumanRecord();
+  }, [address, isConnected, isMobile]); // Re-run when address, connection status, or view changes
 
   const initializeSelfApp = async () => {
     if (!address) return
