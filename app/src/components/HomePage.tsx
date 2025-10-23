@@ -20,7 +20,7 @@ export default function HomePage() {
             </h2>
             <p className="text-xl text-gray-600 mb-8 leading-relaxed">
               Prove real world attestations without revealing your identity.<br/>
-              Join communities with verified peers.<br/> No room for bots, fakes and misinformation.
+              Join communities with verified peers.<br/> No room for bots, fakes and misinformation.              
             </p>
           </div>
         </div>
@@ -59,7 +59,7 @@ export default function HomePage() {
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Authentic</h3>
             <p className="text-gray-600 text-sm">
-              Join communities with verified peers. No room for bots, fakes and misinformation.
+              See what&apos;s trending inside your company, filter by New or Hot.
             </p>
           </div>
 
