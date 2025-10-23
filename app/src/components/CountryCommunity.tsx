@@ -183,9 +183,8 @@ export default function CountryCommunity({ country }: CountryCommunityProps) {
               {/* Description and Stats */}
               <div className="content-stretch flex flex-col gap-[20px] items-start relative shrink-0 w-full">
                 <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
-                  <p className="font-['Inter:Regular',_sans-serif] font-normal leading-[20px] not-italic relative shrink-0 text-[14px] text-zinc-500 w-full">
-                    This is a space for verified citizens to have candid conversations about national issues, government policies, 
-                    social concerns, and community initiatives that matter to {country.name} residents.
+                  <p className="font-['Inter:Regular',_sans-serif] font-normal leading-[20px] not-italic text-[14px] text-zinc-500" style={{ maxWidth: '600px' }}>
+                    This is a space for verified citizens to have candid conversations about national issues, government policies, social concerns, and community initiatives that matter to {country.name} residents.
                   </p>
                   
                   {/* Meta info */}
