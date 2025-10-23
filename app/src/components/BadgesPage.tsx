@@ -9,6 +9,7 @@ import { SelfQRCodeVerificationPanel } from '@/components/zkpassports/self/SelfQ
 
 // @dev - OpenbandsV2BadgeManagerOnCelo.sol related module
 import { storeVerificationData, getProofOfHumanRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/zkpassports/self/openbands-v2-badge-manager-on-celo';
+import { formatRelativeTime } from '@/lib/blockchains/evm/utils/convert-timestamp-to-relative-time';
 
 
 // Mock badge data - in real implementation, this would come from Supabase
@@ -52,6 +53,7 @@ export default function BadgesPage() {
           console.log("Calling the OpenbandsV2BadgeManagerOnCelo#getProofOfHumanRecord() for address (in useEffect):", address);
           const proofOfHumanityRecord = await getProofOfHumanRecord(address);
           console.log("OpenbandsV2BadgeManagerOnCelo#getProofOfHumanRecord():", proofOfHumanityRecord);
+          console.log("proofOfHumanityRecord.createdAt:", proofOfHumanityRecord.createdAt);
 
           let badgesArray = [];
 
@@ -59,7 +61,7 @@ export default function BadgesPage() {
             badgesArray.push({
               id: '1',
               name: 'Nationality Verified',
-              verified: proofOfHumanityRecord.createdAt,
+              verified: formatRelativeTime(Number(proofOfHumanityRecord.createdAt)),
               icon: '🌍'
             });
           }
@@ -68,7 +70,7 @@ export default function BadgesPage() {
             badgesArray.push({
               id: '2',
               name: 'Age Verified',
-              verified: proofOfHumanityRecord.createdAt,
+              verified: formatRelativeTime(Number(proofOfHumanityRecord.createdAt)),
               icon: '🌍'
             });
           }
