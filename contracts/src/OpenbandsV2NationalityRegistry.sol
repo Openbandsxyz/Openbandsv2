@@ -1,116 +1,111 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.28;
+pragma solidity 0.8.28;
+
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {ISelfVerificationRoot} from "./interfaces/ISelfVerificationRoot.sol";
+import {SelfVerificationRoot} from "./abstract/SelfVerificationRoot.sol";
 
 /**
  * @title OpenbandsV2NationalityRegistry
  * @notice Registry contract for storing Self.xyz nationality verification data
- * @dev This contract stores the RESULT of off-chain ZK proof verification
- *      The actual ZK-SNARK proof verification happens off-chain via Self.xyz backend
- *      to save gas costs (on-chain ZK verification costs $50-200+ per transaction)
+ * @dev Inherits from SelfVerificationRoot V2 for automatic proof verification via Self.xyz Hub
+ *      Nationality is disclosed as a public output from the ZK proof and stored on-chain
  */
-contract OpenbandsV2NationalityRegistry {
+contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
     
-    // ============ Structs ============
+    // ====================================================
+    // Storage Variables
+    // ====================================================
     
+    /// @notice Nationality record for a verified user
     struct NationalityRecord {
-        address userAddress;           // Wallet address of verified user
-        string nationality;            // ISO 3166-1 alpha-3 country code (e.g., "USA", "GBR", "IND")
+        string nationality;            // ISO 3166-1 alpha-3 country code (e.g., "USA", "GBR", "JPN")
         bool isAboveMinimumAge;       // Whether user meets minimum age requirement (18+)
         bool isValidNationality;      // Whether nationality was successfully verified
         uint256 verifiedAt;           // Timestamp of verification
-        bool isActive;                // Whether record is still active (for revocations)
+        bool isActive;                // Whether record is still active
     }
-    
-    // ============ State Variables ============
     
     /// @notice Mapping from user address to their nationality record
     mapping(address => NationalityRecord) public nationalityRecords;
     
+    /// @notice Maps nullifiers to user addresses for duplicate prevention
+    mapping(uint256 => address) internal _nullifierToAddress;
+    
+    /// @notice Maps user addresses to registration status
+    mapping(address => bool) internal _registeredAddresses;
+    
     /// @notice Array of all verified user addresses (for enumeration)
     address[] public verifiedUsers;
-    
-    /// @notice Mapping to track if user is in verifiedUsers array
-    mapping(address => bool) private isUserIndexed;
     
     /// @notice Total count of active verifications
     uint256 public totalActiveVerifications;
     
-    /// @notice Contract owner (for emergency functions)
-    address public owner;
+    /// @notice Verification config ID for identity verification
+    bytes32 public verificationConfigId;
     
-    // ============ Events ============
+    // ====================================================
+    // Errors
+    // ====================================================
+    
+    error InvalidNationality();
+    error AlreadyRegistered();
+    error RegisteredNullifier();
+    error InvalidUserIdentifier();
+    
+    // ====================================================
+    // Events
+    // ====================================================
     
     event NationalityVerified(
         address indexed user,
         string nationality,
         bool isAboveMinimumAge,
+        uint256 nullifier,
         uint256 timestamp
     );
     
     event RecordRevoked(address indexed user, uint256 timestamp);
     
-    // ============ Modifiers ============
-    
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner can call this function");
-        _;
-    }
-    
-    // ============ Constructor ============
-    
-    constructor() {
-        owner = msg.sender;
-    }
-    
-    // ============ Main Functions ============
+    // ====================================================
+    // Constructor
+    // ====================================================
     
     /**
-     * @notice Store nationality verification data for the caller
-     * @dev This function is called AFTER off-chain ZK proof verification succeeds
-     * @param _nationality ISO 3166-1 alpha-3 country code (e.g., "USA", "GBR", "IND")
-     * @param _isAboveMinimumAge Whether user meets minimum age requirement
-     * @param _isValidNationality Whether nationality was successfully verified
+     * @notice Constructor for OpenbandsV2NationalityRegistry
+     * @param identityVerificationHubAddress The address of the Identity Verification Hub V2
+     * @param scopeSeed The scope seed string to be hashed with contract address
      */
-    function storeNationalityVerification(
-        string memory _nationality,
-        bool _isAboveMinimumAge,
-        bool _isValidNationality
-    ) external {
-        require(_isValidNationality, "Nationality verification failed");
-        require(bytes(_nationality).length > 0, "Nationality cannot be empty");
-        require(bytes(_nationality).length <= 3, "Nationality must be 3-letter ISO code");
-        
-        address user = msg.sender;
-        
-        // Check if this is a new verification
-        bool isNewUser = !isUserIndexed[user];
-        bool wasActive = nationalityRecords[user].isActive;
-        
-        // Store the record
-        nationalityRecords[user] = NationalityRecord({
-            userAddress: user,
-            nationality: _nationality,
-            isAboveMinimumAge: _isAboveMinimumAge,
-            isValidNationality: _isValidNationality,
-            verifiedAt: block.timestamp,
-            isActive: true
-        });
-        
-        // Add to verified users array if new
-        if (isNewUser) {
-            verifiedUsers.push(user);
-            isUserIndexed[user] = true;
-        }
-        
-        // Update total count
-        if (!wasActive) {
-            totalActiveVerifications++;
-        }
-        
-        emit NationalityVerified(user, _nationality, _isAboveMinimumAge, block.timestamp);
+    constructor(
+        address identityVerificationHubAddress,
+        string memory scopeSeed
+    ) SelfVerificationRoot(identityVerificationHubAddress, scopeSeed) Ownable(_msgSender()) {}
+    
+    // ====================================================
+    // External/Public Functions
+    // ====================================================
+    
+    /**
+     * @notice Sets the verification config ID
+     * @dev Only callable by the contract owner
+     * @param configId The verification config ID to set
+     */
+    function setConfigId(bytes32 configId) external onlyOwner {
+        verificationConfigId = configId;
     }
     
-    // ============ View Functions ============
+    /**
+     * @notice Generates a configId for the user
+     * @dev Override of the SelfVerificationRoot virtual function
+     * @return The stored verification config ID
+     */
+    function getConfigId(
+        bytes32, /* destinationChainId */
+        bytes32, /* userIdentifier */
+        bytes memory /* userDefinedData */
+    ) public view override returns (bytes32) {
+        return verificationConfigId;
+    }
     
     /**
      * @notice Get nationality record for a specific user
@@ -149,14 +144,16 @@ contract OpenbandsV2NationalityRegistry {
     }
     
     /**
-     * @notice Get total count of verified users
-     * @return uint256 Total count
+     * @notice Retrieves the expected proof scope
+     * @return The scope value used for verification
      */
-    function getTotalVerifiedUsers() external view returns (uint256) {
-        return verifiedUsers.length;
+    function getScope() external view returns (uint256) {
+        return _scope;
     }
     
-    // ============ Admin Functions ============
+    // ====================================================
+    // Admin Functions
+    // ====================================================
     
     /**
      * @notice Revoke a user's nationality verification (emergency only)
@@ -171,13 +168,75 @@ contract OpenbandsV2NationalityRegistry {
         emit RecordRevoked(_user, block.timestamp);
     }
     
+    // ====================================================
+    // Override Functions from SelfVerificationRoot
+    // ====================================================
+    
     /**
-     * @notice Transfer ownership to a new address
-     * @param _newOwner Address of the new owner
+     * @notice Hook called after successful verification - handles nationality registration
+     * @dev Validates conditions and registers the user's nationality from the ZK proof
+     * @param output The verification output containing nationality and user data
      */
-    function transferOwnership(address _newOwner) external onlyOwner {
-        require(_newOwner != address(0), "Invalid address");
-        owner = _newOwner;
+    function customVerificationHook(
+        ISelfVerificationRoot.GenericDiscloseOutputV2 memory output,
+        bytes memory /* userData */
+    ) internal override {
+        // Convert userIdentifier (uint256) to address
+        // The userIdentifier from Self.xyz is the user's wallet address encoded as uint256
+        address user = address(uint160(output.userIdentifier));
+        
+        // Check if nullifier has already been used (prevents same passport verifying twice)
+        if (_nullifierToAddress[output.nullifier] != address(0)) {
+            revert RegisteredNullifier();
+        }
+        
+        // Check if user identifier is valid
+        if (output.userIdentifier == 0) {
+            revert InvalidUserIdentifier();
+        }
+        
+        // Extract nationality from disclosed attributes
+        // The nationality is disclosed as part of the ZK proof
+        string memory nationality = output.nationality;
+        
+        // Validate nationality
+        if (bytes(nationality).length == 0 || bytes(nationality).length > 3) {
+            revert InvalidNationality();
+        }
+        
+        // Check if this is a new user
+        bool isNewUser = !_registeredAddresses[user];
+        bool wasActive = nationalityRecords[user].isActive;
+        
+        // Store the nationality record
+        nationalityRecords[user] = NationalityRecord({
+            nationality: nationality,
+            isAboveMinimumAge: output.minimumAge >= 18, // Assuming 18+ requirement
+            isValidNationality: true,
+            verifiedAt: block.timestamp,
+            isActive: true
+        });
+        
+        // Register the user
+        _nullifierToAddress[output.nullifier] = user;
+        _registeredAddresses[user] = true;
+        
+        // Add to verified users array if new
+        if (isNewUser) {
+            verifiedUsers.push(user);
+        }
+        
+        // Update total count
+        if (!wasActive) {
+            totalActiveVerifications++;
+        }
+        
+        emit NationalityVerified(
+            user,
+            nationality,
+            output.minimumAge >= 18,
+            output.nullifier,
+            block.timestamp
+        );
     }
 }
-

@@ -14,11 +14,22 @@ contract DeployNationalityRegistry is Script {
         // Get private key from environment
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         
+        // Self.xyz Identity Verification Hub V2 on Celo Mainnet
+        // Source: https://docs.self.xyz/contract-integration/deployed-contracts
+        // Verified: https://celoscan.io/address/0xe57F4773bd9c9d8b6Cd70431117d353298B9f5BF
+        address identityVerificationHub = 0xe57F4773bd9c9d8b6Cd70431117d353298B9f5BF;
+        
+        // Scope seed for OpenBands v2
+        string memory scopeSeed = "openbands-v2-nationality";
+        
         // Start broadcasting transactions
         vm.startBroadcast(deployerPrivateKey);
         
         // Deploy the contract
-        OpenbandsV2NationalityRegistry registry = new OpenbandsV2NationalityRegistry();
+        OpenbandsV2NationalityRegistry registry = new OpenbandsV2NationalityRegistry(
+            identityVerificationHub,
+            scopeSeed
+        );
         
         console.log("====================================");
         console.log("OpenbandsV2NationalityRegistry deployed!");
