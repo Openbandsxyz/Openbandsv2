@@ -204,14 +204,14 @@ export default function BadgesPage() {
           console.log("Parsed proofOfHumanityRecord:", proofOfHumanityRecord);
           console.log("proofOfHumanityRecord.createdAt:", proofOfHumanityRecord.createdAt);
 
-          let badgesArray = [];
+          const badgesArray: Badge[] = [];
 
           if (proofOfHumanityRecord.isValidNationality == true) {
             badgesArray.push({
               id: '1',
               name: 'Nationality Verified',
-              verified: formatRelativeTime(Number(proofOfHumanityRecord.createdAt)),
-              icon: '🌍'
+              verifiedAt: formatRelativeTime(Number(proofOfHumanityRecord.createdAt)),
+              icon: 'earth' as const
             });
           }
 
@@ -219,8 +219,8 @@ export default function BadgesPage() {
             badgesArray.push({
               id: '2',
               name: 'Age Verified',
-              verified: formatRelativeTime(Number(proofOfHumanityRecord.createdAt)),
-              icon: '🌍'
+              verifiedAt: formatRelativeTime(Number(proofOfHumanityRecord.createdAt)),
+              icon: 'user' as const
             });
           }
 
