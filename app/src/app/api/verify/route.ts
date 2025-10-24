@@ -6,7 +6,7 @@ import { SelfBackendVerifier, DefaultConfigStore, AllIds } from '@selfxyz/core';
 const selfBackendVerifier = new SelfBackendVerifier(
   process.env.NEXT_PUBLIC_SELF_SCOPE || 'openbands-v2', // Must match frontend scope
   process.env.NEXT_PUBLIC_SELF_ENDPOINT || 'https://your-domain.com/api/verify', // This endpoint URL
-  true, // ⚠️ true = testnet (mock passport), false = mainnet (real passport)
+  false, // ⚠️ true = testnet (mock passport), false = mainnet (real passport)
   AllIds, // Allow all attestation types (passport, ID card, etc)
   new DefaultConfigStore({
     minimumAge: 18,
