@@ -1,22 +1,33 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { countries, SelfQRcodeWrapper } from '@selfxyz/qrcode'
 import { SelfAppBuilder } from '@selfxyz/qrcode'
 import { useAccount, useChainId, useSwitchChain } from 'wagmi'
 import { VerificationStatusDisplay, VerificationStatus } from './VerificationStatusDisplay'
 
+// @dev - OpenbandsV2BadgeManagerOnCelo.sol related module
+import { storeVerificationData, getProofOfHumanRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/zkpassports/self/openbands-v2-badge-manager-on-celo';
+
 interface SelfVerifyPlaygroundProps {
   isMobile?: boolean
+  onVerificationSuccess?: () => void
 }
 
-export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundProps) => {
+export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }: SelfVerifyPlaygroundProps) => {
   const [selfApp, setSelfApp] = useState<any | null>(null)
+  const [appConfig, setAppConfig] = useState<any | null>(null)
+  const [userId, setUserId] = useState<string>("")
   const [universalLink, setUniversalLink] = useState("")
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>({
     status: 'idle',
     message: 'Connect your wallet to begin identity verification'
   })
-  const { address, isConnected } = useAccount()
+
+  // Use useMemo to cache the array to avoid creating a new array on each render
+  const excludedCountries = useMemo(() => [countries.UNITED_STATES], []);
+
+  // @dev - Wagmi
+  const { address, isConnected } = useAccount() // @dev - Get connected wallet address
   const chainId = useChainId()
   const { switchChain } = useSwitchChain()
 
@@ -24,7 +35,11 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
   const isOnCeloNetwork = chainId === 42220 // Celo Mainnet chain ID
   const isOnBaseNetwork = chainId === 8453  // Base Mainnet chain ID
 
+  // Automatically call getProofOfHumanRecord when main view is shown
   useEffect(() => {
+    // @dev - Set a user ID, which is the connected wallet address
+    setUserId(address || "");
+
     if (!isConnected || !address) {
       setVerificationStatus({
         status: 'idle',
@@ -35,7 +50,22 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
 
     // Initialize Self.xyz app regardless of network since verification is off-chain
     initializeSelfApp()
-  }, [address, isConnected, isMobile])
+
+    const fetchProofOfHumanRecord = async () => {
+      if (address && isConnected) {
+        try {
+          console.log("Automatically calling getProofOfHumanRecord for address:", address);
+          const proofOfHumanityRecord = await getProofOfHumanRecord(address);
+          console.log("OpenbandsV2BadgeManagerOnCelo#getProofOfHumanRecord():", proofOfHumanityRecord);
+        } catch (error) {
+          console.error("Error fetching proof of human record:", error);
+        }
+      }
+    };
+
+    // @dev - Fetch proof of human record from the OpenbandsV2BadgeManagerOnCelo contract
+    fetchProofOfHumanRecord();
+  }, [address, isConnected, isMobile]); // Re-run when address, connection status, or view changes
 
   const initializeSelfApp = async () => {
     if (!address) return
@@ -45,34 +75,73 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
       message: 'Initializing Self.xyz verification...'
     })
 
+    // @dev - Set a fixed user ID for testing
+    setUserId(address);
+
     try {
-      const appConfig: any = {
+      // const appConfig = {
+      //   version: 2,
+      //   appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || "OpenBands v2",
+      //   scope: process.env.NEXT_PUBLIC_SELF_SCOPE || "openbands-v2",
+      //   //scope: process.env.NEXT_PUBLIC_SELF_SCOPE || "self-workshop",
+      //   endpoint: `${process.env.NEXT_PUBLIC_SELF_ENDPOINT}`, // @dev - The ProofOfHumanity contract address
+      //   logoBase64:
+      //     "https://i.postimg.cc/mrmVf9hm/self.png", // url of a png image, base64 is accepted but not recommended
+      //   userId: address,
+      //   endpointType: "staging_celo",
+      //   userIdType: "hex", // use 'hex' for ethereum address or 'uuid' for uuidv4
+      //   userDefinedData: "Hello Eth Delhi!!!",
+      //   disclosures: {
+      //   // what you want to verify from users' identity
+      //     minimumAge: 18,
+      //     // ofac: true,
+      //     excludedCountries: excludedCountries,
+      //     // what you want users to reveal
+      //     // name: false,
+      //     // issuing_state: true,
+      //     // nationality: true,
+      //     // date_of_birth: true,
+      //     // passport_number: false,
+      //     // gender: true,
+      //     // expiry_date: false,
+      //   }
+      // }
+
+      const appConfig: Record<string, unknown> = {
         version: 2,
-        appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || 'Self.xyz Playground Demo',
-        scope: process.env.NEXT_PUBLIC_SELF_SCOPE || 'selfxyz-playground',
-        endpoint: `${process.env.NEXT_PUBLIC_SELF_ENDPOINT || 'https://api.staging.self.xyz'}`,
-        logoBase64: 'https://i.postimg.cc/mrmVf9hm/self.png',
+        //appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || "OpenBands v2",
+        appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || "Self Workshop",
+        scope: process.env.NEXT_PUBLIC_SELF_SCOPE || "self-workshop",
+        endpoint: `${process.env.NEXT_PUBLIC_SELF_ENDPOINT}`, // @dev - The ProofOfHumanity contract address
+        logoBase64:
+          "https://i.postimg.cc/mrmVf9hm/self.png", // url of a png image, base64 is accepted but not recommended
         userId: address,
-        endpointType: 'staging_celo',
-        userIdType: 'hex',
-        userDefinedData: `Identity verification for ${address}`,
+        endpointType: "staging_celo",
+        userIdType: "hex", // use 'hex' for ethereum address or 'uuid' for uuidv4
+        userDefinedData: "Verification for the OpenBands v2 app",
+        //userDefinedData: "Hello Eth Delhi!!!",
         disclosures: {
+        // what you want to verify from users' identity
           minimumAge: 18,
-          excludedCountries: [
-            countries.CUBA, 
-            countries.IRAN, 
-            countries.NORTH_KOREA, 
-            countries.RUSSIA
-          ],
+          // ofac: true,
+          excludedCountries: excludedCountries,
+          // what you want users to reveal
+          // name: false,
+          // issuing_state: true,
           nationality: true,
-          gender: false, // Optional
-          dateOfBirth: false, // Optional
-        },
+          // date_of_birth: true,
+          // passport_number: false,
+          // gender: true,
+          // expiry_date: false,
+        }
       }
+      setAppConfig(appConfig);
+
 
       // Add deeplink callback for mobile
       if (isMobile) {
         appConfig.deeplinkCallback = `${window.location.origin}/verification-callback`
+        console.log(`appConfig.deeplinkCallback: ${appConfig.deeplinkCallback}`)
       }
 
       const app = new SelfAppBuilder(appConfig).build()
@@ -102,21 +171,61 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
     }
   }
 
-  const handleSuccessfulVerification = (result?: any) => {
-    console.log('Identity verified successfully!', result)
-    setVerificationStatus({
-      status: 'success',
-      message: 'Your identity has been successfully verified!',
-      details: result
-    })
+  const handleSuccessfulVerification = async() => { // @dev - This function would be called - once the "onSuccess" callback from the <SelfQRcodeWrapper> component is triggered
+    console.log('Identity verified successfully!')
+
+    // @dev - Close the modal immediately after successful verification
+    if (onVerificationSuccess) {
+      // Add a small delay to allow users to see the success message briefly
+      setTimeout(() => {
+        onVerificationSuccess();
+      }, 2000);
+    }
+
+    // @dev - The logic to judge whether each discloused data meets the criteria
+    let isAboveMinimumAge: boolean = false;
+    let isValidNationality: boolean = false;
+    if (appConfig) {
+      const { address, userId, userDefinedData, disclosures } = appConfig;
+      if (disclosures.minimumAge >= 18) {
+        isAboveMinimumAge = true;
+      }
+
+      if (disclosures.nationality == true) {
+        isValidNationality = true;
+      }
+    }
+    //const proofPayload: Record<string, unknown> = {};
+    //const userContextData: string = "User context data";
+    console.log('isAboveMinimumAge:', isAboveMinimumAge);
+    console.log('isValidNationality:', isValidNationality);
+
+    try {
+      // @dev - Store verification data on-chain via OpenbandsV2BadgeManagerOnCelo contract
+      const txHash: string = await storeVerificationData(isAboveMinimumAge, isValidNationality);
+      //const txHash: string = await storeVerificationData(isAboveMinimumAge, isValidNationality, proofPayload, userContextData);
+      console.log('Call the storeVerificationData() in the OpenbandsV2BadgeManagerOnCelo.sol -> Transaction hash:', txHash);
+
+      setVerificationStatus({
+        status: 'success',
+        message: 'Your identity has been successfully verified and stored on-chain!'
+      })
+    } catch (error) {
+      console.error('Failed to store verification data on-chain:', error)
+      setVerificationStatus({
+        status: 'error',
+        message: 'Verification successful but failed to store on-chain',
+        error: error instanceof Error ? error.message : 'Unknown error storing verification data'
+      })
+    }
   }
 
-  const handleVerificationError = (error: any) => {
+  const handleVerificationError = (error: Error | unknown) => {
     console.error('Verification failed:', error)
     setVerificationStatus({
       status: 'error',
       message: 'Identity verification failed',
-      error: error?.message || 'Unknown verification error'
+      error: error instanceof Error ? error.message : 'Unknown verification error'
     })
   }
 
@@ -171,7 +280,7 @@ export const SelfVerifyPlayground = ({ isMobile = false }: SelfVerifyPlaygroundP
         {/* Address Display */}
         {address && (
           <div className="address-display">
-            <strong>Verifying for:</strong> {address.slice(0, 6)}...{address.slice(-4)}
+            <strong>User ID to be verified:</strong> {address.slice(0, 6)}...{address.slice(-4)}
           </div>
         )}
       </div>

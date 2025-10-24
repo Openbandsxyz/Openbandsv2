@@ -1,8 +1,16 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAccount, useChainId, useSwitchChain } from 'wagmi'
 import { useApp } from '@/context/AppContext';
 import { SignInPanel } from '@/components/SignInPanel';
+import { WorldIdQRCodeVerificationPanel } from '@/components/zkpassports/world-id/WorldIdQRCodeVerificationPanel';
+import { WorldIdVerification } from '@/components/zkpassports/world-id/WorldIdVerification';
 import { SelfQRCodeVerificationPanel } from '@/components/zkpassports/self/SelfQRCodeVerificationPanel';
+
+// @dev - OpenbandsV2BadgeManagerOnCelo.sol related module
+import { storeVerificationData, getProofOfHumanRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/zkpassports/self/openbands-v2-badge-manager-on-celo';
+import { formatRelativeTime } from '@/lib/blockchains/evm/utils/convert-timestamp-to-relative-time';
+
 
 // Mock badge data - in real implementation, this would come from Supabase
 const mockBadges = [
@@ -22,12 +30,74 @@ const mockBadges = [
 
 export default function BadgesPage() {
   const { isAuthenticated } = useApp();
+  const chainId = useChainId();
   const [showSignIn, setShowSignIn] = useState(false);
   const [showAddBadge, setShowAddBadge] = useState(false);
   const [selectedAttribute, setSelectedAttribute] = useState<string | null>(null);
+  //const [badges, setBadges] = useState(null);
   const [badges, setBadges] = useState(mockBadges);
   const [isMobile] = useState(false);
   const [showQRVerification, setShowQRVerification] = useState(false);
+
+  // @dev - Wagmi
+  const { address, isConnected } = useAccount() // @dev - Get connected wallet address
+  //const chainId = useChainId()
+
+  // Check if user is connected to BASE Sepolia testnet (chain ID 84532)
+  const isBaseSepolia = chainId === 84532;
+
+  useEffect(() => {
+    const fetchProofOfHumanRecord = async () => {
+      if (address && isConnected && !showAddBadge) {
+        try {
+          console.log("Calling the OpenbandsV2BadgeManagerOnCelo#getProofOfHumanRecord() for address (in useEffect):", address);
+          const proofOfHumanityRecordString = await getProofOfHumanRecord(address);
+          console.log("OpenbandsV2BadgeManagerOnCelo#getProofOfHumanRecord() result:", proofOfHumanityRecordString);
+          
+          // @dev - Parse the JSON string returned from the smart contract
+          let proofOfHumanityRecord;
+          try {
+            proofOfHumanityRecord = JSON.parse(proofOfHumanityRecordString);
+          } catch (parseError) {
+            console.error("Error parsing JSON from smart contract:", parseError);
+            return; // Exit early if JSON parsing fails
+          }
+          
+          console.log("Parsed proofOfHumanityRecord:", proofOfHumanityRecord);
+          console.log("proofOfHumanityRecord.createdAt:", proofOfHumanityRecord.createdAt);
+
+          let badgesArray = [];
+
+          if (proofOfHumanityRecord.isValidNationality == true) {
+            badgesArray.push({
+              id: '1',
+              name: 'Nationality Verified',
+              verified: formatRelativeTime(Number(proofOfHumanityRecord.createdAt)),
+              icon: '🌍'
+            });
+          }
+
+          if (proofOfHumanityRecord.isAboveMinimumAge == true) {
+            badgesArray.push({
+              id: '2',
+              name: 'Age Verified',
+              verified: formatRelativeTime(Number(proofOfHumanityRecord.createdAt)),
+              icon: '🌍'
+            });
+          }
+
+          setBadges(badgesArray);
+        } catch (error) {
+          console.error("Error automatically fetching proof of human record:", error);
+        }
+      }
+    };
+
+    // Only fetch when showing the main badges list view (not the add badge form)
+    if (!showAddBadge) {
+      fetchProofOfHumanRecord();
+    }
+  }, [address, isConnected, showAddBadge]); // Re-run when address, connection status, or view changes
 
   const handleAttributeSelect = (attribute: string) => {
     console.log('handleAttributeSelect called with:', attribute, 'isAuthenticated:', isAuthenticated);
@@ -60,7 +130,6 @@ export default function BadgesPage() {
     setBadges(badges.filter(badge => badge.id !== badgeId));
     console.log('Deleting badge:', badgeId);
   };
-
 
   // Show add badge form when "Add new badge" is clicked
   if (showAddBadge) {
@@ -118,6 +187,17 @@ export default function BadgesPage() {
                   <p className="text-sm text-gray-600">
                     Verify your nationality using passport credentials
                   </p>
+
+                  {isBaseSepolia && (
+                    <WorldIdVerification 
+                      onSuccess={(result) => {
+                        console.log("World ID verification completed:", result);
+                      }}
+                      onError={(error) => {
+                        console.error("World ID verification error:", error);
+                      }}
+                    />
+                  )}
                 </button>
 
                 {/* Age Option */}
@@ -140,6 +220,17 @@ export default function BadgesPage() {
                   <p className="text-sm text-gray-600">
                     Verify you are 18+ years old
                   </p>
+
+                  {isBaseSepolia && (
+                    <WorldIdVerification 
+                      onSuccess={(result) => {
+                        console.log("World ID verification completed:", result);
+                      }}
+                      onError={(error) => {
+                        console.error("World ID verification error:", error);
+                      }}
+                    />
+                  )}
                 </button>
 
                 {/* Email Option */}
@@ -191,8 +282,38 @@ export default function BadgesPage() {
           </div>
         )}
 
-        {/* QR Verification Modal */}
-        {showQRVerification && (
+        {/* QR Verification Modal for World ID on BASE */}
+        {/* 
+        {isBaseSepolia && (
+          // <WorldIdVerification 
+          //   onSuccess={(result) => {
+          //     console.log("World ID verification completed:", result);
+          //   }}
+          //   onError={(error) => {
+          //     console.error("World ID verification error:", error);
+          //   }}
+          // />
+
+          // <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          //   <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setShowQRVerification(false)} />
+          //   <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full">
+          //     <div className="p-6">
+          //       <WorldIdVerification 
+          //         onSuccess={(result) => {
+          //           console.log("World ID verification completed:", result);
+          //         }}
+          //         onError={(error) => {
+          //           console.error("World ID verification error:", error);
+          //         }}
+          //       />
+          //     </div>
+          //   </div>
+          // </div>
+        )}
+        */}
+
+        {/* QR Verification Modal for Self.xyz on Celo */}
+        {showQRVerification && !isBaseSepolia && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setShowQRVerification(false)} />
             <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full">
