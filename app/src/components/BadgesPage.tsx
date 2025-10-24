@@ -2,6 +2,58 @@
 import { useState, useEffect } from 'react';
 import { useAccount, useChainId, useSwitchChain } from 'wagmi'
 import { useApp } from '@/context/AppContext';
+import BadgesList from './badges/BadgesList';
+import AddBadgeFlow from './badges/AddBadgeFlow';
+import { useBadgeCheck } from '@/hooks/useBadgeCheck';
+import { useNationalityBadgeCheck } from '@/hooks/useNationalityBadgeCheck';
+
+interface Badge {
+  id: string;
+  name: string;
+  icon: 'user' | 'earth' | 'mail';
+  verifiedAt: string;
+}
+
+// Icon Components
+function MailIcon() {
+  return (
+    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+    </svg>
+  );
+}
+
+function UserIcon() {
+  return (
+    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+  );
+}
+
+function EarthIcon() {
+  return (
+    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
+}
+
+function BadgeIcon({ icon }: { icon: 'user' | 'earth' | 'mail' }) {
+  switch (icon) {
+    case 'mail':
+      return <MailIcon />;
+    case 'user':
+      return <UserIcon />;
+    case 'earth':
+      return <EarthIcon />;
+    default:
+      return <MailIcon />;
+  }
+}
+
+type AttributeType = 'age' | 'email' | 'nationality' | null;
+type ProtocolType = 'google' | 'self' | 'worldid' | null;
 import { SignInPanel } from '@/components/SignInPanel';
 import { WorldIdQRCodeVerificationPanel } from '@/components/zkpassports/world-id/WorldIdQRCodeVerificationPanel';
 import { WorldIdVerification } from '@/components/zkpassports/world-id/WorldIdVerification';
@@ -13,38 +65,124 @@ import { formatRelativeTime } from '@/lib/blockchains/evm/utils/convert-timestam
 
 
 // Mock badge data - in real implementation, this would come from Supabase
-const mockBadges = [
+const mockBadges: Badge[] = [
   {
     id: '1',
-    name: 'United States',
-    verified: '2 hours ago',
-    icon: '🌍'
+    name: '18+ years old',
+    icon: 'user',
+    verifiedAt: '2 hours ago'
   },
   {
     id: '2', 
-    name: '@company.xyz',
-    verified: '1 week ago',
-    icon: '📧'
+    name: 'Costa Rica',
+    icon: 'earth',
+    verifiedAt: '1 week ago'
+  },
+  {
+    id: '3',
+    name: '@pse.dev',
+    icon: 'mail',
+    verifiedAt: 'February 2, 2025'
   }
 ];
 
 export default function BadgesPage() {
   const { isAuthenticated } = useApp();
-  const chainId = useChainId();
-  const [showSignIn, setShowSignIn] = useState(false);
   const [showAddBadge, setShowAddBadge] = useState(false);
-  const [selectedAttribute, setSelectedAttribute] = useState<string | null>(null);
-  //const [badges, setBadges] = useState(null);
-  const [badges, setBadges] = useState(mockBadges);
+
+  const [badges, setBadges] = useState<Badge[]>([]);
+  const { badgeData, loading, error } = useBadgeCheck();
+  const { badgeData: nationalityBadge, loading: nationalityLoading, error: nationalityError } = useNationalityBadgeCheck();
+  const [showSignIn, setShowSignIn] = useState(false);  
+  // const [selectedAttribute, setSelectedAttribute] = useState<string | null>(null);
+  // //const [badges, setBadges] = useState(null);
+  // const [badges, setBadges] = useState(mockBadges);
   const [isMobile] = useState(false);
   const [showQRVerification, setShowQRVerification] = useState(false);
+  
+  // Helper function to format the timestamp
+  const formatTimestamp = (isoString: string): string => {
+    try {
+      const date = new Date(isoString);
+      
+      // Format as "Month Day, Year" (e.g., "September 22, 2025")
+      const formattedDate = date.toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
+      });
+      
+      return formattedDate;
+    } catch (error) {
+      console.error('Error formatting timestamp:', error);
+      return 'On-chain verified';
+    }
+  };
 
+  // Update badges based on on-chain data
+  useEffect(() => {
+    const updatedBadges: Badge[] = [];
+
+    // Add company email badge (from Base Mainnet)
+    if (badgeData.hasVerifiedBadge && badgeData.domain) {
+      const emailBadge: Badge = {
+        id: 'email-1',
+        name: `@${badgeData.domain}`,
+        icon: 'mail',
+        verifiedAt: badgeData.createdAt 
+          ? formatTimestamp(badgeData.createdAt) 
+          : 'On-chain verified'
+      };
+      updatedBadges.push(emailBadge);
+    }
+
+  // Add nationality badge (from Celo Sepolia/Mainnet)
+  console.log('🔍 BadgesPage - nationalityBadge data:', nationalityBadge);
+  console.log('🔍 BadgesPage - nationalityLoading:', nationalityLoading);
+  console.log('🔍 BadgesPage - nationalityError:', nationalityError);
+  
+  if (nationalityBadge?.hasVerifiedBadge && nationalityBadge.nationality) {
+      // Helper function to format timestamp from bigint
+      const formatBigIntTimestamp = (timestamp: bigint): string => {
+        try {
+          // Convert bigint seconds to milliseconds
+          const date = new Date(Number(timestamp) * 1000);
+          return date.toLocaleDateString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric'
+          });
+        } catch (error) {
+          console.error('Error formatting timestamp:', error);
+          return 'On-chain verified';
+        }
+      };
+
+      const nationalityBadgeData: Badge = {
+        id: 'nationality-1',
+        name: nationalityBadge.countryName, // Use the translated country name from the hook
+        icon: 'earth',
+        verifiedAt: formatBigIntTimestamp(nationalityBadge.verifiedAt)
+      };
+      updatedBadges.push(nationalityBadgeData);
+    }
+
+    setBadges(updatedBadges);
+  }, [badgeData, nationalityBadge]);
+
+  const deleteBadge = (id: string) => {
+    setBadges(badges.filter(badge => badge.id !== id));
+    console.log('Deleting badge:', id);
+  };
+    
   // @dev - Wagmi
   const { address, isConnected } = useAccount() // @dev - Get connected wallet address
-  //const chainId = useChainId()
+  const chainId = useChainId()
 
   // Check if user is connected to BASE Sepolia testnet (chain ID 84532)
   const isBaseSepolia = chainId === 84532;
+  
+  const [selectedAttribute, setSelectedAttribute] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProofOfHumanRecord = async () => {
@@ -66,14 +204,14 @@ export default function BadgesPage() {
           console.log("Parsed proofOfHumanityRecord:", proofOfHumanityRecord);
           console.log("proofOfHumanityRecord.createdAt:", proofOfHumanityRecord.createdAt);
 
-          let badgesArray = [];
+          const badgesArray: Badge[] = [];
 
           if (proofOfHumanityRecord.isValidNationality == true) {
             badgesArray.push({
               id: '1',
               name: 'Nationality Verified',
-              verified: formatRelativeTime(Number(proofOfHumanityRecord.createdAt)),
-              icon: '🌍'
+              verifiedAt: formatRelativeTime(Number(proofOfHumanityRecord.createdAt)),
+              icon: 'earth' as const
             });
           }
 
@@ -81,8 +219,8 @@ export default function BadgesPage() {
             badgesArray.push({
               id: '2',
               name: 'Age Verified',
-              verified: formatRelativeTime(Number(proofOfHumanityRecord.createdAt)),
-              icon: '🌍'
+              verifiedAt: formatRelativeTime(Number(proofOfHumanityRecord.createdAt)),
+              icon: 'user' as const
             });
           }
 
@@ -114,225 +252,96 @@ export default function BadgesPage() {
     console.log('Selected attribute:', attribute);
   };
 
-  const handleNext = () => {
-    if (selectedAttribute) {
-      // Navigate to next step in the verification process
-      console.log('Proceeding to next step with attribute:', selectedAttribute);
+  const reverifyBadge = (id: string) => {
+    console.log('Reverifying badge:', id);
+    // Add reverify logic here
+  };
+
+  const handleReverify = (id: string) => {
+    reverifyBadge(id);
+  };
+
+  const handleDelete = (id: string) => {
+    deleteBadge(id);
+  };
+
+  const addNewBadge = () => {
+    setShowAddBadge(true);
+  };
+
+  // NOTE: Badge creation is now handled automatically by the useEffect hook
+  // that reads from the smart contracts (company email from Base, nationality from Celo)
+  // Badges will appear when user refreshes page after successful on-chain storage
+
+  const getBadgeName = (attribute: AttributeType, protocol: ProtocolType): string => {
+    const attributeNames: Record<NonNullable<AttributeType>, string> = {
+      'nationality': 'Nationality',
+      'age': 'Age (18+)',
+      'email': 'Company Email'
+    };
+    
+    const protocolNames: Record<NonNullable<ProtocolType>, string> = {
+      'google': 'Google Verified',
+      'self': 'Self Protocol Verified',
+      'worldid': 'WorldID Verified'
+    };
+
+    if (!attribute || !protocol) return 'Unknown Badge';
+    return `${attributeNames[attribute]} - ${protocolNames[protocol]}`;
+  };
+
+  const getBadgeIcon = (attribute: AttributeType): 'user' | 'earth' | 'mail' => {
+    switch (attribute) {
+      case 'nationality':
+        return 'earth';
+      case 'age':
+        return 'user';
+      case 'email':
+        return 'mail';
+      default:
+        return 'user';
     }
-  };
-
-  const handleReverify = (badgeId: string) => {
-    console.log('Reverifying badge:', badgeId);
-    // Handle reverification logic
-  };
-
-  const handleDelete = (badgeId: string) => {
-    setBadges(badges.filter(badge => badge.id !== badgeId));
-    console.log('Deleting badge:', badgeId);
   };
 
   // Show add badge form when "Add new badge" is clicked
   if (showAddBadge) {
     return (
-      <div className="flex-1 bg-white">
-        {/* Header */}
-        <div className="border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => setShowAddBadge(false)}
-              className="p-2 hover:bg-gray-100 rounded-lg"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <h1 className="text-2xl font-bold text-gray-900">Add New Badge</h1>
-          </div>
-        </div>
+      <AddBadgeFlow 
+        onClose={() => setShowAddBadge(false)}
+      />
+    );
+  }
 
-        {/* Main Content */}
-        <div className="p-6">
-          <div className="max-w-2xl">
-            {/* Description */}
-            <p className="text-gray-600 mb-8 leading-relaxed">
-              Add new badges to your profile, verify and use them as part of your identity securely. 
-              Your badges help build trust and credibility within the community.
-            </p>
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-gray-600">Loading badges...</div>
+      </div>
+    );
+  }
 
-            {/* Attribute Selection */}
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-6">
-                Select the attribute you want to verify
-              </h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                
-                {/* Nationality Option */}
-                <button
-                  onClick={() => handleAttributeSelect('nationality')}
-                  className={`p-6 border-2 rounded-lg text-left transition-all duration-200 ${
-                    selectedAttribute === 'nationality'
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3 mb-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <h3 className="font-semibold text-gray-900">Nationality</h3>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Verify your nationality using passport credentials
-                  </p>
-
-                  {isBaseSepolia && (
-                    <WorldIdVerification 
-                      onSuccess={(result) => {
-                        console.log("World ID verification completed:", result);
-                      }}
-                      onError={(error) => {
-                        console.error("World ID verification error:", error);
-                      }}
-                    />
-                  )}
-                </button>
-
-                {/* Age Option */}
-                <button
-                  onClick={() => handleAttributeSelect('age')}
-                  className={`p-6 border-2 rounded-lg text-left transition-all duration-200 ${
-                    selectedAttribute === 'age'
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3 mb-3">
-                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <h3 className="font-semibold text-gray-900">Age Verification</h3>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Verify you are 18+ years old
-                  </p>
-
-                  {isBaseSepolia && (
-                    <WorldIdVerification 
-                      onSuccess={(result) => {
-                        console.log("World ID verification completed:", result);
-                      }}
-                      onError={(error) => {
-                        console.error("World ID verification error:", error);
-                      }}
-                    />
-                  )}
-                </button>
-
-                {/* Email Option */}
-                <button
-                  onClick={() => handleAttributeSelect('email')}
-                  className={`p-6 border-2 rounded-lg text-left transition-all duration-200 ${
-                    selectedAttribute === 'email'
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3 mb-3">
-                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                      <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <h3 className="font-semibold text-gray-900">Email Domain</h3>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Verify your email domain (e.g., @company.com)
-                  </p>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Sign In Modal */}
-        {showSignIn && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setShowSignIn(false)} />
-            <div className="relative bg-white rounded-lg shadow-xl max-w-sm w-full">
-              <div className="p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold">Sign In</h2>
-                  <button
-                    onClick={() => setShowSignIn(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                <SignInPanel />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* QR Verification Modal for World ID on BASE */}
-        {/* 
-        {isBaseSepolia && (
-          // <WorldIdVerification 
-          //   onSuccess={(result) => {
-          //     console.log("World ID verification completed:", result);
-          //   }}
-          //   onError={(error) => {
-          //     console.error("World ID verification error:", error);
-          //   }}
-          // />
-
-          // <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          //   <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setShowQRVerification(false)} />
-          //   <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full">
-          //     <div className="p-6">
-          //       <WorldIdVerification 
-          //         onSuccess={(result) => {
-          //           console.log("World ID verification completed:", result);
-          //         }}
-          //         onError={(error) => {
-          //           console.error("World ID verification error:", error);
-          //         }}
-          //       />
-          //     </div>
-          //   </div>
-          // </div>
-        )}
-        */}
-
-        {/* QR Verification Modal for Self.xyz on Celo */}
-        {showQRVerification && !isBaseSepolia && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setShowQRVerification(false)} />
-            <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full">
-              <div className="p-6">
-                <SelfQRCodeVerificationPanel 
-                  selectedAttribute={selectedAttribute}
-                  isMobile={isMobile}
-                  onClose={() => setShowQRVerification(false)}
-                />
-              </div>
-            </div>
-          </div>
-        )}
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-red-600">Error: {error}</div>
       </div>
     );
   }
 
   // Show badges list (main view)
   return (
+    <>
+    {/* 
+    <BadgesList 
+      badges={badges}
+      onAddNewBadge={addNewBadge}
+      onDeleteBadge={deleteBadge}
+      onReverifyBadge={reverifyBadge}
+    /> 
+    */}
+        
     <div className="flex-1 bg-white">
       {/* Header */}
       <div className="border-b border-gray-200 px-6 py-6">
@@ -376,7 +385,7 @@ export default function BadgesPage() {
                 <div className="col-span-6">
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                      <span className="text-sm">{badge.icon}</span>
+                      <BadgeIcon icon={badge.icon} />
                     </div>
                     <span className="text-sm font-medium text-gray-900">{badge.name}</span>
                   </div>
@@ -384,7 +393,7 @@ export default function BadgesPage() {
 
                 {/* Verified Column */}
                 <div className="col-span-3">
-                  <span className="text-sm text-gray-600">{badge.verified}</span>
+                  <span className="text-sm text-gray-600">{badge.verifiedAt}</span>
                 </div>
 
                 {/* Actions Column */}
@@ -429,5 +438,6 @@ export default function BadgesPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

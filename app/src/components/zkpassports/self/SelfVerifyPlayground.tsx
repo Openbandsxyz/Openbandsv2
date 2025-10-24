@@ -5,8 +5,11 @@ import { SelfAppBuilder } from '@selfxyz/qrcode'
 import { useAccount, useChainId, useSwitchChain } from 'wagmi'
 import { VerificationStatusDisplay, VerificationStatus } from './VerificationStatusDisplay'
 
+// @dev - OpenbandsV2NationalityRegistry.sol related module
+import { storeNationalityVerification } from '@/lib/blockchains/evm/smart-contracts/wagmi/nationality-registry';
+
 // @dev - OpenbandsV2BadgeManagerOnCelo.sol related module
-import { storeVerificationData, getProofOfHumanRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/zkpassports/self/openbands-v2-badge-manager-on-celo';
+import { getProofOfHumanRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/zkpassports/self/openbands-v2-badge-manager-on-celo';
 
 interface SelfVerifyPlaygroundProps {
   isMobile?: boolean
@@ -68,7 +71,11 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
   }, [address, isConnected, isMobile]); // Re-run when address, connection status, or view changes
 
   const initializeSelfApp = async () => {
-    if (!address) return
+    console.log('🔄 initializeSelfApp called', { address, isMobile });
+    if (!address) {
+      console.log('❌ No address, returning');
+      return;
+    }
 
     setVerificationStatus({
       status: 'connecting',
@@ -77,6 +84,7 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
 
     // @dev - Set a fixed user ID for testing
     setUserId(address);
+    console.log('✅ UserId set:', address);
 
     try {
       // const appConfig = {
@@ -107,32 +115,24 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
       //   }
       // }
 
+      // @dev - Contract Verification Mode Configuration (on-chain verification via Hub)
+      // Self.xyz SDK sends proof to your contract, which calls Hub for verification
+      // See: https://docs.self.xyz/frontend-integration/qrcode-sdk
       const appConfig: Record<string, unknown> = {
         version: 2,
-        //appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || "OpenBands v2",
-        appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || "Self Workshop",
-        scope: process.env.NEXT_PUBLIC_SELF_SCOPE || "self-workshop",
-        endpoint: `${process.env.NEXT_PUBLIC_SELF_ENDPOINT}`, // @dev - The ProofOfHumanity contract address
-        logoBase64:
-          "https://i.postimg.cc/mrmVf9hm/self.png", // url of a png image, base64 is accepted but not recommended
+        appName: "OpenBands v2",
+        scope: "openbands-v2",
+        // endpoint = YOUR contract address (lowercase!)
+        endpoint: (process.env.NEXT_PUBLIC_NATIONALITY_REGISTRY_CONTRACT_ADDRESS || "0xC64C921399b8dea7B4bAA438de3518d04023Ae97").toLowerCase(),
+        endpointType: "celo", // "celo" for mainnet, "staging_celo" for testnet
+        logoBase64: "https://i.postimg.cc/mrmVf9hm/self.png",
         userId: address,
-        endpointType: "staging_celo",
-        userIdType: "hex", // use 'hex' for ethereum address or 'uuid' for uuidv4
+        userIdType: "hex",
         userDefinedData: "Verification for the OpenBands v2 app",
-        //userDefinedData: "Hello Eth Delhi!!!",
         disclosures: {
-        // what you want to verify from users' identity
           minimumAge: 18,
-          // ofac: true,
           excludedCountries: excludedCountries,
-          // what you want users to reveal
-          // name: false,
-          // issuing_state: true,
           nationality: true,
-          // date_of_birth: true,
-          // passport_number: false,
-          // gender: true,
-          // expiry_date: false,
         }
       }
       setAppConfig(appConfig);
@@ -145,6 +145,7 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
       }
 
       const app = new SelfAppBuilder(appConfig).build()
+      console.log('✅ SelfApp built:', app);
       setSelfApp(app)
 
       if (isMobile) {
@@ -152,8 +153,10 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
         const encodedApp = encodeURIComponent(JSON.stringify(app))
         const link = `${baseUrl}?data=${encodedApp}`
         setUniversalLink(link)
+        console.log('📱 Mobile link generated:', link);
       }
 
+      console.log('✅ Setting status to waiting_for_scan');
       setVerificationStatus({
         status: 'waiting_for_scan',
         message: isMobile 
@@ -171,52 +174,30 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
     }
   }
 
-  const handleSuccessfulVerification = async() => { // @dev - This function would be called - once the "onSuccess" callback from the <SelfQRcodeWrapper> component is triggered
-    console.log('Identity verified successfully!')
+  const handleSuccessfulVerification = async(verificationResult?: any) => { // @dev - This function would be called - once the "onSuccess" callback from the <SelfQRcodeWrapper> component is triggered
+    console.log('✅ Identity verified successfully!')
+    console.log('📦 Verification result:', verificationResult)
 
-    // @dev - Close the modal immediately after successful verification
+    // @dev - In Hub mode, nationality verification happens AUTOMATICALLY on-chain!
+    // The Self.xyz Hub has already:
+    // 1. Verified the ZK proof cryptographically
+    // 2. Extracted the nationality from public outputs
+    // 3. Called our contract's customVerificationHook()
+    // 4. Stored the nationality on-chain
+    
+    console.log('🎯 Nationality has been verified and stored on-chain by Self.xyz Hub');
+    console.log('📱 Check "My Badges" page to see your nationality badge');
+
+    setVerificationStatus({
+      status: 'success',
+      message: 'Your identity has been verified on-chain! Check "My Badges" to see your nationality badge.'
+    })
+
+    // @dev - Close the modal after successful verification
     if (onVerificationSuccess) {
-      // Add a small delay to allow users to see the success message briefly
       setTimeout(() => {
         onVerificationSuccess();
       }, 2000);
-    }
-
-    // @dev - The logic to judge whether each discloused data meets the criteria
-    let isAboveMinimumAge: boolean = false;
-    let isValidNationality: boolean = false;
-    if (appConfig) {
-      const { address, userId, userDefinedData, disclosures } = appConfig;
-      if (disclosures.minimumAge >= 18) {
-        isAboveMinimumAge = true;
-      }
-
-      if (disclosures.nationality == true) {
-        isValidNationality = true;
-      }
-    }
-    //const proofPayload: Record<string, unknown> = {};
-    //const userContextData: string = "User context data";
-    console.log('isAboveMinimumAge:', isAboveMinimumAge);
-    console.log('isValidNationality:', isValidNationality);
-
-    try {
-      // @dev - Store verification data on-chain via OpenbandsV2BadgeManagerOnCelo contract
-      const txHash: string = await storeVerificationData(isAboveMinimumAge, isValidNationality);
-      //const txHash: string = await storeVerificationData(isAboveMinimumAge, isValidNationality, proofPayload, userContextData);
-      console.log('Call the storeVerificationData() in the OpenbandsV2BadgeManagerOnCelo.sol -> Transaction hash:', txHash);
-
-      setVerificationStatus({
-        status: 'success',
-        message: 'Your identity has been successfully verified and stored on-chain!'
-      })
-    } catch (error) {
-      console.error('Failed to store verification data on-chain:', error)
-      setVerificationStatus({
-        status: 'error',
-        message: 'Verification successful but failed to store on-chain',
-        error: error instanceof Error ? error.message : 'Unknown error storing verification data'
-      })
     }
   }
 
@@ -272,7 +253,7 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
         {isConnected && (
           <div className={`network-status ${isOnCeloNetwork || isOnBaseNetwork ? 'connected' : 'warning'}`}>
             <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-              Identity verification with Self.xyz works on Celo mainnet
+              Identity verification with Self.xyz works on Celo testnet
             </div>
           </div>
         )}
@@ -293,6 +274,13 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
         onReset={handleReset}
       />  
       */}
+
+      {/* Debug info */}
+      {console.log('🔍 QR Code render check:', { 
+        selfApp: !!selfApp, 
+        status: verificationStatus.status,
+        shouldShow: selfApp && verificationStatus.status === 'waiting_for_scan'
+      })}
 
       {/* QR Code or Mobile Button */}
       {selfApp && verificationStatus.status === 'waiting_for_scan' && (
