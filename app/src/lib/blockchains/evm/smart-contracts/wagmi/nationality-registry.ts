@@ -33,9 +33,7 @@ const NATIONALITY_REGISTRY_ABI = [
         "type": "tuple",
         "internalType": "struct OpenbandsV2NationalityRegistry.NationalityRecord",
         "components": [
-          { "name": "userAddress", "type": "address", "internalType": "address" },
           { "name": "nationality", "type": "string", "internalType": "string" },
-          { "name": "isAboveMinimumAge", "type": "bool", "internalType": "bool" },
           { "name": "isValidNationality", "type": "bool", "internalType": "bool" },
           { "name": "verifiedAt", "type": "uint256", "internalType": "uint256" },
           { "name": "isActive", "type": "bool", "internalType": "bool" }
@@ -92,9 +90,7 @@ export const nationalityRegistryContractConfig = {
  * @notice Nationality record type returned from contract
  */
 export interface NationalityRecord {
-  userAddress: string;
   nationality: string;
-  isAboveMinimumAge: boolean;
   isValidNationality: boolean;
   verifiedAt: bigint;
   isActive: boolean;
@@ -155,6 +151,9 @@ export async function getNationalityRecord(
   userAddress: `0x${string}`
 ): Promise<NationalityRecord> {
   try {
+    console.log(`🔍 Reading nationality record for ${userAddress}`);
+    console.log(`📋 Contract address: ${nationalityRegistryContractConfig.address}`);
+    
     const result = await readContract(wagmiConfig, {
       address: nationalityRegistryContractConfig.address,
       abi: nationalityRegistryContractConfig.abi,
@@ -162,12 +161,10 @@ export async function getNationalityRecord(
       args: [userAddress],
     }) as any;
 
-    console.log(`Nationality record retrieved for ${userAddress}:`, result);
+    console.log(`📦 Nationality record retrieved for ${userAddress}:`, result);
     
     return {
-      userAddress: result.userAddress,
       nationality: result.nationality,
-      isAboveMinimumAge: result.isAboveMinimumAge,
       isValidNationality: result.isValidNationality,
       verifiedAt: result.verifiedAt,
       isActive: result.isActive,

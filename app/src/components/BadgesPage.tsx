@@ -128,8 +128,12 @@ export default function BadgesPage() {
       updatedBadges.push(emailBadge);
     }
 
-    // Add nationality badge (from Celo Sepolia/Mainnet)
-    if (nationalityBadge?.hasVerifiedBadge && nationalityBadge.nationality) {
+  // Add nationality badge (from Celo Sepolia/Mainnet)
+  console.log('🔍 BadgesPage - nationalityBadge data:', nationalityBadge);
+  console.log('🔍 BadgesPage - nationalityLoading:', nationalityLoading);
+  console.log('🔍 BadgesPage - nationalityError:', nationalityError);
+  
+  if (nationalityBadge?.hasVerifiedBadge && nationalityBadge.nationality) {
       // Helper function to format timestamp from bigint
       const formatBigIntTimestamp = (timestamp: bigint): string => {
         try {
@@ -146,36 +150,9 @@ export default function BadgesPage() {
         }
       };
 
-      // Map country codes to full names (you can expand this)
-      const countryCodeToName: Record<string, string> = {
-        'DEU': 'Germany',
-        'USA': 'United States',
-        'GBR': 'United Kingdom',
-        'FRA': 'France',
-        'ESP': 'Spain',
-        'ITA': 'Italy',
-        'JPN': 'Japan',
-        'CAN': 'Canada',
-        'AUS': 'Australia',
-        'BRA': 'Brazil',
-        'MEX': 'Mexico',
-        'IND': 'India',
-        'CHN': 'China',
-        'ZAF': 'South Africa',
-        'KOR': 'South Korea',
-        'NLD': 'Netherlands',
-        'BEL': 'Belgium',
-        'CHE': 'Switzerland',
-        'AUT': 'Austria',
-        'POL': 'Poland',
-        // Add more as needed
-      };
-
-      const countryName = countryCodeToName[nationalityBadge.nationality] || nationalityBadge.nationality;
-
       const nationalityBadgeData: Badge = {
         id: 'nationality-1',
-        name: countryName,
+        name: nationalityBadge.countryName, // Use the translated country name from the hook
         icon: 'earth',
         verifiedAt: formatBigIntTimestamp(nationalityBadge.verifiedAt)
       };

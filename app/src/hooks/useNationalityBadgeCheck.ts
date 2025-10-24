@@ -7,9 +7,11 @@ import { useEffect, useState } from 'react';
 import { useAccount, useChainId } from 'wagmi';
 import { getNationalityRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/nationality-registry';
 import type { NationalityRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/nationality-registry';
+import { translateMRZToCountryName } from '@/lib/utils/country-translation';
 
 export interface NationalityBadgeData {
-  nationality: string;
+  nationality: string; // MRZ country code (e.g., "D<<", "JPN")
+  countryName: string; // Full country name (e.g., "Germany", "Japan")
   isAboveMinimumAge: boolean;
   isValidNationality: boolean;
   verifiedAt: bigint;
@@ -25,9 +27,12 @@ export const useNationalityBadgeCheck = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('🔄 useNationalityBadgeCheck useEffect triggered');
+    console.log('📊 Current state:', { address, isConnected, chainId, loading, error });
+    
     const checkBadge = async () => {
       if (!address || !isConnected) {
-        console.log('⏭️ No wallet connected');
+        console.log('⏭️ No wallet connected - address:', address, 'isConnected:', isConnected);
         setBadgeData(null);
         return;
       }
@@ -44,6 +49,7 @@ export const useNationalityBadgeCheck = () => {
       }
 
       console.log(`🔍 Checking nationality badge for wallet: ${address} on chain ${chainId}`);
+      console.log(`📋 Contract address: ${process.env.NEXT_PUBLIC_NATIONALITY_REGISTRY_CONTRACT_ADDRESS}`);
       setLoading(true);
       setError(null);
 
@@ -54,11 +60,13 @@ export const useNationalityBadgeCheck = () => {
 
         // Check if the record is active and has valid data
         if (record && record.isActive && record.nationality && record.nationality !== '') {
-          console.log(`✅ Found verified nationality badge: ${record.nationality}`);
+          const countryName = translateMRZToCountryName(record.nationality);
+          console.log(`✅ Found verified nationality badge: ${record.nationality} (${countryName})`);
           
           setBadgeData({
             nationality: record.nationality,
-            isAboveMinimumAge: record.isAboveMinimumAge,
+            countryName: countryName,
+            isAboveMinimumAge: true, // Default to true since we removed age verification
             isValidNationality: record.isValidNationality,
             verifiedAt: record.verifiedAt,
             hasVerifiedBadge: true,
