@@ -96,16 +96,18 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
       //   }
       // }
 
-      // @dev - Backend Verification Mode Configuration (per Self.xyz docs)
-      // endpoint MUST be publicly accessible for Self.xyz relayers to send proofs
-      // For local testing: Use ngrok (e.g., https://abc123.ngrok-free.dev/api/verify)
-      // For production: Use your deployed domain (e.g., https://openbands.xyz/api/verify)
-      // See: https://docs.self.xyz/backend-integration/basic-integration
+      // @dev - Hub Verification Mode Configuration (on-chain verification)
+      // Self.xyz Identity Verification Hub handles proof verification on-chain
+      // Hub verifies the proof and calls your contract's customVerificationHook
+      // See: https://docs.self.xyz/contract-integration/basic-integration
       const appConfig: Record<string, unknown> = {
         version: 2,
         appName: "OpenBands v2",
         scope: "openbands-v2",
-        endpoint: process.env.NEXT_PUBLIC_SELF_ENDPOINT || "https://example.com/verify",
+        // Hub mode: proof goes to on-chain Hub contract, not backend endpoint
+        hubContractAddress: "0xe57F4773bd9c9d8b6Cd70431117d353298B9f5BF", // Self.xyz Hub on Celo Mainnet
+        destinationContract: process.env.NEXT_PUBLIC_NATIONALITY_REGISTRY_CONTRACT_ADDRESS || "0xC64C921399b8dea7B4bAA438de3518d04023Ae97",
+        destinationChainId: "42220", // Celo Mainnet
         logoBase64: "https://i.postimg.cc/mrmVf9hm/self.png",
         userId: address,
         userIdType: "hex",
@@ -209,32 +211,23 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
     console.log('isValidNationality:', isValidNationality);
     console.log('nationality:', nationality);
 
-    try {
-      // @dev - Store nationality verification on-chain via OpenbandsV2NationalityRegistry contract
-      // This stores the RESULT of off-chain ZK proof verification
-      const txHash: string = await storeNationalityVerification(nationality, isAboveMinimumAge, isValidNationality);
-      console.log('✅ storeNationalityVerification() called successfully');
-      console.log('📝 Transaction hash:', txHash);
-      console.log('🌍 Nationality stored on-chain:', nationality);
+    // @dev - In Hub mode, nationality is ALREADY stored on-chain by Self.xyz Hub!
+    // The Hub called our contract's customVerificationHook() automatically
+    // No need to manually call storeNationalityVerification()
+    
+    console.log('✅ Nationality already stored on-chain by Self.xyz Hub!');
+    console.log('🎯 Check "My Badges" page to see your nationality badge');
 
-      setVerificationStatus({
-        status: 'success',
-        message: `Your identity has been successfully verified and stored on-chain! Nationality: ${nationality}`
-      })
+    setVerificationStatus({
+      status: 'success',
+      message: `Your identity has been verified on-chain! Your ${nationality} nationality badge has been created.`
+    })
 
-      // @dev - Close the modal after successful verification
-      if (onVerificationSuccess) {
-        setTimeout(() => {
-          onVerificationSuccess();
-        }, 2000);
-      }
-    } catch (error) {
-      console.error('Failed to store verification data on-chain:', error)
-      setVerificationStatus({
-        status: 'error',
-        message: 'Verification successful but failed to store on-chain',
-        error: error instanceof Error ? error.message : 'Unknown error storing verification data'
-      })
+    // @dev - Close the modal after successful verification
+    if (onVerificationSuccess) {
+      setTimeout(() => {
+        onVerificationSuccess();
+      }, 2000);
     }
   }
 
