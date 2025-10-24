@@ -93,7 +93,6 @@ export default function BadgesPage() {
   const [badges, setBadges] = useState<Badge[]>([]);
   const { badgeData, loading, error } = useBadgeCheck();
   const { badgeData: nationalityBadge, loading: nationalityLoading, error: nationalityError } = useNationalityBadgeCheck();
-  const chainId = useChainId();
   const [showSignIn, setShowSignIn] = useState(false);  
   // const [selectedAttribute, setSelectedAttribute] = useState<string | null>(null);
   // //const [badges, setBadges] = useState(null);
@@ -176,9 +175,9 @@ export default function BadgesPage() {
     console.log('Deleting badge:', id);
   };
     
-  // // @dev - Wagmi
-  // const { address, isConnected } = useAccount() // @dev - Get connected wallet address
-  // //const chainId = useChainId()
+  // @dev - Wagmi
+  const { address, isConnected } = useAccount() // @dev - Get connected wallet address
+  const chainId = useChainId()
 
   // Check if user is connected to BASE Sepolia testnet (chain ID 84532)
   const isBaseSepolia = chainId === 84532;
