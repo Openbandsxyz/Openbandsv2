@@ -1,0 +1,29 @@
+# Compiler files
+cache/
+out/
+
+# Ignores ALL deployment broadcast logs (contains sensitive data)
+broadcast/
+
+# Docs
+docs/
+
+# Dotenv file
+.env
+
+# Foundry dependencies
+lib/
+
+# Node modules
+node_modules/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+

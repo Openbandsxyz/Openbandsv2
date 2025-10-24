@@ -1,0 +1,3 @@
+@openzeppelin/=lib/openzeppelin-contracts/
+@selfxyz/contracts/=lib/self/contracts/contracts/
+
