@@ -107,7 +107,7 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
         // Hub mode: proof goes to on-chain Hub contract, not backend endpoint
         hubContractAddress: "0xe57F4773bd9c9d8b6Cd70431117d353298B9f5BF", // Self.xyz Hub on Celo Mainnet
         destinationContract: process.env.NEXT_PUBLIC_NATIONALITY_REGISTRY_CONTRACT_ADDRESS || "0xC64C921399b8dea7B4bAA438de3518d04023Ae97",
-        destinationChainId: "42220", // Celo Mainnet
+        destinationChainId: 42220, // Celo Mainnet (MUST be number, not string!)
         logoBase64: "https://i.postimg.cc/mrmVf9hm/self.png",
         userId: address,
         userIdType: "hex",
