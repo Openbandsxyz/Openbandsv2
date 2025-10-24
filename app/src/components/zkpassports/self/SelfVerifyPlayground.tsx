@@ -96,18 +96,16 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
       //   }
       // }
 
-      // @dev - Hub Verification Mode Configuration (on-chain verification)
-      // Self.xyz Identity Verification Hub handles proof verification on-chain
-      // Hub verifies the proof and calls your contract's customVerificationHook
-      // See: https://docs.self.xyz/contract-integration/basic-integration
+      // @dev - Contract Verification Mode Configuration (on-chain verification via Hub)
+      // Self.xyz SDK sends proof to your contract, which calls Hub for verification
+      // See: https://docs.self.xyz/frontend-integration/qrcode-sdk
       const appConfig: Record<string, unknown> = {
         version: 2,
         appName: "OpenBands v2",
         scope: "openbands-v2",
-        // Hub mode: proof goes to on-chain Hub contract, not backend endpoint
-        hubContractAddress: "0xe57F4773bd9c9d8b6Cd70431117d353298B9f5BF", // Self.xyz Hub on Celo Mainnet
-        destinationContract: process.env.NEXT_PUBLIC_NATIONALITY_REGISTRY_CONTRACT_ADDRESS || "0xC64C921399b8dea7B4bAA438de3518d04023Ae97",
-        destinationChainId: 42220, // Celo Mainnet (MUST be number, not string!)
+        // endpoint = YOUR contract address (lowercase!)
+        endpoint: (process.env.NEXT_PUBLIC_NATIONALITY_REGISTRY_CONTRACT_ADDRESS || "0xC64C921399b8dea7B4bAA438de3518d04023Ae97").toLowerCase(),
+        endpointType: "celo", // "celo" for mainnet, "staging_celo" for testnet
         logoBase64: "https://i.postimg.cc/mrmVf9hm/self.png",
         userId: address,
         userIdType: "hex",
@@ -158,69 +156,22 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
   }
 
   const handleSuccessfulVerification = async(verificationResult?: any) => { // @dev - This function would be called - once the "onSuccess" callback from the <SelfQRcodeWrapper> component is triggered
-    console.log('Identity verified successfully!')
-    console.log('Verification result:', verificationResult)
+    console.log('✅ Identity verified successfully!')
+    console.log('📦 Verification result:', verificationResult)
 
-    // @dev - Extract nationality from verification result
-    let nationality: string = '';
-    let isAboveMinimumAge: boolean = false;
-    let isValidNationality: boolean = false;
-
-    // Try to extract nationality from the verification result
-    if (verificationResult && verificationResult.discloseOutput) {
-      nationality = verificationResult.discloseOutput.nationality || '';
-      console.log('Extracted nationality:', nationality);
-    }
-
-    // @dev - For backend verification mode with mock passports,
-    // the backend can't always extract nationality from InvalidRoot errors
-    // As a workaround for testing, we'll use the nationality from localStorage
-    // (which the user can set when creating the mock passport)
-    if (!nationality) {
-      console.log('⚠️ No nationality in verification result (expected for backend verification mode)');
-      
-      // Try to get nationality from localStorage (set during mock passport creation)
-      const storedNationality = localStorage.getItem('mock_passport_nationality');
-      if (storedNationality) {
-        nationality = storedNationality;
-        console.log(`🔍 Using nationality from localStorage: ${nationality}`);
-      } else {
-        // Fallback: prompt user or use UNKNOWN
-        nationality = prompt('Enter your mock passport nationality (e.g., JPN, DEU, USA):') || 'UNKNOWN';
-        console.log(`📝 User provided nationality: ${nationality}`);
-        // Store for next time
-        if (nationality !== 'UNKNOWN') {
-          localStorage.setItem('mock_passport_nationality', nationality);
-        }
-      }
-    }
-
-    // @dev - The logic to judge whether each disclosed data meets the criteria
-    if (appConfig) {
-      const { disclosures } = appConfig;
-      if (disclosures.minimumAge >= 18) {
-        isAboveMinimumAge = true;
-      }
-
-      if (disclosures.nationality === true && nationality) {
-        isValidNationality = true;
-      }
-    }
-
-    console.log('isAboveMinimumAge:', isAboveMinimumAge);
-    console.log('isValidNationality:', isValidNationality);
-    console.log('nationality:', nationality);
-
-    // @dev - In Hub mode, nationality is ALREADY stored on-chain by Self.xyz Hub!
-    // The Hub called our contract's customVerificationHook() automatically
-    // No need to manually call storeNationalityVerification()
+    // @dev - In Hub mode, nationality verification happens AUTOMATICALLY on-chain!
+    // The Self.xyz Hub has already:
+    // 1. Verified the ZK proof cryptographically
+    // 2. Extracted the nationality from public outputs
+    // 3. Called our contract's customVerificationHook()
+    // 4. Stored the nationality on-chain
     
-    console.log('✅ Nationality already stored on-chain by Self.xyz Hub!');
-    console.log('🎯 Check "My Badges" page to see your nationality badge');
+    console.log('🎯 Nationality has been verified and stored on-chain by Self.xyz Hub');
+    console.log('📱 Check "My Badges" page to see your nationality badge');
 
     setVerificationStatus({
       status: 'success',
-      message: `Your identity has been verified on-chain! Your ${nationality} nationality badge has been created.`
+      message: 'Your identity has been verified on-chain! Check "My Badges" to see your nationality badge.'
     })
 
     // @dev - Close the modal after successful verification

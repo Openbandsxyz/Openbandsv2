@@ -20,7 +20,8 @@ contract DeployNationalityRegistry is Script {
         address identityVerificationHub = 0xe57F4773bd9c9d8b6Cd70431117d353298B9f5BF;
         
         // Scope seed for OpenBands v2
-        string memory scopeSeed = "openbands-v2-nationality";
+        // The official SelfVerificationRoot handles scope calculation with Poseidon hash
+        string memory scopeSeed = "openbands-v2";
         
         // Start broadcasting transactions
         vm.startBroadcast(deployerPrivateKey);

@@ -2,10 +2,8 @@
 cache/
 out/
 
-# Ignores development broadcast logs
-!/broadcast
-/broadcast/*/31337/
-/broadcast/**/dry-run/
+# Ignores ALL deployment broadcast logs (contains sensitive data)
+broadcast/
 
 # Docs
 docs/

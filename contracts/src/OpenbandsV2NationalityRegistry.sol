@@ -2,8 +2,11 @@
 pragma solidity 0.8.28;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {ISelfVerificationRoot} from "./interfaces/ISelfVerificationRoot.sol";
-import {SelfVerificationRoot} from "./abstract/SelfVerificationRoot.sol";
+import {ISelfVerificationRoot} from "@selfxyz/contracts/interfaces/ISelfVerificationRoot.sol";
+import {SelfVerificationRoot} from "@selfxyz/contracts/abstract/SelfVerificationRoot.sol";
+import {SelfStructs} from "@selfxyz/contracts/libraries/SelfStructs.sol";
+import {SelfUtils} from "@selfxyz/contracts/libraries/SelfUtils.sol";
+import {IIdentityVerificationHubV2} from "@selfxyz/contracts/interfaces/IIdentityVerificationHubV2.sol";
 
 /**
  * @title OpenbandsV2NationalityRegistry
@@ -41,6 +44,9 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
     /// @notice Total count of active verifications
     uint256 public totalActiveVerifications;
     
+    /// @notice Verification configuration stored in wire format
+    SelfStructs.VerificationConfigV2 public verificationConfig;
+    
     /// @notice Verification config ID for identity verification
     bytes32 public verificationConfigId;
     
@@ -74,12 +80,28 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
     /**
      * @notice Constructor for OpenbandsV2NationalityRegistry
      * @param identityVerificationHubAddress The address of the Identity Verification Hub V2
-     * @param scopeSeed The scope seed string to be hashed with contract address
+     * @param scopeSeed The scope seed string (e.g., "openbands-v2")
      */
     constructor(
         address identityVerificationHubAddress,
         string memory scopeSeed
-    ) SelfVerificationRoot(identityVerificationHubAddress, scopeSeed) Ownable(_msgSender()) {}
+    ) SelfVerificationRoot(identityVerificationHubAddress, scopeSeed) Ownable(_msgSender()) {
+        
+        // Create unformatted config (human-readable)
+        string[] memory forbiddenCountries = new string[](0); // No country restrictions
+        SelfUtils.UnformattedVerificationConfigV2 memory rawConfig = SelfUtils.UnformattedVerificationConfigV2({
+            olderThan: 18,              // Minimum age 18
+            forbiddenCountries: forbiddenCountries,  // Allow all countries
+            ofacEnabled: false          // Disable OFAC for nationality verification
+        });
+        
+        // Format the config into wire format
+        verificationConfig = SelfUtils.formatVerificationConfigV2(rawConfig);
+        
+        // Register config with Hub and get the config ID
+        verificationConfigId = IIdentityVerificationHubV2(identityVerificationHubAddress)
+            .setVerificationConfigV2(verificationConfig);
+    }
     
     // ====================================================
     // External/Public Functions
@@ -211,7 +233,7 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
         // Store the nationality record
         nationalityRecords[user] = NationalityRecord({
             nationality: nationality,
-            isAboveMinimumAge: output.minimumAge >= 18, // Assuming 18+ requirement
+            isAboveMinimumAge: output.olderThan >= 18, // Check if user is 18 or older
             isValidNationality: true,
             verifiedAt: block.timestamp,
             isActive: true
@@ -234,7 +256,7 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
         emit NationalityVerified(
             user,
             nationality,
-            output.minimumAge >= 18,
+            output.olderThan >= 18,
             output.nullifier,
             block.timestamp
         );
