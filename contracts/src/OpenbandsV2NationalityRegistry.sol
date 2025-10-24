@@ -23,7 +23,6 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
     /// @notice Nationality record for a verified user
     struct NationalityRecord {
         string nationality;            // ISO 3166-1 alpha-3 country code (e.g., "USA", "GBR", "JPN")
-        bool isAboveMinimumAge;       // Whether user meets minimum age requirement (18+)
         bool isValidNationality;      // Whether nationality was successfully verified
         uint256 verifiedAt;           // Timestamp of verification
         bool isActive;                // Whether record is still active
@@ -31,12 +30,6 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
     
     /// @notice Mapping from user address to their nationality record
     mapping(address => NationalityRecord) public nationalityRecords;
-    
-    /// @notice Maps nullifiers to user addresses for duplicate prevention
-    mapping(uint256 => address) internal _nullifierToAddress;
-    
-    /// @notice Maps user addresses to registration status
-    mapping(address => bool) internal _registeredAddresses;
     
     /// @notice Array of all verified user addresses (for enumeration)
     address[] public verifiedUsers;
@@ -55,8 +48,6 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
     // ====================================================
     
     error InvalidNationality();
-    error AlreadyRegistered();
-    error RegisteredNullifier();
     error InvalidUserIdentifier();
     
     // ====================================================
@@ -66,8 +57,6 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
     event NationalityVerified(
         address indexed user,
         string nationality,
-        bool isAboveMinimumAge,
-        uint256 nullifier,
         uint256 timestamp
     );
     
@@ -90,7 +79,7 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
         // Create unformatted config (human-readable)
         string[] memory forbiddenCountries = new string[](0); // No country restrictions
         SelfUtils.UnformattedVerificationConfigV2 memory rawConfig = SelfUtils.UnformattedVerificationConfigV2({
-            olderThan: 18,              // Minimum age 18
+            olderThan: 0,               // No age verification required
             forbiddenCountries: forbiddenCountries,  // Allow all countries
             ofacEnabled: false          // Disable OFAC for nationality verification
         });
@@ -207,11 +196,6 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
         // The userIdentifier from Self.xyz is the user's wallet address encoded as uint256
         address user = address(uint160(output.userIdentifier));
         
-        // Check if nullifier has already been used (prevents same passport verifying twice)
-        if (_nullifierToAddress[output.nullifier] != address(0)) {
-            revert RegisteredNullifier();
-        }
-        
         // Check if user identifier is valid
         if (output.userIdentifier == 0) {
             revert InvalidUserIdentifier();
@@ -226,22 +210,17 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
             revert InvalidNationality();
         }
         
-        // Check if this is a new user
-        bool isNewUser = !_registeredAddresses[user];
+        // Check if this is a new user (first verification)
+        bool isNewUser = !nationalityRecords[user].isActive;
         bool wasActive = nationalityRecords[user].isActive;
         
-        // Store the nationality record
+        // Store the nationality record (allows re-verification / updates)
         nationalityRecords[user] = NationalityRecord({
             nationality: nationality,
-            isAboveMinimumAge: output.olderThan >= 18, // Check if user is 18 or older
             isValidNationality: true,
             verifiedAt: block.timestamp,
             isActive: true
         });
-        
-        // Register the user
-        _nullifierToAddress[output.nullifier] = user;
-        _registeredAddresses[user] = true;
         
         // Add to verified users array if new
         if (isNewUser) {
@@ -256,8 +235,6 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
         emit NationalityVerified(
             user,
             nationality,
-            output.olderThan >= 18,
-            output.nullifier,
             block.timestamp
         );
     }
