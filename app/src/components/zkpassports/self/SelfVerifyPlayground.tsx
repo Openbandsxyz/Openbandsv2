@@ -8,6 +8,9 @@ import { VerificationStatusDisplay, VerificationStatus } from './VerificationSta
 // @dev - OpenbandsV2NationalityRegistry.sol related module
 import { storeNationalityVerification } from '@/lib/blockchains/evm/smart-contracts/wagmi/nationality-registry';
 
+// @dev - OpenbandsV2BadgeManagerOnCelo.sol related module
+import { getProofOfHumanRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/zkpassports/self/openbands-v2-badge-manager-on-celo';
+
 interface SelfVerifyPlaygroundProps {
   isMobile?: boolean
   onVerificationSuccess?: () => void
