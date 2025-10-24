@@ -51,8 +51,19 @@ export default function BadgesPage() {
       if (address && isConnected && !showAddBadge) {
         try {
           console.log("Calling the OpenbandsV2BadgeManagerOnCelo#getProofOfHumanRecord() for address (in useEffect):", address);
-          const proofOfHumanityRecord = await getProofOfHumanRecord(address);
-          console.log("OpenbandsV2BadgeManagerOnCelo#getProofOfHumanRecord():", proofOfHumanityRecord);
+          const proofOfHumanityRecordString = await getProofOfHumanRecord(address);
+          console.log("OpenbandsV2BadgeManagerOnCelo#getProofOfHumanRecord() result:", proofOfHumanityRecordString);
+          
+          // @dev - Parse the JSON string returned from the smart contract
+          let proofOfHumanityRecord;
+          try {
+            proofOfHumanityRecord = JSON.parse(proofOfHumanityRecordString);
+          } catch (parseError) {
+            console.error("Error parsing JSON from smart contract:", parseError);
+            return; // Exit early if JSON parsing fails
+          }
+          
+          console.log("Parsed proofOfHumanityRecord:", proofOfHumanityRecord);
           console.log("proofOfHumanityRecord.createdAt:", proofOfHumanityRecord.createdAt);
 
           let badgesArray = [];
