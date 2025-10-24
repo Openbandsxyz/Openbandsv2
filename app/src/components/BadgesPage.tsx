@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from 'react';
+import { useAccount, useChainId, useSwitchChain } from 'wagmi'
 import { useApp } from '@/context/AppContext';
 import BadgesList from './badges/BadgesList';
 import AddBadgeFlow from './badges/AddBadgeFlow';
@@ -54,10 +55,14 @@ function BadgeIcon({ icon }: { icon: 'user' | 'earth' | 'mail' }) {
 type AttributeType = 'age' | 'email' | 'nationality' | null;
 type ProtocolType = 'google' | 'self' | 'worldid' | null;
 import { SignInPanel } from '@/components/SignInPanel';
-import { SelfQRCodeVerificationPanel } from '@/components/zkpassports/self/SelfQRCodeVerificationPanel';
 import { WorldIdQRCodeVerificationPanel } from '@/components/zkpassports/world-id/WorldIdQRCodeVerificationPanel';
 import { WorldIdVerification } from '@/components/zkpassports/world-id/WorldIdVerification';
-import { useChainId } from 'wagmi';
+import { SelfQRCodeVerificationPanel } from '@/components/zkpassports/self/SelfQRCodeVerificationPanel';
+
+// @dev - OpenbandsV2BadgeManagerOnCelo.sol related module
+import { storeVerificationData, getProofOfHumanRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/zkpassports/self/openbands-v2-badge-manager-on-celo';
+import { formatRelativeTime } from '@/lib/blockchains/evm/utils/convert-timestamp-to-relative-time';
+
 
 // Mock badge data - in real implementation, this would come from Supabase
 const mockBadges: Badge[] = [
@@ -84,11 +89,15 @@ const mockBadges: Badge[] = [
 export default function BadgesPage() {
   const { isAuthenticated } = useApp();
   const [showAddBadge, setShowAddBadge] = useState(false);
+
   const [badges, setBadges] = useState<Badge[]>([]);
   const { badgeData, loading, error } = useBadgeCheck();
   const { badgeData: nationalityBadge, loading: nationalityLoading, error: nationalityError } = useNationalityBadgeCheck();
   const chainId = useChainId();
   const [showSignIn, setShowSignIn] = useState(false);  
+  // const [selectedAttribute, setSelectedAttribute] = useState<string | null>(null);
+  // //const [badges, setBadges] = useState(null);
+  // const [badges, setBadges] = useState(mockBadges);
   const [isMobile] = useState(false);
   const [showQRVerification, setShowQRVerification] = useState(false);
   
@@ -167,10 +176,67 @@ export default function BadgesPage() {
     console.log('Deleting badge:', id);
   };
     
+  // // @dev - Wagmi
+  // const { address, isConnected } = useAccount() // @dev - Get connected wallet address
+  // //const chainId = useChainId()
+
   // Check if user is connected to BASE Sepolia testnet (chain ID 84532)
   const isBaseSepolia = chainId === 84532;
   
   const [selectedAttribute, setSelectedAttribute] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProofOfHumanRecord = async () => {
+      if (address && isConnected && !showAddBadge) {
+        try {
+          console.log("Calling the OpenbandsV2BadgeManagerOnCelo#getProofOfHumanRecord() for address (in useEffect):", address);
+          const proofOfHumanityRecordString = await getProofOfHumanRecord(address);
+          console.log("OpenbandsV2BadgeManagerOnCelo#getProofOfHumanRecord() result:", proofOfHumanityRecordString);
+          
+          // @dev - Parse the JSON string returned from the smart contract
+          let proofOfHumanityRecord;
+          try {
+            proofOfHumanityRecord = JSON.parse(proofOfHumanityRecordString);
+          } catch (parseError) {
+            console.error("Error parsing JSON from smart contract:", parseError);
+            return; // Exit early if JSON parsing fails
+          }
+          
+          console.log("Parsed proofOfHumanityRecord:", proofOfHumanityRecord);
+          console.log("proofOfHumanityRecord.createdAt:", proofOfHumanityRecord.createdAt);
+
+          let badgesArray = [];
+
+          if (proofOfHumanityRecord.isValidNationality == true) {
+            badgesArray.push({
+              id: '1',
+              name: 'Nationality Verified',
+              verified: formatRelativeTime(Number(proofOfHumanityRecord.createdAt)),
+              icon: '🌍'
+            });
+          }
+
+          if (proofOfHumanityRecord.isAboveMinimumAge == true) {
+            badgesArray.push({
+              id: '2',
+              name: 'Age Verified',
+              verified: formatRelativeTime(Number(proofOfHumanityRecord.createdAt)),
+              icon: '🌍'
+            });
+          }
+
+          setBadges(badgesArray);
+        } catch (error) {
+          console.error("Error automatically fetching proof of human record:", error);
+        }
+      }
+    };
+
+    // Only fetch when showing the main badges list view (not the add badge form)
+    if (!showAddBadge) {
+      fetchProofOfHumanRecord();
+    }
+  }, [address, isConnected, showAddBadge]); // Re-run when address, connection status, or view changes
 
   const handleAttributeSelect = (attribute: string) => {
     console.log('handleAttributeSelect called with:', attribute, 'isAuthenticated:', isAuthenticated);
