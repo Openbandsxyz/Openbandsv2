@@ -2,6 +2,7 @@ import { useState } from 'react';
 import AttributeSelection from "./steps/AttributeSelection";
 import ProtocolPopup from "./ProtocolPopup";
 import EmailPopup from "./EmailPopup";
+import SelfPopup from "./SelfPopup";
 
 type AttributeType = 'age' | 'email' | 'nationality' | null;
 type ProtocolType = 'google' | 'self' | 'worldid' | null;
@@ -22,7 +23,7 @@ interface Protocol {
 
 interface AddBadgeFlowProps {
   onClose: () => void;
-  onCreateBadge: (attribute: AttributeType, protocol: ProtocolType) => void;
+  onCreateBadge?: (attribute: AttributeType, protocol: ProtocolType) => void; // Optional - badges now created from contract data
 }
 
 const attributes: Attribute[] = [
@@ -42,6 +43,7 @@ export default function AddBadgeFlow({ onClose, onCreateBadge }: AddBadgeFlowPro
   const [selectedProtocol, setSelectedProtocol] = useState<ProtocolType>(null);
   const [showProtocolPopup, setShowProtocolPopup] = useState(false);
   const [showEmailPopup, setShowEmailPopup] = useState(false);
+  const [showSelfPopup, setShowSelfPopup] = useState(false);
 
   const handleAttributeSelect = (attribute: AttributeType) => {
     setSelectedAttribute(attribute);
@@ -59,15 +61,23 @@ export default function AddBadgeFlow({ onClose, onCreateBadge }: AddBadgeFlowPro
   const handleProtocolSelect = (protocol: ProtocolType) => {
     setSelectedProtocol(protocol);
     setShowProtocolPopup(false);
-    // No further action - just close the popup
+    
+    // Show Self verification popup when Self Protocol is selected
+    if (protocol === 'self') {
+      setShowSelfPopup(true);
+    }
+    // TODO: Handle WorldID protocol similarly when implemented
   };
 
   const handleEmailSuccess = () => {
     setShowEmailPopup(false);
-    // Create the badge
-    if (selectedAttribute && selectedProtocol) {
-      onCreateBadge(selectedAttribute, selectedProtocol);
-    }
+    // Badge will be created automatically from contract data after page refresh
+    onClose();
+  };
+
+  const handleSelfSuccess = () => {
+    setShowSelfPopup(false);
+    // Badge will be created automatically from contract data after page refresh
     onClose();
   };
 
@@ -143,6 +153,14 @@ export default function AddBadgeFlow({ onClose, onCreateBadge }: AddBadgeFlowPro
         isOpen={showEmailPopup}
         onClose={() => setShowEmailPopup(false)}
         onSuccess={handleEmailSuccess}
+      />
+      
+      {/* Self Protocol Verification Popup */}
+      <SelfPopup
+        isOpen={showSelfPopup}
+        onClose={() => setShowSelfPopup(false)}
+        onSuccess={handleSelfSuccess}
+        selectedAttribute={selectedAttribute}
       />
     </div>
   );

@@ -34,36 +34,39 @@ interface ProofPayload {
 
 /**
  * @notice - Store verification data on the OpenbandsV2BadgeManagerOnCelo contract
- * @param isAboveMinimumAge
- * @param isValidNationality
+ * @param isAboveMinimumAge - Whether user meets minimum age requirement
+ * @param isValidNationality - Whether nationality was successfully verified
+ * @param nationality - The user's nationality (3-letter ISO code, e.g., "USA", "IND", "GBR")
  * @returns Promise with transaction hash if successful
  */
 export async function storeVerificationData(
   isAboveMinimumAge: boolean, 
-  isValidNationality: boolean
-  //proofPayload: ProofPayload, 
-  //userContextData: string,
+  isValidNationality: boolean,
+  nationality: string = ''
 ): Promise<`0x${string}`> {
   try {
-    // Convert proofPayload object to JSON string for storage
-    //const proofPayloadString = JSON.stringify(proofPayload);
-    
+    console.log('📝 Storing verification data on-chain:', {
+      isAboveMinimumAge,
+      isValidNationality,
+      nationality
+    });
+
     // First simulate the contract call to check if it will succeed
     const { request } = await simulateContract(wagmiConfig, {
       address: openbandsV2BadgeManagerOnCeloContractConfig.address,
       abi: openbandsV2BadgeManagerOnCeloContractConfig.abi,
       functionName: 'storeVerificationData',
-      args: [isAboveMinimumAge, isValidNationality]
-      //args: [isAboveMinimumAge, isValidNationality, proofPayloadString, userContextData, true],
+      args: [isAboveMinimumAge, isValidNationality, nationality]
     });
 
     // Execute the actual transaction
     const hash = await writeContract(wagmiConfig, request);
     
-    console.log(`Verification data stored successfully. Transaction hash: ${hash}`);
+    console.log(`✅ Verification data stored successfully. Transaction hash: ${hash}`);
+    console.log(`🌍 Nationality stored: ${nationality}`);
     return hash;
   } catch (error) {
-    console.error('Error storing verification data:', error);
+    console.error('❌ Error storing verification data:', error);
     throw error;
   }
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAccount } from 'wagmi';
+import { useAccount, useChainId } from 'wagmi';
 import { readContract } from '@wagmi/core';
 import { wagmiConfig } from '@/lib/blockchains/evm/smart-contracts/wagmi/config';
 import {
@@ -16,6 +16,7 @@ interface BadgeData {
 
 export function useBadgeCheck() {
   const { address } = useAccount();
+  const chainId = useChainId();
   const [badgeData, setBadgeData] = useState<BadgeData>({
     domain: null,
     walletAddress: '',
@@ -31,6 +32,20 @@ export function useBadgeCheck() {
         setBadgeData({
           domain: null,
           walletAddress: '',
+          hasVerifiedBadge: false,
+          createdAt: null,
+        });
+        return;
+      }
+
+      // Only check badges on Base Mainnet (where ZkJwtProofManager is deployed)
+      // Skip on other networks like Celo Sepolia
+      const BASE_MAINNET_CHAIN_ID = 8453;
+      if (chainId !== BASE_MAINNET_CHAIN_ID) {
+        console.log(`⏭️ Skipping badge check - not on Base Mainnet (current chain: ${chainId})`);
+        setBadgeData({
+          domain: null,
+          walletAddress: address,
           hasVerifiedBadge: false,
           createdAt: null,
         });
@@ -109,7 +124,7 @@ export function useBadgeCheck() {
     };
 
     checkBadge();
-  }, [address]);
+  }, [address, chainId]);
 
   return { badgeData, loading, error };
 }

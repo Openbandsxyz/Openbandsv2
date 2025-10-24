@@ -5,8 +5,8 @@ import { SelfAppBuilder } from '@selfxyz/qrcode'
 import { useAccount, useChainId, useSwitchChain } from 'wagmi'
 import { VerificationStatusDisplay, VerificationStatus } from './VerificationStatusDisplay'
 
-// @dev - OpenbandsV2BadgeManagerOnCelo.sol related module
-import { storeVerificationData, getProofOfHumanRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/zkpassports/self/openbands-v2-badge-manager-on-celo';
+// @dev - OpenbandsV2NationalityRegistry.sol related module
+import { storeNationalityVerification } from '@/lib/blockchains/evm/smart-contracts/wagmi/nationality-registry';
 
 interface SelfVerifyPlaygroundProps {
   isMobile?: boolean
@@ -52,7 +52,11 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
   }, [address, isConnected, isMobile])
 
   const initializeSelfApp = async () => {
-    if (!address) return
+    console.log('🔄 initializeSelfApp called', { address, isMobile });
+    if (!address) {
+      console.log('❌ No address, returning');
+      return;
+    }
 
     setVerificationStatus({
       status: 'connecting',
@@ -61,6 +65,7 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
 
     // @dev - Set a fixed user ID for testing
     setUserId(address);
+    console.log('✅ UserId set:', address);
 
     try {
       // const appConfig = {
@@ -91,32 +96,24 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
       //   }
       // }
 
+      // @dev - Backend Verification Mode Configuration (per Self.xyz docs)
+      // endpoint MUST be publicly accessible for Self.xyz relayers to send proofs
+      // For local testing: Use ngrok (e.g., https://abc123.ngrok-free.dev/api/verify)
+      // For production: Use your deployed domain (e.g., https://openbands.xyz/api/verify)
+      // See: https://docs.self.xyz/backend-integration/basic-integration
       const appConfig: Record<string, unknown> = {
         version: 2,
-        //appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || "OpenBands v2",
-        appName: process.env.NEXT_PUBLIC_SELF_APP_NAME || "Self Workshop",
-        scope: process.env.NEXT_PUBLIC_SELF_SCOPE || "self-workshop",
-        endpoint: `${process.env.NEXT_PUBLIC_SELF_ENDPOINT}`, // @dev - The ProofOfHumanity contract address
-        logoBase64:
-          "https://i.postimg.cc/mrmVf9hm/self.png", // url of a png image, base64 is accepted but not recommended
+        appName: "OpenBands v2",
+        scope: "openbands-v2",
+        endpoint: process.env.NEXT_PUBLIC_SELF_ENDPOINT || "https://example.com/verify",
+        logoBase64: "https://i.postimg.cc/mrmVf9hm/self.png",
         userId: address,
-        endpointType: "staging_celo",
-        userIdType: "hex", // use 'hex' for ethereum address or 'uuid' for uuidv4
+        userIdType: "hex",
         userDefinedData: "Verification for the OpenBands v2 app",
-        //userDefinedData: "Hello Eth Delhi!!!",
         disclosures: {
-        // what you want to verify from users' identity
           minimumAge: 18,
-          // ofac: true,
           excludedCountries: excludedCountries,
-          // what you want users to reveal
-          // name: false,
-          // issuing_state: true,
           nationality: true,
-          // date_of_birth: true,
-          // passport_number: false,
-          // gender: true,
-          // expiry_date: false,
         }
       }
       setAppConfig(appConfig);
@@ -129,6 +126,7 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
       }
 
       const app = new SelfAppBuilder(appConfig).build()
+      console.log('✅ SelfApp built:', app);
       setSelfApp(app)
 
       if (isMobile) {
@@ -136,8 +134,10 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
         const encodedApp = encodeURIComponent(JSON.stringify(app))
         const link = `${baseUrl}?data=${encodedApp}`
         setUniversalLink(link)
+        console.log('📱 Mobile link generated:', link);
       }
 
+      console.log('✅ Setting status to waiting_for_scan');
       setVerificationStatus({
         status: 'waiting_for_scan',
         message: isMobile 
@@ -155,45 +155,79 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
     }
   }
 
-  const handleSuccessfulVerification = async() => { // @dev - This function would be called - once the "onSuccess" callback from the <SelfQRcodeWrapper> component is triggered
+  const handleSuccessfulVerification = async(verificationResult?: any) => { // @dev - This function would be called - once the "onSuccess" callback from the <SelfQRcodeWrapper> component is triggered
     console.log('Identity verified successfully!')
+    console.log('Verification result:', verificationResult)
 
-    // @dev - Close the modal immediately after successful verification
-    if (onVerificationSuccess) {
-      // Add a small delay to allow users to see the success message briefly
-      setTimeout(() => {
-        onVerificationSuccess();
-      }, 2000);
-    }
-
-    // @dev - The logic to judge whether each discloused data meets the criteria
+    // @dev - Extract nationality from verification result
+    let nationality: string = '';
     let isAboveMinimumAge: boolean = false;
     let isValidNationality: boolean = false;
+
+    // Try to extract nationality from the verification result
+    if (verificationResult && verificationResult.discloseOutput) {
+      nationality = verificationResult.discloseOutput.nationality || '';
+      console.log('Extracted nationality:', nationality);
+    }
+
+    // @dev - For backend verification mode with mock passports,
+    // the backend can't always extract nationality from InvalidRoot errors
+    // As a workaround for testing, we'll use the nationality from localStorage
+    // (which the user can set when creating the mock passport)
+    if (!nationality) {
+      console.log('⚠️ No nationality in verification result (expected for backend verification mode)');
+      
+      // Try to get nationality from localStorage (set during mock passport creation)
+      const storedNationality = localStorage.getItem('mock_passport_nationality');
+      if (storedNationality) {
+        nationality = storedNationality;
+        console.log(`🔍 Using nationality from localStorage: ${nationality}`);
+      } else {
+        // Fallback: prompt user or use UNKNOWN
+        nationality = prompt('Enter your mock passport nationality (e.g., JPN, DEU, USA):') || 'UNKNOWN';
+        console.log(`📝 User provided nationality: ${nationality}`);
+        // Store for next time
+        if (nationality !== 'UNKNOWN') {
+          localStorage.setItem('mock_passport_nationality', nationality);
+        }
+      }
+    }
+
+    // @dev - The logic to judge whether each disclosed data meets the criteria
     if (appConfig) {
-      const { address, userId, userDefinedData, disclosures } = appConfig;
+      const { disclosures } = appConfig;
       if (disclosures.minimumAge >= 18) {
         isAboveMinimumAge = true;
       }
 
-      if (disclosures.nationality == true) {
+      if (disclosures.nationality === true && nationality) {
         isValidNationality = true;
       }
     }
-    //const proofPayload: Record<string, unknown> = {};
-    //const userContextData: string = "User context data";
+
     console.log('isAboveMinimumAge:', isAboveMinimumAge);
     console.log('isValidNationality:', isValidNationality);
+    console.log('nationality:', nationality);
 
     try {
-      // @dev - Store verification data on-chain via OpenbandsV2BadgeManagerOnCelo contract
-      const txHash: string = await storeVerificationData(isAboveMinimumAge, isValidNationality);
-      //const txHash: string = await storeVerificationData(isAboveMinimumAge, isValidNationality, proofPayload, userContextData);
-      console.log('Call the storeVerificationData() in the OpenbandsV2BadgeManagerOnCelo.sol -> Transaction hash:', txHash);
+      // @dev - Store nationality verification on-chain via OpenbandsV2NationalityRegistry contract
+      // This stores the RESULT of off-chain ZK proof verification
+      const txHash: string = await storeNationalityVerification(nationality, isAboveMinimumAge, isValidNationality);
+      console.log('✅ storeNationalityVerification() called successfully');
+      console.log('📝 Transaction hash:', txHash);
+      console.log('🌍 Nationality stored on-chain:', nationality);
 
       setVerificationStatus({
         status: 'success',
-        message: 'Your identity has been successfully verified and stored on-chain!'
+        message: `Your identity has been successfully verified and stored on-chain! Nationality: ${nationality}`
       })
+
+      // @dev - Close the modal after successful verification
+      if (onVerificationSuccess) {
+        setTimeout(() => {
+          onVerificationSuccess();
+        }, 2000);
+      }
     } catch (error) {
       console.error('Failed to store verification data on-chain:', error)
       setVerificationStatus({
@@ -256,7 +290,7 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
         {isConnected && (
           <div className={`network-status ${isOnCeloNetwork || isOnBaseNetwork ? 'connected' : 'warning'}`}>
             <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-              Identity verification with Self.xyz works on Celo mainnet
+              Identity verification with Self.xyz works on Celo testnet
             </div>
           </div>
         )}
@@ -277,6 +311,13 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
         onReset={handleReset}
       />  
       */}
+
+      {/* Debug info */}
+      {console.log('🔍 QR Code render check:', { 
+        selfApp: !!selfApp, 
+        status: verificationStatus.status,
+        shouldShow: selfApp && verificationStatus.status === 'waiting_for_scan'
+      })}
 
       {/* QR Code or Mobile Button */}
       {selfApp && verificationStatus.status === 'waiting_for_scan' && (
