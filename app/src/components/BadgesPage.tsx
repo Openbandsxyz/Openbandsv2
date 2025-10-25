@@ -286,36 +286,6 @@ export default function BadgesPage() {
   // that reads from the smart contracts (company email from Base, nationality from Celo)
   // Badges will appear when user refreshes page after successful on-chain storage
 
-  const getBadgeName = (attribute: AttributeType, protocol: ProtocolType): string => {
-    const attributeNames: Record<NonNullable<AttributeType>, string> = {
-      'nationality': 'Nationality',
-      'age': 'Age (18+)',
-      'email': 'Company Email'
-    };
-    
-    const protocolNames: Record<NonNullable<ProtocolType>, string> = {
-      'google': 'Google Verified',
-      'self': 'Self Protocol Verified',
-      'worldid': 'WorldID Verified'
-    };
-
-    if (!attribute || !protocol) return 'Unknown Badge';
-    return `${attributeNames[attribute]} - ${protocolNames[protocol]}`;
-  };
-
-  const getBadgeIcon = (attribute: AttributeType): 'user' | 'earth' | 'mail' => {
-    switch (attribute) {
-      case 'nationality':
-        return 'earth';
-      case 'age':
-        return 'user';
-      case 'email':
-        return 'mail';
-      default:
-        return 'user';
-    }
-  };
-
   // Show add badge form when "Add new badge" is clicked
   if (showAddBadge) {
     return (
