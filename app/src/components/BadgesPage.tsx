@@ -99,6 +99,8 @@ export default function BadgesPage() {
   // const [badges, setBadges] = useState(mockBadges);
   const [isMobile] = useState(false);
   const [showQRVerification, setShowQRVerification] = useState(false);
+  const [showWorldIdModal, setShowWorldIdModal] = useState(false);
+  const [worldIdAttribute, setWorldIdAttribute] = useState<AttributeType>(null);
   
   // Helper function to format the timestamp
   const formatTimestamp = (isoString: string): string => {
@@ -269,6 +271,17 @@ export default function BadgesPage() {
     setShowAddBadge(true);
   };
 
+  // Handler for World ID verification initiation
+  const handleCreateBadge = (attribute: AttributeType, protocol: ProtocolType) => {
+    if (protocol === 'worldid' && (attribute === 'nationality' || attribute === 'age') && isBaseSepolia) {
+      // Show World ID modal only on BASE Sepolia for nationality/age
+      setWorldIdAttribute(attribute);
+      setShowWorldIdModal(true);
+    }
+  };
+
+
+
   // NOTE: Badge creation is now handled automatically by the useEffect hook
   // that reads from the smart contracts (company email from Base, nationality from Celo)
   // Badges will appear when user refreshes page after successful on-chain storage
@@ -308,6 +321,7 @@ export default function BadgesPage() {
     return (
       <AddBadgeFlow 
         onClose={() => setShowAddBadge(false)}
+        onCreateBadge={handleCreateBadge}
       />
     );
   }
@@ -438,6 +452,14 @@ export default function BadgesPage() {
         </div>
       </div>
     </div>
+
+      {/* World ID Verification Modal */}
+      {showWorldIdModal && worldIdAttribute && (
+        <WorldIdQRCodeVerificationPanel
+          selectedAttribute={worldIdAttribute}
+          onClose={() => setShowWorldIdModal(false)}
+        />
+      )}
     </>
   );
 }

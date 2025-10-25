@@ -66,7 +66,15 @@ export default function AddBadgeFlow({ onClose, onCreateBadge }: AddBadgeFlowPro
     if (protocol === 'self') {
       setShowSelfPopup(true);
     }
-    // TODO: Handle WorldID protocol similarly when implemented
+    // Handle WorldID protocol - delegate to parent component (BadgesPage)
+    else if (protocol === 'worldid') {
+      // Close this flow and let parent handle World ID modal
+      onClose();
+      // Notify parent about World ID selection if callback is provided
+      if (onCreateBadge) {
+        onCreateBadge(selectedAttribute, protocol);
+      }
+    }
   };
 
   const handleEmailSuccess = () => {
