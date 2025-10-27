@@ -9,7 +9,6 @@ const selfBackendVerifier = new SelfBackendVerifier(
   false, // ⚠️ true = testnet (mock passport), false = mainnet (real passport)
   AllIds, // Allow all attestation types (passport, ID card, etc)
   new DefaultConfigStore({
-    minimumAge: 18,
     excludedCountries: [], // Add country codes to exclude if needed ['USA', 'IRN']
     ofac: false, // OFAC sanctions list check
   }),
@@ -109,11 +108,9 @@ export async function POST(req: NextRequest) {
             result: true,
             data: {
               nationality, // Will be actual nationality or 'UNKNOWN'
-              minimumAge: 18,
               userIdentifier: userAddress,
               discloseOutput: {
                 nationality,
-                minimumAge: 18,
               },
             },
           }, { status: 200 });
@@ -148,11 +145,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Extract disclosed data (nationality, etc.)
-    const { nationality, minimumAge } = result.discloseOutput || {};
+    const { nationality } = result.discloseOutput || {};
     const { userIdentifier } = result.userData || {};
 
     console.log('🌍 Disclosed nationality:', nationality);
-    console.log('📅 Minimum age:', minimumAge);
     console.log('👤 User identifier:', userIdentifier);
 
     // Return success with disclosed data
@@ -161,7 +157,6 @@ export async function POST(req: NextRequest) {
       result: true,
       data: {
         nationality,
-        minimumAge,
         userIdentifier,
         discloseOutput: result.discloseOutput,
       },

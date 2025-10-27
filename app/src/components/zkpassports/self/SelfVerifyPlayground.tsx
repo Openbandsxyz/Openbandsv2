@@ -14,9 +14,10 @@ import { getProofOfHumanRecord } from '@/lib/blockchains/evm/smart-contracts/wag
 interface SelfVerifyPlaygroundProps {
   isMobile?: boolean
   onVerificationSuccess?: () => void
+  attributeType?: 'nationality' | 'age'
 }
 
-export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }: SelfVerifyPlaygroundProps) => {
+export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess, attributeType = 'nationality' }: SelfVerifyPlaygroundProps) => {
   const [selfApp, setSelfApp] = useState<any | null>(null)
   const [appConfig, setAppConfig] = useState<any | null>(null)
   const [userId, setUserId] = useState<string>("")
@@ -27,7 +28,7 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
   })
 
   // Use useMemo to cache the array to avoid creating a new array on each render
-  const excludedCountries = useMemo(() => [countries.UNITED_STATES], []);
+  const excludedCountries = useMemo(() => [], []);
 
   // @dev - Wagmi
   const { address, isConnected } = useAccount() // @dev - Get connected wallet address
@@ -118,22 +119,34 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
       // @dev - Contract Verification Mode Configuration (on-chain verification via Hub)
       // Self.xyz SDK sends proof to your contract, which calls Hub for verification
       // See: https://docs.self.xyz/frontend-integration/qrcode-sdk
+      
+      // Determine contract address and scope based on attribute type
+      const contractAddress = attributeType === 'age' 
+        ? (process.env.NEXT_PUBLIC_AGE_REGISTRY_CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000000")
+        : (process.env.NEXT_PUBLIC_NATIONALITY_REGISTRY_CONTRACT_ADDRESS || "0xC64C921399b8dea7B4bAA438de3518d04023Ae97");
+      
+      const scope = attributeType === 'age' ? "openbands-age-v2" : "openbands-v2";
+      
       const appConfig: Record<string, unknown> = {
         version: 2,
-        appName: "OpenBands v2",
-        scope: "openbands-v2",
+        appName: "Openbands",
+        scope: scope,
         // endpoint = YOUR contract address (lowercase!)
-        endpoint: (process.env.NEXT_PUBLIC_NATIONALITY_REGISTRY_CONTRACT_ADDRESS || "0xC64C921399b8dea7B4bAA438de3518d04023Ae97").toLowerCase(),
+        endpoint: contractAddress.toLowerCase(),
         endpointType: "celo", // "celo" for mainnet, "staging_celo" for testnet
         logoBase64: "https://i.postimg.cc/mrmVf9hm/self.png",
         userId: address,
         userIdType: "hex",
-        userDefinedData: "Verification for the OpenBands v2 app",
-        disclosures: {
-          minimumAge: 18,
-          excludedCountries: excludedCountries,
-          nationality: true,
-        }
+        userDefinedData: `Verification for OpenBands - ${attributeType}`,
+        disclosures: attributeType === 'age' 
+          ? {
+              excludedCountries: excludedCountries,
+              minimumAge: 18, // Age verification requires 18+ (SDK uses minimumAge)
+            }
+          : {
+              excludedCountries: excludedCountries,
+              nationality: true, // Nationality verification
+            }
       }
       setAppConfig(appConfig);
 
@@ -185,12 +198,12 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
     // 3. Called our contract's customVerificationHook()
     // 4. Stored the nationality on-chain
     
-    console.log('🎯 Nationality has been verified and stored on-chain by Self.xyz Hub');
-    console.log('📱 Check "My Badges" page to see your nationality badge');
+    console.log(`🎯 ${attributeType} has been verified and stored on-chain by Self.xyz Hub`);
+    console.log(`📱 Check "My Badges" page to see your ${attributeType} badge`);
 
     setVerificationStatus({
       status: 'success',
-      message: 'Your identity has been verified on-chain! Check "My Badges" to see your nationality badge.'
+      message: `Your ${attributeType} has been verified on-chain! Check "My Badges" to see your ${attributeType} badge.`
     })
 
     // @dev - Close the modal after successful verification
@@ -244,16 +257,16 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess }
   return (
     <div className="self-playground-container">
       <div style={{ marginBottom: '20px' }}>
-        <h2 style={{ marginBottom: '8px' }}>Self.xyz Identity Verification</h2>
+        <h2 style={{ marginBottom: '8px' }}>Self.xyz {attributeType === 'age' ? 'Age' : 'Identity'} Verification</h2>
         <p style={{ color: '#666', fontSize: '14px', marginBottom: '16px' }}>
-          Verify your identity using your passport with Self.xyz protocol
+          Verify your {attributeType === 'age' ? 'age (18+)' : 'nationality'} using your passport with Self.xyz protocol
         </p>
 
         {/* Network Status */}
         {isConnected && (
           <div className={`network-status ${isOnCeloNetwork || isOnBaseNetwork ? 'connected' : 'warning'}`}>
             <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-              Identity verification with Self.xyz works on Celo testnet
+              Identity verification with Self.xyz works on Celo mainnet
             </div>
           </div>
         )}

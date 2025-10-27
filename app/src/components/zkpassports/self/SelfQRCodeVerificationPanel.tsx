@@ -120,6 +120,7 @@ export const SelfQRCodeVerificationPanel = ({
             <SelfVerifyPlayground 
               isMobile={isMobile} 
               onVerificationSuccess={onClose}
+              attributeType={selectedAttribute === 'age' ? 'age' : 'nationality'}
             />
           </div>
         </div>
