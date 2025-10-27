@@ -34,6 +34,8 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
         bool isValidNationality;      // Whether nationality was successfully verified
         uint256 verifiedAt;           // Timestamp of verification
         bool isActive;                // Whether record is still active
+        uint256 chainId; 
+        address userAddress;   // @dev - User ID in Self.xyz on Celo main
     }
     
     /// @notice Mapping from user address to their nationality record
@@ -82,11 +84,11 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
     constructor(
         address identityVerificationHubAddress,
         string memory scopeSeed,
-        CeloSender celoSender,
-        BaseReceiver baseReceiver
+        CeloSender _celoSender,
+        BaseReceiver _baseReceiver
     ) SelfVerificationRoot(identityVerificationHubAddress, scopeSeed) Ownable(_msgSender()) {
-        celoSender = celoSender;
-        baseReceiver = baseReceiver;
+        celoSender = _celoSender;
+        baseReceiver = _baseReceiver;
 
         // Create unformatted config (human-readable)
         string[] memory forbiddenCountries = new string[](0); // No country restrictions
@@ -231,7 +233,9 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
             nationality: nationality,
             isValidNationality: true,
             verifiedAt: block.timestamp,
-            isActive: true
+            isActive: true,
+            userAddress: user,
+            chainId: block.chainid
         });
 
         // @dev - Send a message from Celo mainnet to BASE mainnet via Hyperlane

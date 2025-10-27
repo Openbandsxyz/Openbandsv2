@@ -20,6 +20,7 @@ library DataType {
         bool isActive;                // Whether record is still active
         //uint256 nullifier;
         uint256 chainId; 
+        address userAddress;   // @dev - User ID in Self.xyz on Celo mainnet
     }
 
     /// @notice Nationality record for a verified user
