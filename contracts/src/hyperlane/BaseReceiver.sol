@@ -8,9 +8,9 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title BaseReceiver
- * @notice Receives cross-chain messages from Celo Sepolia via Hyperlane
- * @dev Deployed on Base Sepolia (Chain ID: 84532)
- * @dev Verified mailbox: 0x6966b0E55883d49BFB24539356a2f8A673E02039
+ * @notice Receives cross-chain messages from Celo via Hyperlane
+ * @dev Deployed on Base Mainnet (Chain ID: 8453)
+ * @dev Verified mailbox: 0xeA87ae93Fa0019a82A727bfd3eBd1cFCa8f64f1D
  */
 contract BaseReceiver is IMessageRecipient, Ownable {
     using TypeCasts for bytes32;
@@ -18,10 +18,10 @@ contract BaseReceiver is IMessageRecipient, Ownable {
 
     // ============ Constants ============
 
-    /// @notice Celo Sepolia domain ID
-    uint32 public constant CELO_SEPOLIA_DOMAIN = 11142220;
+    /// @notice Celo mainnet domain ID
+    uint32 public constant CELO_DOMAIN = 42220;
 
-    /// @notice Hyperlane Mailbox on Base Sepolia
+    /// @notice Hyperlane Mailbox on Base Mainnet
     IMailbox public immutable MAILBOX;
 
     // ============ Storage ============
@@ -32,7 +32,7 @@ contract BaseReceiver is IMessageRecipient, Ownable {
     /// @notice Counter of total messages received
     uint256 public messageCount;
 
-    /// @notice Trusted senders from Celo Sepolia (optional access control)
+    /// @notice Trusted senders from Celo (optional access control)
     mapping(bytes32 => bool) public trustedSenders;
 
     /// @notice Whether to enforce trusted senders check
@@ -51,9 +51,9 @@ contract BaseReceiver is IMessageRecipient, Ownable {
     // ============ Events ============
 
     /**
-     * @notice Emitted when a message is received from Celo Sepolia
+     * @notice Emitted when a message is received from Celo
      * @param messageId Unique identifier for this message
-     * @param origin Origin domain (should be CELO_SEPOLIA_DOMAIN)
+     * @param origin Origin domain (should be CELO_DOMAIN)
      * @param sender Sender address on origin chain (as bytes32)
      * @param message Message body received
      */
@@ -94,8 +94,8 @@ contract BaseReceiver is IMessageRecipient, Ownable {
 
     /**
      * @notice Initialize the BaseReceiver contract
-     * @param _mailbox Address of the Hyperlane Mailbox on Base Sepolia
-     *                 Must be: 0x6966b0E55883d49BFB24539356a2f8A673E02039
+     * @param _mailbox Address of the Hyperlane Mailbox on Base Mainnet
+     *                 Must be: 0xeA87ae93Fa0019a82A727bfd3eBd1cFCa8f64f1D
      */
     constructor(address _mailbox) {
         if (_mailbox == address(0)) revert ZeroAddressMailbox();
@@ -111,7 +111,7 @@ contract BaseReceiver is IMessageRecipient, Ownable {
      * @param _sender Sender address on the origin chain (as bytes32)
      * @param _message Message body
      * @dev This function can only be called by the Hyperlane Mailbox
-     * @dev Messages are only accepted from Celo Sepolia (domain 11142220)
+     * @dev Messages are only accepted from Celo Mainnet (domain 42220)
      */
     function handle(
         uint32 _origin,
@@ -121,9 +121,9 @@ contract BaseReceiver is IMessageRecipient, Ownable {
         // Verify caller is the Mailbox
         if (msg.sender != address(MAILBOX)) revert NotMailbox();
 
-        // Verify origin is Celo Sepolia
-        if (_origin != CELO_SEPOLIA_DOMAIN) {
-            revert InvalidOrigin(_origin, CELO_SEPOLIA_DOMAIN);
+        // Verify origin is Celo Mainnet
+        if (_origin != CELO_DOMAIN) {
+            revert InvalidOrigin(_origin, CELO_DOMAIN);
         }
 
         // Optional: Check if sender is trusted (if enforcement enabled)
@@ -168,7 +168,7 @@ contract BaseReceiver is IMessageRecipient, Ownable {
 
     /**
      * @notice Add a trusted sender address
-     * @param sender Sender address on Celo Sepolia
+     * @param sender Sender address on Celo
      * @dev Converts address to bytes32 for storage
      */
     function addTrustedSender(address sender) external onlyOwner {
@@ -179,7 +179,7 @@ contract BaseReceiver is IMessageRecipient, Ownable {
 
     /**
      * @notice Remove a trusted sender address
-     * @param sender Sender address on Celo Sepolia
+     * @param sender Sender address on Celo
      */
     function removeTrustedSender(address sender) external onlyOwner {
         bytes32 senderBytes32 = sender.addressToBytes32();
@@ -244,7 +244,7 @@ contract BaseReceiver is IMessageRecipient, Ownable {
 
     /**
      * @notice Get the local domain (chain) ID
-     * @return Local domain identifier (should be 84532 for Base Sepolia)
+     * @return Local domain identifier (should be 8453 for Base Mainnet)
      */
     function localDomain() external view returns (uint32) {
         return MAILBOX.localDomain();

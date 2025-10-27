@@ -6,27 +6,27 @@ import {TypeCasts} from "@hyperlane-xyz/core/contracts/libs/TypeCasts.sol";
 
 /**
  * @title CeloSender
- * @notice Sends cross-chain messages from Celo Sepolia to Base Sepolia via Hyperlane
- * @dev Deployed on Celo Sepolia (Chain ID: 11142220)
- * @dev Verified mailbox: 0xD0680F80F4f947968206806C2598Cbc5b6FE5b03
+ * @notice Sends cross-chain messages from Celo to Base via Hyperlane
+ * @dev Deployed on Celo Mainnet (Chain ID: 42220)
+ * @dev Verified mailbox: 0x50da3B3907A08a24fe4999F4Dcf337E8dC7954bb
  */
 contract CeloSender {
     using TypeCasts for address;
 
     // ============ Constants ============
 
-    /// @notice Base Sepolia domain ID
-    uint32 public constant BASE_SEPOLIA_DOMAIN = 84532;
+    /// @notice Base mainnet domain ID
+    uint32 public constant BASE_DOMAIN = 8453;
 
-    /// @notice Hyperlane Mailbox on Celo Sepolia
+    /// @notice Hyperlane Mailbox on Celo Mainnet
     IMailboxV3 public immutable MAILBOX;
 
     // ============ Events ============
 
     /**
-     * @notice Emitted when a message is dispatched to Base Sepolia
+     * @notice Emitted when a message is dispatched to Base
      * @param messageId Hyperlane message ID
-     * @param recipient Recipient address on Base Sepolia
+     * @param recipient Recipient address on Base
      * @param message Message body sent
      */
     event MessageDispatched(
@@ -45,8 +45,8 @@ contract CeloSender {
 
     /**
      * @notice Initialize the CeloSender contract
-     * @param _mailbox Address of the Hyperlane Mailbox on Celo Sepolia
-     *                 Must be: 0xD0680F80F4f947968206806C2598Cbc5b6FE5b03
+     * @param _mailbox Address of the Hyperlane Mailbox on Celo Mainnet
+     *                 Must be: 0x50da3B3907A08a24fe4999F4Dcf337E8dC7954bb
      */
     constructor(address _mailbox) {
         if (_mailbox == address(0)) revert ZeroAddressMailbox();
@@ -62,8 +62,8 @@ contract CeloSender {
     // ============ External Functions ============
 
     /**
-     * @notice Send a message to a recipient on Base Sepolia
-     * @param recipient Address of the recipient on Base Sepolia
+     * @notice Send a message to a recipient on Base
+     * @param recipient Address of the recipient on Base
      * @param message Arbitrary message bytes to send
      * @return messageId Hyperlane message identifier
      * @dev The recipient should implement IMessageRecipient.handle()
@@ -79,9 +79,8 @@ contract CeloSender {
         bytes32 recipientBytes32 = recipient.addressToBytes32();
 
         // Dispatch message via Hyperlane Mailbox (V3 payable for hook fees)
-        // Using 3-param dispatch (matches successful tx 0x1aa6fad3...)
         messageId = MAILBOX.dispatch{value: msg.value}(
-            BASE_SEPOLIA_DOMAIN,
+            BASE_DOMAIN,
             recipientBytes32,
             message
         );
@@ -90,8 +89,8 @@ contract CeloSender {
     }
 
     /**
-     * @notice Send a simple string message to Base Sepolia
-     * @param recipient Address of the recipient on Base Sepolia
+     * @notice Send a simple string message to Base
+     * @param recipient Address of the recipient on Base
      * @param message String message to send
      * @return messageId Hyperlane message identifier
      */
@@ -106,7 +105,7 @@ contract CeloSender {
 
     /**
      * @notice Get the local domain (chain) ID
-     * @return Local domain identifier (should be 11142220 for Celo Sepolia)
+     * @return Local domain identifier (should be 42220 for Celo Mainnet)
      */
     function localDomain() external view returns (uint32) {
         return MAILBOX.localDomain();
