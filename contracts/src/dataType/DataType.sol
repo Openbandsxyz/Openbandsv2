@@ -2,7 +2,7 @@ pragma solidity 0.8.28;
 
 library DataType {
 
-    // // @dev - Temporary struct
+    // // @dev - 
     // struct ProofOfHumanRecordViaSelf {
     //     bytes32 verificationConfigId;
     //     uint256 chainId; 
