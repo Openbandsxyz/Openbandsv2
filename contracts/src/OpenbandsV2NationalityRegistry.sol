@@ -8,8 +8,9 @@ import {SelfStructs} from "@selfxyz/contracts/libraries/SelfStructs.sol";
 import {SelfUtils} from "@selfxyz/contracts/libraries/SelfUtils.sol";
 import {IIdentityVerificationHubV2} from "@selfxyz/contracts/interfaces/IIdentityVerificationHubV2.sol";
 
-// @dev - Hyperlane
+// @dev - Hyperlane wrapper contracts
 import { CeloSender } from "./hyperlane/CeloSender.sol";
+import { BaseReceiver } from "./hyperlane/BaseReceiver.sol";
 
 
 /**
@@ -20,6 +21,9 @@ import { CeloSender } from "./hyperlane/CeloSender.sol";
  */
 contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
     
+    CeloSender public celoSender;
+    BaseReceiver public baseReceiver;
+
     // ====================================================
     // Storage Variables
     // ====================================================
@@ -77,9 +81,13 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
      */
     constructor(
         address identityVerificationHubAddress,
-        string memory scopeSeed
+        string memory scopeSeed,
+        CeloSender celoSender,
+        BaseReceiver baseReceiver
     ) SelfVerificationRoot(identityVerificationHubAddress, scopeSeed) Ownable(_msgSender()) {
-        
+        celoSender = celoSender;
+        baseReceiver = baseReceiver;
+
         // Create unformatted config (human-readable)
         string[] memory forbiddenCountries = new string[](0); // No country restrictions
         SelfUtils.UnformattedVerificationConfigV2 memory rawConfig = SelfUtils.UnformattedVerificationConfigV2({
@@ -229,7 +237,7 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
         // @dev - Send a message from Celo mainnet to BASE mainnet via Hyperlane
         //bytes memory message = "test";
         bytes memory message = abi.encode(nationalityRecords[user]);
-        CeloSender.sendMessage(OPENBANDS_V2_BADGE_MANAGER_CONTRACT_ON_BASE_MAINNET, message); // @dev - TODO: Replace the SC address (of the Badge Manager contract) with the actual address
+        CeloSender.sendMessage(address(baseReceiver), message); // @dev - TODO: Replace the SC address (of the Badge Manager contract) with the actual address
 
         // Add to verified users array if new
         if (isNewUser) {

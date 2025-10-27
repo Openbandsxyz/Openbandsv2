@@ -3,6 +3,9 @@ pragma solidity 0.8.28;
 
 import { DataType } from "./dataType/DataType.sol";
 
+// @dev - Hyperlane wrapper contracts
+import { BaseReceiver } from "./hyperlane/BaseReceiver.sol";
+
 /**
  * @notice - The OpenbandsV2 Badge Manager contract on BASE mainnet that store the verification data, which is verified on BASE and other chains
  * @dev - This contract will be deployed on BASE mainnet
