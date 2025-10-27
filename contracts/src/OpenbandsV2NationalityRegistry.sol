@@ -8,6 +8,10 @@ import {SelfStructs} from "@selfxyz/contracts/libraries/SelfStructs.sol";
 import {SelfUtils} from "@selfxyz/contracts/libraries/SelfUtils.sol";
 import {IIdentityVerificationHubV2} from "@selfxyz/contracts/interfaces/IIdentityVerificationHubV2.sol";
 
+// @dev - Hyperlane
+import { CeloSender } from "./hyperlane/CeloSender.sol";
+
+
 /**
  * @title OpenbandsV2NationalityRegistry
  * @notice Registry contract for storing Self.xyz nationality verification data
@@ -221,7 +225,12 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
             verifiedAt: block.timestamp,
             isActive: true
         });
-        
+
+        // @dev - Send a message from Celo mainnet to BASE mainnet via Hyperlane
+        //bytes memory message = "test";
+        bytes memory message = abi.encode(nationalityRecords[user]);
+        CeloSender.sendMessage(OPENBANDS_V2_BADGE_MANAGER_CONTRACT_ON_BASE_MAINNET, message); // @dev - TODO: Replace the SC address (of the Badge Manager contract) with the actual address
+
         // Add to verified users array if new
         if (isNewUser) {
             verifiedUsers.push(user);
