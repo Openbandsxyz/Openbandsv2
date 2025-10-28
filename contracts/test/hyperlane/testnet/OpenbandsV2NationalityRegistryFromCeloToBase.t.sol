@@ -4,8 +4,8 @@ pragma solidity ^0.8.28;
 
 import {Test} from "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
-import {CeloSender} from "../../../src/CeloSender.sol";
-import {BaseReceiver} from "../../../src/BaseReceiver.sol";
+import {CeloSender} from "../../../src/hyperlane/CeloSender.sol";
+import {BaseReceiver} from "../../../src/hyperlane/BaseReceiver.sol";
 import {IMailbox} from "@hyperlane-xyz/core/contracts/interfaces/IMailbox.sol";
 import {IInterchainSecurityModule} from "@hyperlane-xyz/core/contracts/interfaces/IInterchainSecurityModule.sol";
 import {TypeCasts} from "@hyperlane-xyz/core/contracts/libs/TypeCasts.sol";
