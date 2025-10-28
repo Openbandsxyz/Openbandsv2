@@ -11,10 +11,10 @@ import {IInterchainSecurityModule} from "@hyperlane-xyz/core/contracts/interface
 import {TypeCasts} from "@hyperlane-xyz/core/contracts/libs/TypeCasts.sol";
 
 /**
- * @title OpenbandsV2NationalityRegistryFromCeloToBaseTest
+ * @title OpenbandsV2 Hyperlane integration test, which is messaging from Celo Sepolia to Base Sepolia
  * @notice Tests for Celo -> Base cross-chain messaging
  */
-contract OpenbandsV2NationalityRegistryFromCeloToBaseTest is Test {
+contract OpenbandsV2HyperlaneIntegrationFromCeloToBaseTest is Test {
     using TypeCasts for address;
 
     CeloSender public celoSender;
@@ -62,7 +62,7 @@ contract OpenbandsV2NationalityRegistryFromCeloToBaseTest is Test {
         address CELO_SENDER_ADDRESS = vm.envAddress("CELO_SENDER_ADDRESS");
         address BASE_RECEIVER_ADDRESS = vm.envAddress("BASE_RECEIVER_ADDRESS");
         celoSender = CeloSender(payable(CELO_SENDER_ADDRESS));
-        baseReceiver = BaseReceiver(BASE_RECEIVER_ADDRESS);
+        baseReceiver = BaseReceiver(payable(BASE_RECEIVER_ADDRESS));
 
         //vm.label(mockCeloMailbox, "CeloMailbox");
         //vm.label(mockBaseMailbox, "BaseMailbox");
