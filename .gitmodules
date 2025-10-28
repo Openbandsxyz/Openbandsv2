@@ -7,3 +7,6 @@
 [submodule "contracts/lib/self"]
 	path = contracts/lib/self
 	url = https://github.com/selfxyz/self
+[submodule "contracts/lib/hyperlane-monorepo"]
+	path = contracts/lib/hyperlane-monorepo
+	url = https://github.com/hyperlane-xyz/hyperlane-monorepo

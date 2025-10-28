@@ -2,7 +2,8 @@
 src = "src"
 out = "out"
 libs = ["lib"]
-solc_version = "0.8.28"
+solc_version = "0.8.19"
+#solc_version = "0.8.28"
 optimizer = true
 optimizer_runs = 10000
 via_ir = false

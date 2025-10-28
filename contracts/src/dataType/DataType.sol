@@ -1,4 +1,4 @@
-pragma solidity 0.8.28;
+pragma solidity >=0.8.19;
 
 library DataType {
 
@@ -13,6 +13,7 @@ library DataType {
     //     uint256 createdAt;
     // }
 
+    // @dev - Tentative definition for storing the nationality record, which is retrieved via Self.xyz on Celo mainnet
     struct NationalityRecordViaSelf {
         string nationality;            // ISO 3166-1 alpha-3 country code (e.g., "USA", "GBR", "JPN")
         bool isValidNationality;      // Whether nationality was successfully verified
