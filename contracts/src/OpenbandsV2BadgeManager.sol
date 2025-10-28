@@ -3,6 +3,7 @@
 pragma solidity ^0.8.28;
 
 import { DataType } from "./dataType/DataType.sol";
+import { Converter } from "./dataType/converters/Converter.sol";
 
 // @dev - Hyperlane wrapper contracts
 import { CeloSender } from "./hyperlane/CeloSender.sol";
@@ -39,7 +40,8 @@ contract OpenbandsV2BadgeManager {
         require(msg.sender == address(celoSender), "Unauthorized sender");
 
         // @dev - Handle the received message
-        baseReceiver.handle(CELO_DOMAIN, address(celoSender), nationalityRecordViaSelfInBytes);
+        bytes32 celoSenderInBytes = Converter.addressToBytes32(address(celoSender));
+        baseReceiver.handle(CELO_DOMAIN, celoSenderInBytes, nationalityRecordViaSelfInBytes);
 
         // @dev - Store the nationality record
         DataType.NationalityRecordViaSelf memory nationalityRecordViaSelf = abi.decode(nationalityRecordViaSelfInBytes, (DataType.NationalityRecordViaSelf));
