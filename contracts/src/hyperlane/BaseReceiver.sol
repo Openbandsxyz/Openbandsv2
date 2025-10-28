@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;  /// @dev - [TODO]: To be asked for adding "^" symbol
+pragma solidity ^0.8.19;  /// @dev - [TODO]: To be asked
 //pragma solidity 0.8.19;
 
 import {IMessageRecipient} from "@hyperlane-xyz/core/contracts/interfaces/IMessageRecipient.sol";
@@ -98,7 +98,7 @@ contract BaseReceiver is IMessageRecipient, Ownable {
      * @param _mailbox Address of the Hyperlane Mailbox on Base Mainnet
      *                 Must be: 0xeA87ae93Fa0019a82A727bfd3eBd1cFCa8f64f1D
      */
-    constructor(address _mailbox, address _initialOwner) Ownable(_initialOwner) { /// @dev - [TODO]: To be asked for the "Ownable" stuff
+    constructor(address _mailbox, address _initialOwner) Ownable(_initialOwner) { /// @dev - [TODO]: To be asked
     //constructor(address _mailbox) {
         if (_mailbox == address(0)) revert ZeroAddressMailbox();
         MAILBOX = IMailbox(_mailbox);
@@ -119,7 +119,8 @@ contract BaseReceiver is IMessageRecipient, Ownable {
         uint32 _origin,
         bytes32 _sender,
         bytes calldata _message
-    ) external override {
+    ) external payable override { // @dev - [TODO]: To be asked
+    //) external override {
         // Verify caller is the Mailbox
         if (msg.sender != address(MAILBOX)) revert NotMailbox();
 
