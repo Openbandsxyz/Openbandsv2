@@ -39,10 +39,10 @@ contract OpenbandsV2BadgeManager {
         require(msg.sender == address(celoSender), "Unauthorized sender");
 
         // @dev - Handle the received message
-        baseReceiver.handle(CELO_DOMAIN, address(celoSender), nationalityRecordViaSelf);
+        baseReceiver.handle(CELO_DOMAIN, address(celoSender), nationalityRecordViaSelfInBytes);
 
         // @dev - Store the nationality record
-        DataType.NationalityRecordViaSelf memory nationalityRecordViaSelf = abi.decode(encodedNationalityRecordViaSelf, (nationalityRecordViaSelfInBytes));
+        DataType.NationalityRecordViaSelf memory nationalityRecordViaSelf = abi.decode(nationalityRecordViaSelfInBytes, (DataType.NationalityRecordViaSelf));
         nationalityRecordViaSelfs[nationalityRecordViaSelf.userAddress] = nationalityRecordViaSelf;
     }
 }

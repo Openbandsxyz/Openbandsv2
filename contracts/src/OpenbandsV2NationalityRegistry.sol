@@ -242,7 +242,7 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
         // @dev - Send a message from Celo mainnet to BASE mainnet via Hyperlane
         //bytes memory message = "test";
         bytes memory message = abi.encode(nationalityRecords[user]);
-        CeloSender.sendMessage(address(baseReceiver), message); // @dev - TODO: Replace the SC address (of the Badge Manager contract) with the actual address
+        celoSender.sendToBase(address(baseReceiver), message); // @dev - TODO: Replace the SC address (of the Badge Manager contract) with the actual address
 
         // Add to verified users array if new
         if (isNewUser) {
