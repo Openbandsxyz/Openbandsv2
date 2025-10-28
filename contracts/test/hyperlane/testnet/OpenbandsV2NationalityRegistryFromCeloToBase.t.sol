@@ -20,8 +20,10 @@ contract OpenbandsV2NationalityRegistryFromCeloToBaseTest is Test {
     CeloSender public celoSender;
     BaseReceiver public baseReceiver;
 
-    address public mockCeloMailbox;
-    address public mockBaseMailbox;
+    address public celoMailbox; // @dev - on Celo Sepolia
+    address public baseMailbox; // @dev - on Base Sepolia
+    //address public mockCeloMailbox;
+    //address public mockBaseMailbox;
 
     address public owner = address(this);
     address public alice = makeAddr("alice");
@@ -45,15 +47,23 @@ contract OpenbandsV2NationalityRegistryFromCeloToBaseTest is Test {
 
     function setUp() public {
         // Deploy mock mailboxes
-        mockCeloMailbox = address(new MockMailbox(CELO_SEPOLIA_DOMAIN));
-        mockBaseMailbox = address(new MockMailbox(BASE_SEPOLIA_DOMAIN));
+        //mockCeloMailbox = address(new MockMailbox(CELO_SEPOLIA_DOMAIN));
+        //mockBaseMailbox = address(new MockMailbox(BASE_SEPOLIA_DOMAIN));
+
+        // @dev - Store the deployed contract addresses of each Mailbox on Celo Sepolia and Base Sepolia
+        celoMailbox = vm.envAddress("CELO_SEPOLIA_MAILBOX_ADDRESS");
+        baseMailbox = vm.envAddress("BASE_SEPOLIA_MAILBOX_ADDRESS");
 
         // Deploy contracts
-        celoSender = new CeloSender(mockCeloMailbox);
-        baseReceiver = new BaseReceiver(mockBaseMailbox);
+        //celoSender = new CeloSender(mockCeloMailbox);
+        //baseReceiver = new BaseReceiver(mockBaseMailbox);
 
-        vm.label(mockCeloMailbox, "CeloMailbox");
-        vm.label(mockBaseMailbox, "BaseMailbox");
+        // @dev - Store the deployed contract addresses on Celo Sepolia and Base Sepolia
+        celoSender = vm.envAddress("CELO_SENDER_ADDRESS");
+        baseReceiver = vm.envAddress("BASE_RECEIVER_ADDRESS");
+
+        //vm.label(mockCeloMailbox, "CeloMailbox");
+        //vm.label(mockBaseMailbox, "BaseMailbox");
         vm.label(address(celoSender), "CeloSender");
         vm.label(address(baseReceiver), "BaseReceiver");
     }
@@ -77,7 +87,8 @@ contract OpenbandsV2NationalityRegistryFromCeloToBaseTest is Test {
         bytes32 sender = address(celoSender).addressToBytes32();
 
         // Simulate mailbox calling handle
-        vm.prank(mockBaseMailbox);
+        vm.prank(baseMailbox);
+        //vm.prank(mockBaseMailbox);
         baseReceiver.handle(CELO_SEPOLIA_DOMAIN, sender, message);
 
         assertEq(baseReceiver.messageCount(), 1);
@@ -87,7 +98,8 @@ contract OpenbandsV2NationalityRegistryFromCeloToBaseTest is Test {
         bytes memory message = "Test message";
         bytes32 sender = address(celoSender).addressToBytes32();
 
-        vm.prank(mockBaseMailbox);
+        vm.prank(baseMailbox);
+        //vm.prank(mockBaseMailbox);
         baseReceiver.handle(CELO_SEPOLIA_DOMAIN, sender, message);
 
         bytes32 messageId = keccak256(abi.encodePacked(CELO_SEPOLIA_DOMAIN, sender, uint256(0), message));
@@ -104,7 +116,8 @@ contract OpenbandsV2NationalityRegistryFromCeloToBaseTest is Test {
         bytes memory message = bytes(originalMessage);
         bytes32 sender = address(celoSender).addressToBytes32();
 
-        vm.prank(mockBaseMailbox);
+        vm.prank(baseMailbox);
+        //vm.prank(mockBaseMailbox);
         baseReceiver.handle(CELO_SEPOLIA_DOMAIN, sender, message);
 
         bytes32 messageId = keccak256(abi.encodePacked(CELO_SEPOLIA_DOMAIN, sender, uint256(0), message));
@@ -116,7 +129,8 @@ contract OpenbandsV2NationalityRegistryFromCeloToBaseTest is Test {
     function test_BaseReceiver_GetSenderAddress() public {
         bytes memory message = "test";
 
-        vm.prank(mockBaseMailbox);
+        vm.prank(baseMailbox);
+        //vm.prank(mockBaseMailbox);
         baseReceiver.handle(CELO_SEPOLIA_DOMAIN, alice.addressToBytes32(), message);
 
         bytes32 messageId = keccak256(abi.encodePacked(CELO_SEPOLIA_DOMAIN, alice.addressToBytes32(), uint256(0), message));
@@ -155,53 +169,53 @@ contract OpenbandsV2NationalityRegistryFromCeloToBaseTest is Test {
 
 // ============ Mock Contracts ============
 
-contract MockMailbox is IMailbox {
-    uint32 public immutable _localDomain;
-    uint32 private _messageCount;
-    mapping(bytes32 => bool) private _delivered;
+// contract MockMailbox is IMailbox {
+//     uint32 public immutable _localDomain;
+//     uint32 private _messageCount;
+//     mapping(bytes32 => bool) private _delivered;
 
-    constructor(uint32 domain) {
-        _localDomain = domain;
-    }
+//     constructor(uint32 domain) {
+//         _localDomain = domain;
+//     }
 
-    function localDomain() external view returns (uint32) {
-        return _localDomain;
-    }
+//     function localDomain() external view returns (uint32) {
+//         return _localDomain;
+//     }
 
-    function dispatch(
-        uint32,
-        bytes32,
-        bytes calldata
-    ) external returns (bytes32) {
-        _messageCount++;
-        return bytes32(uint256(_messageCount));
-    }
+//     function dispatch(
+//         uint32,
+//         bytes32,
+//         bytes calldata
+//     ) external returns (bytes32) {
+//         _messageCount++;
+//         return bytes32(uint256(_messageCount));
+//     }
 
-    function delivered(bytes32 messageId) external view returns (bool) {
-        return _delivered[messageId];
-    }
+//     function delivered(bytes32 messageId) external view returns (bool) {
+//         return _delivered[messageId];
+//     }
 
-    function defaultIsm() external pure returns (IInterchainSecurityModule) {
-        return IInterchainSecurityModule(address(0));
-    }
+//     function defaultIsm() external pure returns (IInterchainSecurityModule) {
+//         return IInterchainSecurityModule(address(0));
+//     }
 
-    function process(bytes calldata, bytes calldata) external pure {
-        revert("Not implemented");
-    }
+//     function process(bytes calldata, bytes calldata) external pure {
+//         revert("Not implemented");
+//     }
 
-    function count() external view returns (uint32) {
-        return _messageCount;
-    }
+//     function count() external view returns (uint32) {
+//         return _messageCount;
+//     }
 
-    function root() external pure returns (bytes32) {
-        return bytes32(0);
-    }
+//     function root() external pure returns (bytes32) {
+//         return bytes32(0);
+//     }
 
-    function latestCheckpoint() external pure returns (bytes32, uint32) {
-        return (bytes32(0), 0);
-    }
+//     function latestCheckpoint() external pure returns (bytes32, uint32) {
+//         return (bytes32(0), 0);
+//     }
 
-    function recipientIsm(address) external pure returns (IInterchainSecurityModule) {
-        return IInterchainSecurityModule(address(0));
-    }
-}
+//     function recipientIsm(address) external pure returns (IInterchainSecurityModule) {
+//         return IInterchainSecurityModule(address(0));
+//     }
+// }
