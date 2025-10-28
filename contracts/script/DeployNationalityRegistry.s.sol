@@ -4,6 +4,10 @@ pragma solidity >=0.8.19;
 import "forge-std/Script.sol";
 import "../src/OpenbandsV2NationalityRegistry.sol";
 
+// @dev - Hyperlane wrapper contracts
+import { CeloSender } from "../src/hyperlane/CeloSender.sol";
+import { BaseReceiver } from "../src/hyperlane/BaseReceiver.sol";
+
 /**
  * @title DeployNationalityRegistry
  * @notice Deployment script for OpenbandsV2NationalityRegistry contract
@@ -18,18 +22,38 @@ contract DeployNationalityRegistry is Script {
         // Source: https://docs.self.xyz/contract-integration/deployed-contracts
         // Verified: https://celoscan.io/address/0xe57F4773bd9c9d8b6Cd70431117d353298B9f5BF
         address identityVerificationHub = 0xe57F4773bd9c9d8b6Cd70431117d353298B9f5BF;
-        
+      
         // Scope seed for OpenBands v2
         // The official SelfVerificationRoot handles scope calculation with Poseidon hash
         string memory scopeSeed = "openbands-v2";
         
+        // @dev - Hyperlane wrapper contracts
+        CeloSender celoSender;
+        BaseReceiver baseReceiver;
+        
+        // @dev - Mailbox addresses
+        address celoMailbox;
+        address baseMailbox;
+
+        // @dev - Store the deployed contract addresses of the Hyperlane wrapper contracts on Celo Sepolia and Base Sepolia
+        address CELO_SENDER_ADDRESS = vm.envAddress("CELO_SENDER_ADDRESS");
+        address BASE_RECEIVER_ADDRESS = vm.envAddress("BASE_RECEIVER_ADDRESS");
+        celoSender = CeloSender(payable(CELO_SENDER_ADDRESS));
+        baseReceiver = BaseReceiver(payable(BASE_RECEIVER_ADDRESS));
+
+        // @dev - Store the deployed contract addresses of each Mailbox on Celo Sepolia and Base Sepolia
+        celoMailbox = vm.envAddress("CELO_SEPOLIA_MAILBOX_ADDRESS");
+        baseMailbox = vm.envAddress("BASE_SEPOLIA_MAILBOX_ADDRESS");
+
         // Start broadcasting transactions
         vm.startBroadcast(deployerPrivateKey);
         
         // Deploy the contract
         OpenbandsV2NationalityRegistry registry = new OpenbandsV2NationalityRegistry(
             identityVerificationHub,
-            scopeSeed
+            scopeSeed,
+            celoSender,
+            baseReceiver
         );
         
         console.log("====================================");
