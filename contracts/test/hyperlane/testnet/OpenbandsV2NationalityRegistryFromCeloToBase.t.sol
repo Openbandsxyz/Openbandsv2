@@ -59,8 +59,10 @@ contract OpenbandsV2NationalityRegistryFromCeloToBaseTest is Test {
         //baseReceiver = new BaseReceiver(mockBaseMailbox);
 
         // @dev - Store the deployed contract addresses on Celo Sepolia and Base Sepolia
-        celoSender = vm.envAddress("CELO_SENDER_ADDRESS");
-        baseReceiver = vm.envAddress("BASE_RECEIVER_ADDRESS");
+        address CELO_SENDER_ADDRESS = vm.envAddress("CELO_SENDER_ADDRESS");
+        address BASE_RECEIVER_ADDRESS = vm.envAddress("BASE_RECEIVER_ADDRESS");
+        celoSender = CeloSender(payable(CELO_SENDER_ADDRESS));
+        baseReceiver = BaseReceiver(BASE_RECEIVER_ADDRESS);
 
         //vm.label(mockCeloMailbox, "CeloMailbox");
         //vm.label(mockBaseMailbox, "BaseMailbox");
