@@ -10,6 +10,10 @@ import {IMailbox} from "@hyperlane-xyz/core/contracts/interfaces/IMailbox.sol";
 import {IInterchainSecurityModule} from "@hyperlane-xyz/core/contracts/interfaces/IInterchainSecurityModule.sol";
 import {TypeCasts} from "@hyperlane-xyz/core/contracts/libs/TypeCasts.sol";
 
+// @dev - Openbands V2 contracts
+import { OpenbandsV2NationalityRegistry } from "../../../src/OpenbandsV2NationalityRegistry.sol"; // @dev - on Celo
+import { OpenbandsV2BadgeManager } from "../../../src/OpenbandsV2BadgeManager.sol";               // @dev - on BASE
+
 /**
  * @title OpenbandsV2 Hyperlane integration test, which is messaging on local network
  * @notice Tests for Celo -> Base cross-chain messaging on local network
@@ -17,6 +21,8 @@ import {TypeCasts} from "@hyperlane-xyz/core/contracts/libs/TypeCasts.sol";
 contract OpenbandsV2HyperlaneIntegrationOnLocalTest is Test {
     using TypeCasts for address;
 
+    OpenbandsV2NationalityRegistry public openbandsV2NationalityRegistry;
+    OpenbandsV2BadgeManager public openbandsV2BadgeManager;
     CeloSender public celoSender;
     BaseReceiver public baseReceiver;
 
@@ -67,6 +73,12 @@ contract OpenbandsV2HyperlaneIntegrationOnLocalTest is Test {
         //address BASE_RECEIVER_ADDRESS = vm.envAddress("BASE_RECEIVER_ADDRESS");
         //celoSender = CeloSender(payable(CELO_SENDER_ADDRESS));
         //baseReceiver = BaseReceiver(payable(BASE_RECEIVER_ADDRESS));
+
+        // @dev - Deploy the Openbands V2 contracts
+        address IDENTITY_VERIFICATION_HUB_ADDRESS = 0x07Cb46BbF693Fc20C07C4d27edec935f21499716; // TODO: This SC address should be replaced later.
+        string memory SCOPE_SEED = "openbands-v2";
+        openbandsV2NationalityRegistry = new OpenbandsV2NationalityRegistry(IDENTITY_VERIFICATION_HUB_ADDRESS, SCOPE_SEED, celoSender, baseReceiver);
+        openbandsV2BadgeManager = new OpenbandsV2BadgeManager(celoSender, baseReceiver);
 
         vm.label(mockCeloMailbox, "CeloMailbox");
         vm.label(mockBaseMailbox, "BaseMailbox");
@@ -176,6 +188,7 @@ contract OpenbandsV2HyperlaneIntegrationOnLocalTest is Test {
 // ============ Mock Contracts ============
 
 contract MockMailbox is IMailbox {
+//contract MockMailbox is IMailbox {
     uint32 public immutable _localDomain;
     uint32 private _messageCount;
     mapping(bytes32 => bool) private _delivered;
@@ -205,7 +218,8 @@ contract MockMailbox is IMailbox {
         return IInterchainSecurityModule(address(0));
     }
 
-    function process(bytes calldata, bytes calldata) external pure {
+    function process(bytes calldata, bytes calldata) external payable { // [TODO]: To be asked
+    //function process(bytes calldata, bytes calldata) external pure {
         revert("Not implemented");
     }
 
