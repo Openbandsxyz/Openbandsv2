@@ -10,6 +10,10 @@ import {IMailbox} from "@hyperlane-xyz/core/contracts/interfaces/IMailbox.sol";
 import {IInterchainSecurityModule} from "@hyperlane-xyz/core/contracts/interfaces/IInterchainSecurityModule.sol";
 import {TypeCasts} from "@hyperlane-xyz/core/contracts/libs/TypeCasts.sol";
 
+// @dev - Openbands V2 contracts
+import { OpenbandsV2NationalityRegistry } from "../../../src/OpenbandsV2NationalityRegistry.sol"; // @dev - on Celo
+import { OpenbandsV2BadgeManager } from "../../../src/OpenbandsV2BadgeManager.sol";               // @dev - on BASE
+
 /**
  * @title OpenbandsV2 Hyperlane integration test, which is messaging from Celo Sepolia to Base Sepolia
  * @notice Tests for Celo -> Base cross-chain messaging
@@ -17,6 +21,8 @@ import {TypeCasts} from "@hyperlane-xyz/core/contracts/libs/TypeCasts.sol";
 contract OpenbandsV2HyperlaneIntegrationFromCeloToBaseTest is Test {
     using TypeCasts for address;
 
+    OpenbandsV2NationalityRegistry public openbandsV2NationalityRegistry;
+    OpenbandsV2BadgeManager public openbandsV2BadgeManager;
     CeloSender public celoSender;
     BaseReceiver public baseReceiver;
 
@@ -63,6 +69,13 @@ contract OpenbandsV2HyperlaneIntegrationFromCeloToBaseTest is Test {
         address BASE_RECEIVER_ADDRESS = vm.envAddress("BASE_RECEIVER_ADDRESS");
         celoSender = CeloSender(payable(CELO_SENDER_ADDRESS));
         baseReceiver = BaseReceiver(payable(BASE_RECEIVER_ADDRESS));
+
+        // @dev - Create the Openbands V2 contracts instances on testnet
+        address IDENTITY_VERIFICATION_HUB_ADDRESS = 0x16ECBA51e18a4a7e61fdC417f0d47AFEeDfbed74; // @dev - The deployed address of the IdentityVerificationHub contract on Celo Sepolia
+        address OPENBANDS_V2_NATIONALITY_REGISTRY_ADDRESS_ON_CELO_SEPOLIA = vm.envAddress("OPENBANDS_V2_NATIONALITY_REGISTRY_ADDRESS_ON_CELO_SEPOLIA");
+        address OPENBANDS_V2_BADGE_MANAGER_ADDRESS_ON_BASE_SEPOLIA = vm.envAddress("OPENBANDS_V2_BADGE_MANAGER_ADDRESS_ON_BASE_SEPOLIA");
+        openbandsV2NationalityRegistry = OpenbandsV2NationalityRegistry(OPENBANDS_V2_NATIONALITY_REGISTRY_ADDRESS_ON_CELO_SEPOLIA);
+        openbandsV2BadgeManager = OpenbandsV2BadgeManager(OPENBANDS_V2_BADGE_MANAGER_ADDRESS_ON_BASE_SEPOLIA);
 
         //vm.label(mockCeloMailbox, "CeloMailbox");
         //vm.label(mockBaseMailbox, "BaseMailbox");
