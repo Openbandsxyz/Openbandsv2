@@ -6,34 +6,57 @@ import HomePage from '@/components/HomePage';
 import MainContent from '@/components/MainContent';
 import CountryCommunity from '@/components/CountryCommunity';
 import BadgesPage from '@/components/BadgesPage';
+// Mobile components were removed; desktop layout is used exclusively for now
+
+// Wrapper component to handle MiniKit availability
+function MiniKitWrapper({ children }: { children: React.ReactNode }) {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return <>{children}</>;
+  }
+
+  try {
+    const { setFrameReady, isFrameReady } = useMiniKit();
+    
+    useEffect(() => {
+      if (!isFrameReady) {
+        setFrameReady();
+      }
+    }, [isFrameReady, setFrameReady]);
+
+    return <>{children}</>;
+  } catch (error) {
+    // MiniKit not available, render children without MiniKit functionality
+    return <>{children}</>;
+  }
+}
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'home' | 'badges' | 'employees' | 'communities'>('home');
+  const [desktopTab, setDesktopTab] = useState<'home' | 'badges' | 'employees' | 'communities'>('home');
   const [selectedCommunity, setSelectedCommunity] = useState<{ name: string; code: string; flag: string } | null>(null);
   const [isClient, setIsClient] = useState(false);
 
-  // MiniKit frame lifecycle: signal ready once mounted
-  const { setFrameReady, isFrameReady } = useMiniKit();
-
   useEffect(() => {
     setIsClient(true);
-    if (!isFrameReady) {
-      setFrameReady();
-    }
-  }, [isFrameReady, setFrameReady]);
+  }, []);
 
   const handleCommunitySelect = (community: { name: string; code: string; flag: string }) => {
     setSelectedCommunity(community);
   };
 
   const renderContent = () => {
-    if (activeTab === 'home') {
+    if (desktopTab === 'home') {
       return <HomePage />;
-    } else if (activeTab === 'badges') {
+    } else if (desktopTab === 'badges') {
       return <BadgesPage />;
-    } else if (activeTab === 'employees') {
+    } else if (desktopTab === 'employees') {
       return <MainContent />;
-    } else if (activeTab === 'communities') {
+    } else if (desktopTab === 'communities') {
       if (selectedCommunity) {
         return <CountryCommunity country={selectedCommunity} />;
       } else {
@@ -56,8 +79,10 @@ export default function Home() {
   }
 
   return (
-    <Layout activeTab={activeTab} onTabChange={setActiveTab} onCommunitySelect={handleCommunitySelect}>
-      {renderContent()}
-    </Layout>
+    <MiniKitWrapper>
+      <Layout activeTab={desktopTab} onTabChange={setDesktopTab} onCommunitySelect={handleCommunitySelect}>
+        {renderContent()}
+      </Layout>
+    </MiniKitWrapper>
   );
 }

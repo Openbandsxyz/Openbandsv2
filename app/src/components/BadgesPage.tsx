@@ -6,11 +6,12 @@ import BadgesList from './badges/BadgesList';
 import AddBadgeFlow from './badges/AddBadgeFlow';
 import { useBadgeCheck } from '@/hooks/useBadgeCheck';
 import { useNationalityBadgeCheck } from '@/hooks/useNationalityBadgeCheck';
+import { useAgeBadgeCheck } from '@/hooks/useAgeBadgeCheck';
 
 interface Badge {
   id: string;
   name: string;
-  icon: 'user' | 'earth' | 'mail';
+  icon: 'user' | 'earth' | 'mail' | 'calendar';
   verifiedAt: string;
 }
 
@@ -39,7 +40,15 @@ function EarthIcon() {
   );
 }
 
-function BadgeIcon({ icon }: { icon: 'user' | 'earth' | 'mail' }) {
+function CalendarIcon() {
+  return (
+    <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    </svg>
+  );
+}
+
+function BadgeIcon({ icon }: { icon: 'user' | 'earth' | 'mail' | 'calendar' }) {
   switch (icon) {
     case 'mail':
       return <MailIcon />;
@@ -47,6 +56,8 @@ function BadgeIcon({ icon }: { icon: 'user' | 'earth' | 'mail' }) {
       return <UserIcon />;
     case 'earth':
       return <EarthIcon />;
+    case 'calendar':
+      return <CalendarIcon />;
     default:
       return <MailIcon />;
   }
@@ -93,6 +104,7 @@ export default function BadgesPage() {
   const [badges, setBadges] = useState<Badge[]>([]);
   const { badgeData, loading, error } = useBadgeCheck();
   const { badgeData: nationalityBadge, loading: nationalityLoading, error: nationalityError } = useNationalityBadgeCheck();
+  const { ageBadge, ageLoading, ageError } = useAgeBadgeCheck();
   const [showSignIn, setShowSignIn] = useState(false);  
   // const [selectedAttribute, setSelectedAttribute] = useState<string | null>(null);
   // //const [badges, setBadges] = useState(null);
@@ -167,8 +179,39 @@ export default function BadgesPage() {
       updatedBadges.push(nationalityBadgeData);
     }
 
+  // Add age badge (from Celo Sepolia/Mainnet)
+  console.log('🔍 BadgesPage - ageBadge data:', ageBadge);
+  console.log('🔍 BadgesPage - ageLoading:', ageLoading);
+  console.log('🔍 BadgesPage - ageError:', ageError);
+  
+  if (ageBadge?.hasVerifiedBadge && ageBadge.isAgeVerified) {
+      // Helper function to format timestamp from bigint
+      const formatBigIntTimestamp = (timestamp: bigint): string => {
+        try {
+          // Convert bigint seconds to milliseconds
+          const date = new Date(Number(timestamp) * 1000);
+          return date.toLocaleDateString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric'
+          });
+        } catch (error) {
+          console.error('Error formatting timestamp:', error);
+          return 'On-chain verified';
+        }
+      };
+
+      const ageBadgeData: Badge = {
+        id: 'age-1',
+        name: 'Age (18+)',
+        icon: 'calendar',
+        verifiedAt: formatBigIntTimestamp(ageBadge.verifiedAt)
+      };
+      updatedBadges.push(ageBadgeData);
+    }
+
     setBadges(updatedBadges);
-  }, [badgeData, nationalityBadge]);
+  }, [badgeData, nationalityBadge, ageBadge]);
 
   const deleteBadge = (id: string) => {
     setBadges(badges.filter(badge => badge.id !== id));
@@ -317,7 +360,7 @@ export default function BadgesPage() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-gray-600">Loading badges...</div>
-      </div>
+                    </div>
     );
   }
 

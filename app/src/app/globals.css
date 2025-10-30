@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import Mobile-First CSS Framework */
+@import '../styles/mobile.css';
+
 /* Spinner Animation for when a user is signing in with a Google account */
 @keyframes spin {
   to { transform: rotate(360deg); }
