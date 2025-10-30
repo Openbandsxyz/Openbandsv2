@@ -15,6 +15,9 @@ import { BaseReceiver } from "../src/hyperlane/BaseReceiver.sol";
  */
 contract DeployNationalityRegistry is Script {
     function run() external {
+        vm.createSelectFork("celo_sepolia");  // [NOTE]: foundry.toml - Celo Sepolia RPC URL
+        //vm.createSelectFork("https://forno.celo-sepolia.celo-testnet.org");
+
         // Get private key from environment
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         

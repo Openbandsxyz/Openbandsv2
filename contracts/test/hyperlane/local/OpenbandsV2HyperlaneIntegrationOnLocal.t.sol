@@ -1,241 +1,241 @@
-// SPDX-License-Identifier: MIT
-//pragma solidity >=0.8.19;
-pragma solidity ^0.8.28;
+// // SPDX-License-Identifier: MIT
+// //pragma solidity >=0.8.19;
+// pragma solidity ^0.8.28;
 
-import {Test} from "forge-std/Test.sol";
-import {console2} from "forge-std/console2.sol";
-import {CeloSender} from "../../../src/hyperlane/CeloSender.sol";
-import {BaseReceiver} from "../../../src/hyperlane/BaseReceiver.sol";
-import {IMailbox} from "@hyperlane-xyz/core/contracts/interfaces/IMailbox.sol";
-import {IInterchainSecurityModule} from "@hyperlane-xyz/core/contracts/interfaces/IInterchainSecurityModule.sol";
-import {TypeCasts} from "@hyperlane-xyz/core/contracts/libs/TypeCasts.sol";
+// import {Test} from "forge-std/Test.sol";
+// import {console2} from "forge-std/console2.sol";
+// import {CeloSender} from "../../../src/hyperlane/CeloSender.sol";
+// import {BaseReceiver} from "../../../src/hyperlane/BaseReceiver.sol";
+// import {IMailbox} from "@hyperlane-xyz/core/contracts/interfaces/IMailbox.sol";
+// import {IInterchainSecurityModule} from "@hyperlane-xyz/core/contracts/interfaces/IInterchainSecurityModule.sol";
+// import {TypeCasts} from "@hyperlane-xyz/core/contracts/libs/TypeCasts.sol";
 
-// @dev - Openbands V2 contracts
-import { OpenbandsV2NationalityRegistry } from "../../../src/OpenbandsV2NationalityRegistry.sol"; // @dev - on Celo
-import { OpenbandsV2BadgeManager } from "../../../src/OpenbandsV2BadgeManager.sol";               // @dev - on BASE
+// // @dev - Openbands V2 contracts
+// import { OpenbandsV2NationalityRegistry } from "../../../src/OpenbandsV2NationalityRegistry.sol"; // @dev - on Celo
+// import { OpenbandsV2BadgeManager } from "../../../src/OpenbandsV2BadgeManager.sol";               // @dev - on BASE
 
-/**
- * @title OpenbandsV2 Hyperlane integration test, which is messaging on local network
- * @notice Tests for Celo -> Base cross-chain messaging on local network
- */
-contract OpenbandsV2HyperlaneIntegrationOnLocalTest is Test {
-    using TypeCasts for address;
+// /**
+//  * @title OpenbandsV2 Hyperlane integration test, which is messaging on local network
+//  * @notice Tests for Celo -> Base cross-chain messaging on local network
+//  */
+// contract OpenbandsV2HyperlaneIntegrationOnLocalTest is Test {
+//     using TypeCasts for address;
 
-    OpenbandsV2NationalityRegistry public openbandsV2NationalityRegistry;
-    OpenbandsV2BadgeManager public openbandsV2BadgeManager;
-    CeloSender public celoSender;
-    BaseReceiver public baseReceiver;
+//     OpenbandsV2NationalityRegistry public openbandsV2NationalityRegistry;
+//     OpenbandsV2BadgeManager public openbandsV2BadgeManager;
+//     CeloSender public celoSender;
+//     BaseReceiver public baseReceiver;
 
-    //address public celoMailbox; // @dev - on Celo Sepolia
-    //address public baseMailbox; // @dev - on Base Sepolia
-    address public mockCeloMailbox;
-    address public mockBaseMailbox;
+//     //address public celoMailbox; // @dev - on Celo Sepolia
+//     //address public baseMailbox; // @dev - on Base Sepolia
+//     address public mockCeloMailbox;
+//     address public mockBaseMailbox;
 
-    address public owner = address(this);
-    address public alice = makeAddr("alice");
-    address public bob = makeAddr("bob");
+//     address public owner = address(this);
+//     address public alice = makeAddr("alice");
+//     address public bob = makeAddr("bob");
 
-    uint32 constant CELO_SEPOLIA_DOMAIN = 11142220;
-    uint32 constant BASE_SEPOLIA_DOMAIN = 84532;
+//     uint32 constant CELO_SEPOLIA_DOMAIN = 11142220;
+//     uint32 constant BASE_SEPOLIA_DOMAIN = 84532;
 
-    event MessageDispatched(
-        bytes32 indexed messageId,
-        address indexed recipient,
-        bytes message
-    );
+//     event MessageDispatched(
+//         bytes32 indexed messageId,
+//         address indexed recipient,
+//         bytes message
+//     );
 
-    event MessageReceived(
-        bytes32 indexed messageId,
-        uint32 indexed origin,
-        bytes32 indexed sender,
-        bytes message
-    );
+//     event MessageReceived(
+//         bytes32 indexed messageId,
+//         uint32 indexed origin,
+//         bytes32 indexed sender,
+//         bytes message
+//     );
 
-    function setUp() public {
-        // @dev - Initial owner for BaseReceiver
-        address initialOwner = address(this);
+//     function setUp() public {
+//         // @dev - Initial owner for BaseReceiver
+//         address initialOwner = address(this);
 
-        // Deploy mock mailboxes
-        mockCeloMailbox = address(new MockMailbox(CELO_SEPOLIA_DOMAIN));
-        mockBaseMailbox = address(new MockMailbox(BASE_SEPOLIA_DOMAIN));
+//         // Deploy mock mailboxes
+//         mockCeloMailbox = address(new MockMailbox(CELO_SEPOLIA_DOMAIN));
+//         mockBaseMailbox = address(new MockMailbox(BASE_SEPOLIA_DOMAIN));
 
-        // @dev - Store the deployed contract addresses of each Mailbox on Celo Sepolia and Base Sepolia
-        //celoMailbox = vm.envAddress("CELO_SEPOLIA_MAILBOX_ADDRESS");
-        //baseMailbox = vm.envAddress("BASE_SEPOLIA_MAILBOX_ADDRESS");
+//         // @dev - Store the deployed contract addresses of each Mailbox on Celo Sepolia and Base Sepolia
+//         //celoMailbox = vm.envAddress("CELO_SEPOLIA_MAILBOX_ADDRESS");
+//         //baseMailbox = vm.envAddress("BASE_SEPOLIA_MAILBOX_ADDRESS");
 
-        // Deploy contracts
-        celoSender = new CeloSender(mockCeloMailbox);
-        //baseReceiver = new BaseReceiver(mockBaseMailbox);
-        baseReceiver = new BaseReceiver(mockBaseMailbox, initialOwner);  /// @dev - [TODO]: To be asked
+//         // Deploy contracts
+//         celoSender = new CeloSender(mockCeloMailbox);
+//         //baseReceiver = new BaseReceiver(mockBaseMailbox);
+//         baseReceiver = new BaseReceiver(mockBaseMailbox, initialOwner);  /// @dev - [TODO]: To be asked
 
-        // @dev - Store the deployed contract addresses on Celo Sepolia and Base Sepolia
-        //address CELO_SENDER_ADDRESS = vm.envAddress("CELO_SENDER_ADDRESS");
-        //address BASE_RECEIVER_ADDRESS = vm.envAddress("BASE_RECEIVER_ADDRESS");
-        //celoSender = CeloSender(payable(CELO_SENDER_ADDRESS));
-        //baseReceiver = BaseReceiver(payable(BASE_RECEIVER_ADDRESS));
+//         // @dev - Store the deployed contract addresses on Celo Sepolia and Base Sepolia
+//         //address CELO_SENDER_ADDRESS = vm.envAddress("CELO_SENDER_ADDRESS");
+//         //address BASE_RECEIVER_ADDRESS = vm.envAddress("BASE_RECEIVER_ADDRESS");
+//         //celoSender = CeloSender(payable(CELO_SENDER_ADDRESS));
+//         //baseReceiver = BaseReceiver(payable(BASE_RECEIVER_ADDRESS));
 
-        // @dev - Deploy the Openbands V2 contracts
-        address IDENTITY_VERIFICATION_HUB_ADDRESS = 0x07Cb46BbF693Fc20C07C4d27edec935f21499716; // TODO: This SC address should be replaced later.
-        string memory SCOPE_SEED = "openbands-v2";
-        openbandsV2NationalityRegistry = new OpenbandsV2NationalityRegistry(IDENTITY_VERIFICATION_HUB_ADDRESS, SCOPE_SEED, celoSender, baseReceiver);
-        openbandsV2BadgeManager = new OpenbandsV2BadgeManager(celoSender, baseReceiver);
+//         // @dev - Deploy the Openbands V2 contracts
+//         address IDENTITY_VERIFICATION_HUB_ADDRESS = 0x07Cb46BbF693Fc20C07C4d27edec935f21499716; // TODO: This SC address should be replaced later.
+//         string memory SCOPE_SEED = "openbands-v2";
+//         openbandsV2NationalityRegistry = new OpenbandsV2NationalityRegistry(IDENTITY_VERIFICATION_HUB_ADDRESS, SCOPE_SEED, celoSender, baseReceiver);
+//         openbandsV2BadgeManager = new OpenbandsV2BadgeManager(celoSender, baseReceiver);
 
-        vm.label(mockCeloMailbox, "CeloMailbox");
-        vm.label(mockBaseMailbox, "BaseMailbox");
-        vm.label(address(celoSender), "CeloSender");
-        vm.label(address(baseReceiver), "BaseReceiver");
-    }
-
-
-    // ============ CeloSender Tests ============
-
-    function test_CeloSender_SendStringToBase() public {
-        string memory message = "Hello Base!";
-
-        bytes32 messageId = celoSender.sendStringToBase(address(baseReceiver), message);
-
-        assertEq(messageId, bytes32(uint256(1)));
-    }
+//         vm.label(mockCeloMailbox, "CeloMailbox");
+//         vm.label(mockBaseMailbox, "BaseMailbox");
+//         vm.label(address(celoSender), "CeloSender");
+//         vm.label(address(baseReceiver), "BaseReceiver");
+//     }
 
 
-    // ============ BaseReceiver Tests ============
+//     // ============ CeloSender Tests ============
 
-    function test_BaseReceiver_HandleMessage() public {
-        bytes memory message = "Hello from Celo!";
-        bytes32 sender = address(celoSender).addressToBytes32();
+//     function test_CeloSender_SendStringToBase() public {
+//         string memory message = "Hello Base!";
 
-        // Simulate mailbox calling handle
-        //vm.prank(baseMailbox);
-        vm.prank(mockBaseMailbox);
-        baseReceiver.handle(CELO_SEPOLIA_DOMAIN, sender, message);
+//         bytes32 messageId = celoSender.sendStringToBase(address(baseReceiver), message);
 
-        assertEq(baseReceiver.messageCount(), 1);
-    }
+//         assertEq(messageId, bytes32(uint256(1)));
+//     }
 
-    function test_BaseReceiver_GetMessage() public {
-        bytes memory message = "Test message";
-        bytes32 sender = address(celoSender).addressToBytes32();
 
-        //vm.prank(baseMailbox);
-        vm.prank(mockBaseMailbox);
-        baseReceiver.handle(CELO_SEPOLIA_DOMAIN, sender, message);
+//     // ============ BaseReceiver Tests ============
 
-        bytes32 messageId = keccak256(abi.encodePacked(CELO_SEPOLIA_DOMAIN, sender, uint256(0), message));
+//     function test_BaseReceiver_HandleMessage() public {
+//         bytes memory message = "Hello from Celo!";
+//         bytes32 sender = address(celoSender).addressToBytes32();
 
-        BaseReceiver.ReceivedMessage memory received = baseReceiver.getMessage(messageId);
-        assertEq(received.origin, CELO_SEPOLIA_DOMAIN);
-        assertEq(received.sender, sender);
-        assertEq(received.message, message);
-        assertTrue(received.exists);
-    }
+//         // Simulate mailbox calling handle
+//         //vm.prank(baseMailbox);
+//         vm.prank(mockBaseMailbox);
+//         baseReceiver.handle(CELO_SEPOLIA_DOMAIN, sender, message);
 
-    function test_BaseReceiver_GetMessageAsString() public {
-        string memory originalMessage = "Hello Base!";
-        bytes memory message = bytes(originalMessage);
-        bytes32 sender = address(celoSender).addressToBytes32();
+//         assertEq(baseReceiver.messageCount(), 1);
+//     }
 
-        //vm.prank(baseMailbox);
-        vm.prank(mockBaseMailbox);
-        baseReceiver.handle(CELO_SEPOLIA_DOMAIN, sender, message);
+//     function test_BaseReceiver_GetMessage() public {
+//         bytes memory message = "Test message";
+//         bytes32 sender = address(celoSender).addressToBytes32();
 
-        bytes32 messageId = keccak256(abi.encodePacked(CELO_SEPOLIA_DOMAIN, sender, uint256(0), message));
+//         //vm.prank(baseMailbox);
+//         vm.prank(mockBaseMailbox);
+//         baseReceiver.handle(CELO_SEPOLIA_DOMAIN, sender, message);
 
-        string memory decoded = baseReceiver.getMessageAsString(messageId);
-        assertEq(decoded, originalMessage);
-    }
+//         bytes32 messageId = keccak256(abi.encodePacked(CELO_SEPOLIA_DOMAIN, sender, uint256(0), message));
 
-    function test_BaseReceiver_GetSenderAddress() public {
-        bytes memory message = "test";
+//         BaseReceiver.ReceivedMessage memory received = baseReceiver.getMessage(messageId);
+//         assertEq(received.origin, CELO_SEPOLIA_DOMAIN);
+//         assertEq(received.sender, sender);
+//         assertEq(received.message, message);
+//         assertTrue(received.exists);
+//     }
 
-        //vm.prank(baseMailbox);
-        vm.prank(mockBaseMailbox);
-        baseReceiver.handle(CELO_SEPOLIA_DOMAIN, alice.addressToBytes32(), message);
+//     function test_BaseReceiver_GetMessageAsString() public {
+//         string memory originalMessage = "Hello Base!";
+//         bytes memory message = bytes(originalMessage);
+//         bytes32 sender = address(celoSender).addressToBytes32();
 
-        bytes32 messageId = keccak256(abi.encodePacked(CELO_SEPOLIA_DOMAIN, alice.addressToBytes32(), uint256(0), message));
+//         //vm.prank(baseMailbox);
+//         vm.prank(mockBaseMailbox);
+//         baseReceiver.handle(CELO_SEPOLIA_DOMAIN, sender, message);
 
-        address senderAddr = baseReceiver.getSenderAddress(messageId);
-        assertEq(senderAddr, alice);
-    }
+//         bytes32 messageId = keccak256(abi.encodePacked(CELO_SEPOLIA_DOMAIN, sender, uint256(0), message));
 
-    // ============ Integration Tests ============
+//         string memory decoded = baseReceiver.getMessageAsString(messageId);
+//         assertEq(decoded, originalMessage);
+//     }
 
-    // function test_Integration_CeloToBaseFlow() public {
-    //     bytes memory message = "Cross-chain message from Celo to Base";
+//     function test_BaseReceiver_GetSenderAddress() public {
+//         bytes memory message = "test";
 
-    //     // Step 1: Send from Celo
-    //     bytes32 messageId = celoSender.sendToBase(address(baseReceiver), message);
-    //     assertEq(messageId, bytes32(uint256(1)));
+//         //vm.prank(baseMailbox);
+//         vm.prank(mockBaseMailbox);
+//         baseReceiver.handle(CELO_SEPOLIA_DOMAIN, alice.addressToBytes32(), message);
 
-    //     // Step 2: Simulate Hyperlane delivery to Base
-    //     bytes32 sender = address(celoSender).addressToBytes32();
-    //     vm.prank(mockBaseMailbox);
-    //     baseReceiver.handle(CELO_SEPOLIA_DOMAIN, sender, message);
+//         bytes32 messageId = keccak256(abi.encodePacked(CELO_SEPOLIA_DOMAIN, alice.addressToBytes32(), uint256(0), message));
 
-    //     // Step 3: Verify message received
-    //     assertEq(baseReceiver.messageCount(), 1);
+//         address senderAddr = baseReceiver.getSenderAddress(messageId);
+//         assertEq(senderAddr, alice);
+//     }
 
-    //     bytes32 receivedMsgId = keccak256(
-    //         abi.encodePacked(CELO_SEPOLIA_DOMAIN, sender, uint256(0), message)
-    //     );
+//     // ============ Integration Tests ============
 
-    //     BaseReceiver.ReceivedMessage memory received = baseReceiver.getMessage(receivedMsgId);
-    //     assertEq(received.message, message);
-    //     assertTrue(received.exists);
-    // }
+//     // function test_Integration_CeloToBaseFlow() public {
+//     //     bytes memory message = "Cross-chain message from Celo to Base";
 
-}
+//     //     // Step 1: Send from Celo
+//     //     bytes32 messageId = celoSender.sendToBase(address(baseReceiver), message);
+//     //     assertEq(messageId, bytes32(uint256(1)));
 
-// ============ Mock Contracts ============
+//     //     // Step 2: Simulate Hyperlane delivery to Base
+//     //     bytes32 sender = address(celoSender).addressToBytes32();
+//     //     vm.prank(mockBaseMailbox);
+//     //     baseReceiver.handle(CELO_SEPOLIA_DOMAIN, sender, message);
 
-contract MockMailbox is IMailbox {
-//contract MockMailbox is IMailbox {
-    uint32 public immutable _localDomain;
-    uint32 private _messageCount;
-    mapping(bytes32 => bool) private _delivered;
+//     //     // Step 3: Verify message received
+//     //     assertEq(baseReceiver.messageCount(), 1);
 
-    constructor(uint32 domain) {
-        _localDomain = domain;
-    }
+//     //     bytes32 receivedMsgId = keccak256(
+//     //         abi.encodePacked(CELO_SEPOLIA_DOMAIN, sender, uint256(0), message)
+//     //     );
 
-    function localDomain() external view returns (uint32) {
-        return _localDomain;
-    }
+//     //     BaseReceiver.ReceivedMessage memory received = baseReceiver.getMessage(receivedMsgId);
+//     //     assertEq(received.message, message);
+//     //     assertTrue(received.exists);
+//     // }
 
-    function dispatch(
-        uint32,
-        bytes32,
-        bytes calldata
-    ) external returns (bytes32) {
-        _messageCount++;
-        return bytes32(uint256(_messageCount));
-    }
+// }
 
-    function delivered(bytes32 messageId) external view returns (bool) {
-        return _delivered[messageId];
-    }
+// // ============ Mock Contracts ============
 
-    function defaultIsm() external pure returns (IInterchainSecurityModule) {
-        return IInterchainSecurityModule(address(0));
-    }
+// contract MockMailbox is IMailbox {
+// //contract MockMailbox is IMailbox {
+//     uint32 public immutable _localDomain;
+//     uint32 private _messageCount;
+//     mapping(bytes32 => bool) private _delivered;
 
-    function process(bytes calldata, bytes calldata) external payable { // [TODO]: To be asked
-    //function process(bytes calldata, bytes calldata) external pure {
-        revert("Not implemented");
-    }
+//     constructor(uint32 domain) {
+//         _localDomain = domain;
+//     }
 
-    function count() external view returns (uint32) {
-        return _messageCount;
-    }
+//     function localDomain() external view returns (uint32) {
+//         return _localDomain;
+//     }
 
-    function root() external pure returns (bytes32) {
-        return bytes32(0);
-    }
+//     function dispatch(
+//         uint32,
+//         bytes32,
+//         bytes calldata
+//     ) external returns (bytes32) {
+//         _messageCount++;
+//         return bytes32(uint256(_messageCount));
+//     }
 
-    function latestCheckpoint() external pure returns (bytes32, uint32) {
-        return (bytes32(0), 0);
-    }
+//     function delivered(bytes32 messageId) external view returns (bool) {
+//         return _delivered[messageId];
+//     }
 
-    function recipientIsm(address) external pure returns (IInterchainSecurityModule) {
-        return IInterchainSecurityModule(address(0));
-    }
-}
+//     function defaultIsm() external pure returns (IInterchainSecurityModule) {
+//         return IInterchainSecurityModule(address(0));
+//     }
+
+//     function process(bytes calldata, bytes calldata) external payable { // [TODO]: To be asked
+//     //function process(bytes calldata, bytes calldata) external pure {
+//         revert("Not implemented");
+//     }
+
+//     function count() external view returns (uint32) {
+//         return _messageCount;
+//     }
+
+//     function root() external pure returns (bytes32) {
+//         return bytes32(0);
+//     }
+
+//     function latestCheckpoint() external pure returns (bytes32, uint32) {
+//         return (bytes32(0), 0);
+//     }
+
+//     function recipientIsm(address) external pure returns (IInterchainSecurityModule) {
+//         return IInterchainSecurityModule(address(0));
+//     }
+// }

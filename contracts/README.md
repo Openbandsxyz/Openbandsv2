@@ -101,10 +101,18 @@ forge test
 ### Deploy to Testnet
 ```bash
 forge script script/DeployNationalityRegistry.s.sol:DeployNationalityRegistry \
-  --rpc-url $CELO_TESTNET_RPC_URL \
+  --rpc-url $CELO_SEPOLIA_RPC_URL \
   --broadcast \
   --verify
 ```
+Or
+```bash
+forge script script/DeployNationalityRegistry.s.sol:DeployNationalityRegistry \
+  --rpc-url https://forno.celo-sepolia.celo-testnet.org \
+  --broadcast \
+  --verify
+```
+
 
 ### Deploy to Mainnet (after testing!)
 ```bash
