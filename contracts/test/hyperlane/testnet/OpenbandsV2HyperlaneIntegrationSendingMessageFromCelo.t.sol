@@ -17,12 +17,13 @@ import { OpenbandsV2BadgeManager } from "../../../src/OpenbandsV2BadgeManager.so
 /**
  * @title OpenbandsV2 Hyperlane integration test, which is messaging from Celo Sepolia to Base Sepolia
  * @notice Tests for Celo -> Base cross-chain messaging
+ * @dev - This file would be for the sender side (on Celo Sepolia).
  */
-contract OpenbandsV2HyperlaneIntegrationFromCeloToBaseTest is Test {
+contract OpenbandsV2HyperlaneIntegrationSendingMessageFromCeloTest is Test {
     using TypeCasts for address;
 
     OpenbandsV2NationalityRegistry public openbandsV2NationalityRegistry;
-    OpenbandsV2BadgeManager public openbandsV2BadgeManager;
+    //OpenbandsV2BadgeManager public openbandsV2BadgeManager;
     CeloSender public celoSender;
     BaseReceiver public baseReceiver;
 
@@ -36,7 +37,7 @@ contract OpenbandsV2HyperlaneIntegrationFromCeloToBaseTest is Test {
     address public bob = makeAddr("bob");
 
     uint32 constant CELO_SEPOLIA_DOMAIN = 11142220;
-    uint32 constant BASE_SEPOLIA_DOMAIN = 84532;
+    //uint32 constant BASE_SEPOLIA_DOMAIN = 84532;
 
     event MessageDispatched(
         bytes32 indexed messageId,
@@ -73,9 +74,9 @@ contract OpenbandsV2HyperlaneIntegrationFromCeloToBaseTest is Test {
         // @dev - Create the Openbands V2 contracts instances on testnet
         address IDENTITY_VERIFICATION_HUB_ADDRESS = 0x16ECBA51e18a4a7e61fdC417f0d47AFEeDfbed74; // @dev - The deployed address of the IdentityVerificationHub contract on Celo Sepolia
         address OPENBANDS_V2_NATIONALITY_REGISTRY_ADDRESS_ON_CELO_SEPOLIA = vm.envAddress("OPENBANDS_V2_NATIONALITY_REGISTRY_ADDRESS_ON_CELO_SEPOLIA");
-        address OPENBANDS_V2_BADGE_MANAGER_ADDRESS_ON_BASE_SEPOLIA = vm.envAddress("OPENBANDS_V2_BADGE_MANAGER_ADDRESS_ON_BASE_SEPOLIA");
+        //address OPENBANDS_V2_BADGE_MANAGER_ADDRESS_ON_BASE_SEPOLIA = vm.envAddress("OPENBANDS_V2_BADGE_MANAGER_ADDRESS_ON_BASE_SEPOLIA");
         openbandsV2NationalityRegistry = OpenbandsV2NationalityRegistry(OPENBANDS_V2_NATIONALITY_REGISTRY_ADDRESS_ON_CELO_SEPOLIA);
-        openbandsV2BadgeManager = OpenbandsV2BadgeManager(OPENBANDS_V2_BADGE_MANAGER_ADDRESS_ON_BASE_SEPOLIA);
+        //openbandsV2BadgeManager = OpenbandsV2BadgeManager(OPENBANDS_V2_BADGE_MANAGER_ADDRESS_ON_BASE_SEPOLIA);
 
         //vm.label(mockCeloMailbox, "CeloMailbox");
         //vm.label(mockBaseMailbox, "BaseMailbox");
@@ -97,62 +98,62 @@ contract OpenbandsV2HyperlaneIntegrationFromCeloToBaseTest is Test {
 
     // ============ BaseReceiver Tests ============
 
-    function test_BaseReceiver_HandleMessage() public {
-        bytes memory message = "Hello from Celo!";
-        bytes32 sender = address(celoSender).addressToBytes32();
+    // function test_BaseReceiver_HandleMessage() public {
+    //     bytes memory message = "Hello from Celo!";
+    //     bytes32 sender = address(celoSender).addressToBytes32();
 
-        // Simulate mailbox calling handle
-        vm.prank(baseMailbox);
-        //vm.prank(mockBaseMailbox);
-        baseReceiver.handle(CELO_SEPOLIA_DOMAIN, sender, message);
+    //     // Simulate mailbox calling handle
+    //     vm.prank(baseMailbox);
+    //     //vm.prank(mockBaseMailbox);
+    //     baseReceiver.handle(CELO_SEPOLIA_DOMAIN, sender, message);
 
-        assertEq(baseReceiver.messageCount(), 1);
-    }
+    //     assertEq(baseReceiver.messageCount(), 1);
+    // }
 
-    function test_BaseReceiver_GetMessage() public {
-        bytes memory message = "Test message";
-        bytes32 sender = address(celoSender).addressToBytes32();
+    // function test_BaseReceiver_GetMessage() public {
+    //     bytes memory message = "Test message";
+    //     bytes32 sender = address(celoSender).addressToBytes32();
 
-        vm.prank(baseMailbox);
-        //vm.prank(mockBaseMailbox);
-        baseReceiver.handle(CELO_SEPOLIA_DOMAIN, sender, message);
+    //     vm.prank(baseMailbox);
+    //     //vm.prank(mockBaseMailbox);
+    //     baseReceiver.handle(CELO_SEPOLIA_DOMAIN, sender, message);
 
-        bytes32 messageId = keccak256(abi.encodePacked(CELO_SEPOLIA_DOMAIN, sender, uint256(0), message));
+    //     bytes32 messageId = keccak256(abi.encodePacked(CELO_SEPOLIA_DOMAIN, sender, uint256(0), message));
 
-        BaseReceiver.ReceivedMessage memory received = baseReceiver.getMessage(messageId);
-        assertEq(received.origin, CELO_SEPOLIA_DOMAIN);
-        assertEq(received.sender, sender);
-        assertEq(received.message, message);
-        assertTrue(received.exists);
-    }
+    //     BaseReceiver.ReceivedMessage memory received = baseReceiver.getMessage(messageId);
+    //     assertEq(received.origin, CELO_SEPOLIA_DOMAIN);
+    //     assertEq(received.sender, sender);
+    //     assertEq(received.message, message);
+    //     assertTrue(received.exists);
+    // }
 
-    function test_BaseReceiver_GetMessageAsString() public {
-        string memory originalMessage = "Hello Base!";
-        bytes memory message = bytes(originalMessage);
-        bytes32 sender = address(celoSender).addressToBytes32();
+    // function test_BaseReceiver_GetMessageAsString() public {
+    //     string memory originalMessage = "Hello Base!";
+    //     bytes memory message = bytes(originalMessage);
+    //     bytes32 sender = address(celoSender).addressToBytes32();
 
-        vm.prank(baseMailbox);
-        //vm.prank(mockBaseMailbox);
-        baseReceiver.handle(CELO_SEPOLIA_DOMAIN, sender, message);
+    //     vm.prank(baseMailbox);
+    //     //vm.prank(mockBaseMailbox);
+    //     baseReceiver.handle(CELO_SEPOLIA_DOMAIN, sender, message);
 
-        bytes32 messageId = keccak256(abi.encodePacked(CELO_SEPOLIA_DOMAIN, sender, uint256(0), message));
+    //     bytes32 messageId = keccak256(abi.encodePacked(CELO_SEPOLIA_DOMAIN, sender, uint256(0), message));
 
-        string memory decoded = baseReceiver.getMessageAsString(messageId);
-        assertEq(decoded, originalMessage);
-    }
+    //     string memory decoded = baseReceiver.getMessageAsString(messageId);
+    //     assertEq(decoded, originalMessage);
+    // }
 
-    function test_BaseReceiver_GetSenderAddress() public {
-        bytes memory message = "test";
+    // function test_BaseReceiver_GetSenderAddress() public {
+    //     bytes memory message = "test";
 
-        vm.prank(baseMailbox);
-        //vm.prank(mockBaseMailbox);
-        baseReceiver.handle(CELO_SEPOLIA_DOMAIN, alice.addressToBytes32(), message);
+    //     vm.prank(baseMailbox);
+    //     //vm.prank(mockBaseMailbox);
+    //     baseReceiver.handle(CELO_SEPOLIA_DOMAIN, alice.addressToBytes32(), message);
 
-        bytes32 messageId = keccak256(abi.encodePacked(CELO_SEPOLIA_DOMAIN, alice.addressToBytes32(), uint256(0), message));
+    //     bytes32 messageId = keccak256(abi.encodePacked(CELO_SEPOLIA_DOMAIN, alice.addressToBytes32(), uint256(0), message));
 
-        address senderAddr = baseReceiver.getSenderAddress(messageId);
-        assertEq(senderAddr, alice);
-    }
+    //     address senderAddr = baseReceiver.getSenderAddress(messageId);
+    //     assertEq(senderAddr, alice);
+    // }
 
     // ============ Integration Tests ============
 

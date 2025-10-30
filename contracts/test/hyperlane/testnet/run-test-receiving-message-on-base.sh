@@ -1,0 +1,2 @@
+echo "Running the OpenbandsV2 contracts and the Hyperlane wrapper contract integration tests on Celo Sepolia..."
+forge test ./test/hyperlane/testnet/OpenbandsV2HyperlaneIntegrationReceivingMessageOnBase.t.sol
