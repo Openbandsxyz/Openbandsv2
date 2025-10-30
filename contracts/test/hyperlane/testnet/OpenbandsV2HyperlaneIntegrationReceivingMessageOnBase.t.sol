@@ -17,6 +17,7 @@ import { OpenbandsV2BadgeManager } from "../../../src/OpenbandsV2BadgeManager.so
 /**
  * @title OpenbandsV2 Hyperlane integration test, which is messaging from Celo Sepolia to Base Sepolia
  * @notice Tests for Celo -> Base cross-chain messaging
+ * @dev - This file would be for the receiver side (on Base Sepolia).
  */
 contract OpenbandsV2HyperlaneIntegrationReceivingMessageOnBaseTest is Test {
     using TypeCasts for address;
