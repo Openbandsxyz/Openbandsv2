@@ -6,11 +6,7 @@ import HomePage from '@/components/HomePage';
 import MainContent from '@/components/MainContent';
 import CountryCommunity from '@/components/CountryCommunity';
 import BadgesPage from '@/components/BadgesPage';
-import MobileLayout from '@/components/mobile/MobileLayout';
-import MobileHomePage from '@/components/mobile/MobileHomePage';
-import MobileCommunitiesPage from '@/components/mobile/MobileCommunitiesPage';
-import MobileProfilePage from '@/components/mobile/MobileProfilePage';
-import { TabId } from '@/components/mobile/BottomTabNavigation';
+// Mobile components were removed; desktop layout is used exclusively for now
 
 // Wrapper component to handle MiniKit availability
 function MiniKitWrapper({ children }: { children: React.ReactNode }) {
@@ -41,7 +37,6 @@ function MiniKitWrapper({ children }: { children: React.ReactNode }) {
 }
 
 export default function Home() {
-  const [mobileTab, setMobileTab] = useState<TabId>('home');
   const [desktopTab, setDesktopTab] = useState<'home' | 'badges' | 'employees' | 'communities'>('home');
   const [selectedCommunity, setSelectedCommunity] = useState<{ name: string; code: string; flag: string } | null>(null);
   const [isClient, setIsClient] = useState(false);
@@ -52,17 +47,6 @@ export default function Home() {
 
   const handleCommunitySelect = (community: { name: string; code: string; flag: string }) => {
     setSelectedCommunity(community);
-  };
-
-  const renderMobileContent = () => {
-    if (mobileTab === 'home') {
-      return <MobileHomePage />;
-    } else if (mobileTab === 'communities') {
-      return <MobileCommunitiesPage />;
-    } else if (mobileTab === 'profile') {
-      return <MobileProfilePage />;
-    }
-    return <MobileHomePage />;
   };
 
   const renderContent = () => {
@@ -96,16 +80,9 @@ export default function Home() {
 
   return (
     <MiniKitWrapper>
-      <MobileLayout activeTab={mobileTab} onTabChange={setMobileTab}>
-        <div className="lg:hidden">
-          {renderMobileContent()}
-        </div>
-        <div className="hidden lg:block">
-          <Layout activeTab={desktopTab} onTabChange={setDesktopTab} onCommunitySelect={handleCommunitySelect}>
-            {renderContent()}
-          </Layout>
-        </div>
-      </MobileLayout>
+      <Layout activeTab={desktopTab} onTabChange={setDesktopTab} onCommunitySelect={handleCommunitySelect}>
+        {renderContent()}
+      </Layout>
     </MiniKitWrapper>
   );
 }
