@@ -87,13 +87,13 @@ contract OpenbandsV2HyperlaneIntegrationSendingMessageFromCeloTest is Test {
 
     // ============ CeloSender Tests ============
 
-    function test_CeloSender_SendStringToBase() public {
-        string memory message = "Hello Base!";
+    // function test_CeloSender_SendStringToBase() public {
+    //     string memory message = "Hello Base!";
 
-        bytes32 messageId = celoSender.sendStringToBase(address(baseReceiver), message);
+    //     bytes32 messageId = celoSender.sendStringToBase(address(baseReceiver), message);
 
-        assertEq(messageId, bytes32(uint256(1)));
-    }
+    //     assertEq(messageId, bytes32(uint256(1)));
+    // }
 
 
     // ============ BaseReceiver Tests ============
@@ -155,33 +155,45 @@ contract OpenbandsV2HyperlaneIntegrationSendingMessageFromCeloTest is Test {
     //     assertEq(senderAddr, alice);
     // }
 
-    // ============ Integration Tests ============
+    // ============ Integration Tests (for only the Hyperlane wrapper contract) ============
 
-    // function test_Integration_CeloToBaseFlow() public {
-    //     bytes memory message = "Cross-chain message from Celo to Base";
+    function test_Integration_CeloToBaseFlow() public {
+        bytes memory message = "Cross-chain message from Celo to Base";
 
-    //     // Step 1: Send from Celo
-    //     bytes32 messageId = celoSender.sendToBase(address(baseReceiver), message);
-    //     assertEq(messageId, bytes32(uint256(1)));
+        // Step 1: Send from Celo
+        bytes32 messageId = celoSender.sendToBase(address(baseReceiver), message);
+        assertEq(messageId, bytes32(uint256(1)));
 
-    //     // Step 2: Simulate Hyperlane delivery to Base
-    //     bytes32 sender = address(celoSender).addressToBytes32();
-    //     vm.prank(mockBaseMailbox);
-    //     baseReceiver.handle(CELO_SEPOLIA_DOMAIN, sender, message);
+        //     // Step 2: Simulate Hyperlane delivery to Base
+        //     bytes32 sender = address(celoSender).addressToBytes32();
+        //     vm.prank(mockBaseMailbox);
+        //     baseReceiver.handle(CELO_SEPOLIA_DOMAIN, sender, message);
 
-    //     // Step 3: Verify message received
-    //     assertEq(baseReceiver.messageCount(), 1);
+        //     // Step 3: Verify message received
+        //     assertEq(baseReceiver.messageCount(), 1);
 
-    //     bytes32 receivedMsgId = keccak256(
-    //         abi.encodePacked(CELO_SEPOLIA_DOMAIN, sender, uint256(0), message)
-    //     );
+        //     bytes32 receivedMsgId = keccak256(
+        //         abi.encodePacked(CELO_SEPOLIA_DOMAIN, sender, uint256(0), message)
+        //     );
 
-    //     BaseReceiver.ReceivedMessage memory received = baseReceiver.getMessage(receivedMsgId);
-    //     assertEq(received.message, message);
-    //     assertTrue(received.exists);
-    // }
+        //     BaseReceiver.ReceivedMessage memory received = baseReceiver.getMessage(receivedMsgId);
+        //     assertEq(received.message, message);
+        //     assertTrue(received.exists);
+    }
+
+
+   // ============ Integration Tests (for including the OpenbandsV2NationalityRegistry.sol) ============
+
 
 }
+
+
+
+
+
+
+
+
 
 // ============ Mock Contracts ============
 

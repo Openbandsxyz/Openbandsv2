@@ -8,4 +8,3 @@ forge script script/DeployNationalityRegistry.s.sol:DeployNationalityRegistry \
   --rpc-url https://forno.celo-sepolia.celo-testnet.org \
   --broadcast \
   --verify
-```
