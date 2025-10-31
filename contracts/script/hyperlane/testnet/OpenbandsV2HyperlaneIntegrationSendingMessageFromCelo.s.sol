@@ -12,6 +12,10 @@ import { OpenbandsV2NationalityRegistry } from "../../../src/OpenbandsV2National
 import { OpenbandsV2BadgeManager } from "../../../src/OpenbandsV2BadgeManager.sol";               // @dev - on BASE
 
 
+/**
+ * @title - The script for the Openbands V2 Hyperlane integration contract
+ * @dev - Sending a message from Celo (to Base)
+ */
 contract OpenbandsV2HyperlaneIntegrationSendingMessageFromCeloScript is Script {
     OpenbandsV2NationalityRegistry public openbandsV2NationalityRegistry;
     //OpenbandsV2BadgeManager public openbandsV2BadgeManager;
@@ -20,11 +24,16 @@ contract OpenbandsV2HyperlaneIntegrationSendingMessageFromCeloScript is Script {
     address public celoMailbox; // @dev - on Celo Sepolia
     address public baseMailbox; // @dev - on Base Sepolia
 
-    function setUp() public {}
+    uint256 executorPrivateKey;
 
-    function run() public returns (bool) {
+    address OPENBANDS_V2_NATIONALITY_REGISTRY_ADDRESS_ON_CELO_SEPOLIA;
+    address IDENTITY_VERIFICATION_HUB_ADDRESS;
+    address CELO_SENDER_ADDRESS;
+    address BASE_RECEIVER_ADDRESS;
+
+    function setUp() public {
         /// @dev - Set a private key of the executor wallet
-        uint256 executorPrivateKey = vm.envUint("PRIVATE_KEY_ON_CELO_SEPOLIA");
+        executorPrivateKey = vm.envUint("PRIVATE_KEY_ON_CELO_SEPOLIA");
         vm.startBroadcast(executorPrivateKey);
 
         // @dev - Store the deployed contract addresses of each Mailbox on Celo Sepolia and Base Sepolia
@@ -32,18 +41,20 @@ contract OpenbandsV2HyperlaneIntegrationSendingMessageFromCeloScript is Script {
         baseMailbox = vm.envAddress("BASE_SEPOLIA_MAILBOX_ADDRESS");
 
         // @dev - Store the deployed contract addresses on Celo Sepolia and Base Sepolia
-        address CELO_SENDER_ADDRESS = vm.envAddress("CELO_SENDER_ADDRESS");
-        address BASE_RECEIVER_ADDRESS = vm.envAddress("BASE_RECEIVER_ADDRESS");
+        CELO_SENDER_ADDRESS = vm.envAddress("CELO_SENDER_ADDRESS");
+        BASE_RECEIVER_ADDRESS = vm.envAddress("BASE_RECEIVER_ADDRESS");
         celoSender = ICeloSender(payable(CELO_SENDER_ADDRESS));
         baseReceiver = IBaseReceiver(payable(BASE_RECEIVER_ADDRESS));
 
         // @dev - Create the Openbands V2 contracts instances on testnet
-        address IDENTITY_VERIFICATION_HUB_ADDRESS = 0x16ECBA51e18a4a7e61fdC417f0d47AFEeDfbed74; // @dev - The deployed address of the IdentityVerificationHub contract on Celo Sepolia
-        address OPENBANDS_V2_NATIONALITY_REGISTRY_ADDRESS_ON_CELO_SEPOLIA = vm.envAddress("OPENBANDS_V2_NATIONALITY_REGISTRY_ADDRESS_ON_CELO_SEPOLIA");
+        IDENTITY_VERIFICATION_HUB_ADDRESS = 0x16ECBA51e18a4a7e61fdC417f0d47AFEeDfbed74; // @dev - The deployed address of the IdentityVerificationHub contract on Celo Sepolia
+        OPENBANDS_V2_NATIONALITY_REGISTRY_ADDRESS_ON_CELO_SEPOLIA = vm.envAddress("OPENBANDS_V2_NATIONALITY_REGISTRY_ADDRESS_ON_CELO_SEPOLIA");
         //address OPENBANDS_V2_BADGE_MANAGER_ADDRESS_ON_BASE_SEPOLIA = vm.envAddress("OPENBANDS_V2_BADGE_MANAGER_ADDRESS_ON_BASE_SEPOLIA");
         openbandsV2NationalityRegistry = OpenbandsV2NationalityRegistry(OPENBANDS_V2_NATIONALITY_REGISTRY_ADDRESS_ON_CELO_SEPOLIA);
         //openbandsV2BadgeManager = OpenbandsV2BadgeManager(OPENBANDS_V2_BADGE_MANAGER_ADDRESS_ON_BASE_SEPOLIA);
+    }
 
+    function run() public returns (bool) {
         return true; // [Result]: true
     }
 
