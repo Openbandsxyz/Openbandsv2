@@ -11,7 +11,7 @@ import {TypeCasts} from "@hyperlane-xyz/core/contracts/libs/TypeCasts.sol";
  * @dev Deployed on Base Sepolia (Chain ID: 84532)
  * @dev Verified mailbox: 0x6966b0E55883d49BFB24539356a2f8A673E02039
  */
-contract BaseReceiver is IMessageRecipient, Ownable {
+interface BaseReceiver is IMessageRecipient {
     using TypeCasts for bytes32;
     using TypeCasts for address;
 
@@ -124,7 +124,7 @@ contract BaseReceiver is IMessageRecipient, Ownable {
      * @param sender Sender address
      * @return True if trusted, false otherwise
      */
-    function isTrustedSender(address sender) external view returns (bool);
+    function isTrustedSender(address sender) external virtual view returns (bool);
 
     /**
      * @notice Check if a sender is trusted (bytes32 format)
@@ -140,7 +140,7 @@ contract BaseReceiver is IMessageRecipient, Ownable {
      * @notice Get the local domain (chain) ID
      * @return Local domain identifier (should be 84532 for Base Sepolia)
      */
-    function localDomain() external view returns (uint32);
+    function localDomain() external virtual view returns (uint32);
 
     /**
      * @notice Decode a message as a string

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {IMailboxV3} from "./IMailboxV3.sol";
+import {IMailboxV3} from "../IMailboxV3.sol";
+import {TypeCasts} from "@hyperlane-xyz/core/contracts/libs/TypeCasts.sol";
 
 
 /**
@@ -10,7 +11,7 @@ import {IMailboxV3} from "./IMailboxV3.sol";
  * @dev Deployed on Celo Sepolia (Chain ID: 11142220)
  * @dev Verified mailbox: 0xD0680F80F4f947968206806C2598Cbc5b6FE5b03
  */
-contract ICeloSender {
+interface ICeloSender {
     using TypeCasts for address;
 
     // ============ Constants ============
@@ -59,7 +60,7 @@ contract ICeloSender {
     function sendToBase(
         address recipient,
         bytes calldata message
-    ) external payable returns (bytes32 messageId);
+    ) external payable virtual returns (bytes32 messageId);
 
     /**
      * @notice Send a simple string message to Base Sepolia
@@ -70,7 +71,7 @@ contract ICeloSender {
     function sendStringToBase(
         address recipient,
         string calldata message
-    ) external payable returns (bytes32 messageId);
+    ) external payable virtual returns (bytes32 messageId);
 
     // ============ View Functions ============
 
@@ -78,12 +79,12 @@ contract ICeloSender {
      * @notice Get the local domain (chain) ID
      * @return Local domain identifier (should be 11142220 for Celo Sepolia)
      */
-    function localDomain() external view returns (uint32);
+    function localDomain() external virtual view returns (uint32);
 
     /**
      * @notice Check if a message has been delivered
      * @param messageId The message ID to check
      * @return True if delivered, false otherwise
      */
-    function isDelivered(bytes32 messageId) external view returns (bool);
+    function isDelivered(bytes32 messageId) external virtual view returns (bool);
 }
