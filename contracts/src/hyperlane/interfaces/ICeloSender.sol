@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {IMailboxV3} from "../IMailboxV3.sol";
-import {TypeCasts} from "@hyperlane-xyz/core/contracts/libs/TypeCasts.sol";
+// import { IMailboxV3 } from "../interfaces/IMailboxV3.sol";
+import { TypeCasts } from "@hyperlane-xyz/core/contracts/libs/TypeCasts.sol";
 
 
 /**
@@ -12,15 +12,15 @@ import {TypeCasts} from "@hyperlane-xyz/core/contracts/libs/TypeCasts.sol";
  * @dev Verified mailbox: 0xD0680F80F4f947968206806C2598Cbc5b6FE5b03
  */
 interface ICeloSender {
-    using TypeCasts for address;
+    //using TypeCasts for address;
 
     // ============ Constants ============
 
     /// @notice Base Sepolia domain ID
-    uint32 public constant BASE_SEPOLIA_DOMAIN = 84532;
+    //uint32 public constant BASE_SEPOLIA_DOMAIN = 84532;
 
     /// @notice Hyperlane Mailbox on Celo Sepolia
-    IMailboxV3 public immutable MAILBOX;
+    //IMailboxV3 public immutable MAILBOX;
 
     // ============ Events ============
 
@@ -46,7 +46,7 @@ interface ICeloSender {
      * @notice Receive function to accept refunds from Hyperlane hooks
      * @dev Mailbox hooks refund excess msg.value after paying fees
      */
-    receive() external payable {}
+    //receive() external payable {}
 
     // ============ External Functions ============
 

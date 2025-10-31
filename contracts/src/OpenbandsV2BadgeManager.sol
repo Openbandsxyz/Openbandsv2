@@ -6,8 +6,8 @@ import { DataType } from "./dataType/DataType.sol";
 import { Converter } from "./dataType/converters/Converter.sol";
 
 // @dev - Hyperlane wrapper contracts
-import { CeloSender } from "./hyperlane/CeloSender.sol";
-import { BaseReceiver } from "./hyperlane/BaseReceiver.sol";
+import { ICeloSender } from "./hyperlane/interfaces/ICeloSender.sol";
+import { IBaseReceiver } from "./hyperlane/interfaces/IBaseReceiver.sol";
 
 /**
  * @notice - The OpenbandsV2 Badge Manager contract on BASE mainnet that store the verification data, which is verified on BASE and other chains
@@ -15,8 +15,8 @@ import { BaseReceiver } from "./hyperlane/BaseReceiver.sol";
  */
 contract OpenbandsV2BadgeManager {
 
-    CeloSender public celoSender;
-    BaseReceiver public baseReceiver;
+    ICeloSender public celoSender;
+    IBaseReceiver public baseReceiver;
 
     /// @notice Celo mainnet domain ID
     uint32 public constant CELO_DOMAIN = 42220;
@@ -25,8 +25,8 @@ contract OpenbandsV2BadgeManager {
     mapping (address => DataType.NationalityRecordViaSelf) public nationalityRecordViaSelfs;
 
     constructor(
-        CeloSender _celoSender,
-        BaseReceiver _baseReceiver
+        ICeloSender _celoSender,
+        IBaseReceiver _baseReceiver
     ) {
         celoSender = _celoSender;
         baseReceiver = _baseReceiver;

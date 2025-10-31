@@ -2,8 +2,8 @@
 pragma solidity ^0.8.28;
 
 import {IMessageRecipient} from "@hyperlane-xyz/core/contracts/interfaces/IMessageRecipient.sol";
-import {IMailbox} from "@hyperlane-xyz/core/contracts/interfaces/IMailbox.sol";
-import {TypeCasts} from "@hyperlane-xyz/core/contracts/libs/TypeCasts.sol";
+//import {IMailbox} from "@hyperlane-xyz/core/contracts/interfaces/IMailbox.sol";
+//import {TypeCasts} from "@hyperlane-xyz/core/contracts/libs/TypeCasts.sol";
 
 /**
  * @title BaseReceiver
@@ -11,31 +11,31 @@ import {TypeCasts} from "@hyperlane-xyz/core/contracts/libs/TypeCasts.sol";
  * @dev Deployed on Base Sepolia (Chain ID: 84532)
  * @dev Verified mailbox: 0x6966b0E55883d49BFB24539356a2f8A673E02039
  */
-interface BaseReceiver is IMessageRecipient {
-    using TypeCasts for bytes32;
-    using TypeCasts for address;
+interface IBaseReceiver is IMessageRecipient {
+    //using TypeCasts for bytes32;
+    //using TypeCasts for address;
 
     // ============ Constants ============
 
     /// @notice Celo Sepolia domain ID
-    uint32 public constant CELO_SEPOLIA_DOMAIN = 11142220;
+    //uint32 public constant CELO_SEPOLIA_DOMAIN = 11142220;
 
     /// @notice Hyperlane Mailbox on Base Sepolia
-    IMailbox public immutable MAILBOX;
+    //IMailbox public immutable MAILBOX;
 
     // ============ Storage ============
 
-    /// @notice Mapping of message ID to received message
-    mapping(bytes32 => ReceivedMessage) public receivedMessages;
+    // /// @notice Mapping of message ID to received message
+    // mapping(bytes32 => ReceivedMessage) public receivedMessages;
 
-    /// @notice Counter of total messages received
-    uint256 public messageCount;
+    // /// @notice Counter of total messages received
+    // uint256 public messageCount;
 
-    /// @notice Trusted senders from Celo Sepolia (optional access control)
-    mapping(bytes32 => bool) public trustedSenders;
+    // /// @notice Trusted senders from Celo Sepolia (optional access control)
+    // mapping(bytes32 => bool) public trustedSenders;
 
-    /// @notice Whether to enforce trusted senders check
-    bool public enforceTrustedSenders;
+    // /// @notice Whether to enforce trusted senders check
+    // bool public enforceTrustedSenders;
 
     // ============ Structs ============
 
@@ -104,7 +104,7 @@ interface BaseReceiver is IMessageRecipient {
         uint32 _origin,
         bytes32 _sender,
         bytes calldata _message
-    ) external;
+    ) external payable;
 
 
     // ============ View Functions ============

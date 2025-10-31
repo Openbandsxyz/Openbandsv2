@@ -5,8 +5,8 @@ import "forge-std/Script.sol";
 import "../src/OpenbandsV2NationalityRegistry.sol";
 
 // @dev - Hyperlane wrapper contracts
-import { CeloSender } from "../src/hyperlane/CeloSender.sol";
-import { BaseReceiver } from "../src/hyperlane/BaseReceiver.sol";
+import { ICeloSender } from "../src/hyperlane/interfaces/ICeloSender.sol";
+import { IBaseReceiver } from "../src/hyperlane/interfaces/IBaseReceiver.sol";
 
 /**
  * @title DeployNationalityRegistry
@@ -32,9 +32,9 @@ contract DeployNationalityRegistry is Script {
         string memory scopeSeed = "openbands-v2";
         
         // @dev - Hyperlane wrapper contracts
-        CeloSender celoSender;
-        BaseReceiver baseReceiver;
-        
+        ICeloSender celoSender;
+        IBaseReceiver baseReceiver;
+
         // @dev - Mailbox addresses
         address celoMailbox;
         address baseMailbox;
@@ -42,8 +42,8 @@ contract DeployNationalityRegistry is Script {
         // @dev - Store the deployed contract addresses of the Hyperlane wrapper contracts on Celo Sepolia and Base Sepolia
         address CELO_SENDER_ADDRESS = vm.envAddress("CELO_SENDER_ADDRESS");
         address BASE_RECEIVER_ADDRESS = vm.envAddress("BASE_RECEIVER_ADDRESS");
-        celoSender = CeloSender(payable(CELO_SENDER_ADDRESS));
-        baseReceiver = BaseReceiver(payable(BASE_RECEIVER_ADDRESS));
+        celoSender = ICeloSender(payable(CELO_SENDER_ADDRESS));
+        baseReceiver = IBaseReceiver(payable(BASE_RECEIVER_ADDRESS));
 
         // @dev - Store the deployed contract addresses of each Mailbox on Celo Sepolia and Base Sepolia
         celoMailbox = vm.envAddress("CELO_SEPOLIA_MAILBOX_ADDRESS");

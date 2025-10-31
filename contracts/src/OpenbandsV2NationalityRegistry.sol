@@ -10,8 +10,8 @@ import {SelfUtils} from "@selfxyz/contracts/libraries/SelfUtils.sol";
 import {IIdentityVerificationHubV2} from "@selfxyz/contracts/interfaces/IIdentityVerificationHubV2.sol";
 
 // @dev - Hyperlane wrapper contracts
-import { CeloSender } from "./hyperlane/CeloSender.sol";
-import { BaseReceiver } from "./hyperlane/BaseReceiver.sol";
+import { ICeloSender } from "./hyperlane/interfaces/ICeloSender.sol";
+import { IBaseReceiver } from "./hyperlane/interfaces/IBaseReceiver.sol";
 
 
 /**
@@ -22,8 +22,8 @@ import { BaseReceiver } from "./hyperlane/BaseReceiver.sol";
  */
 contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
     
-    CeloSender public celoSender;
-    BaseReceiver public baseReceiver;
+    ICeloSender public celoSender;
+    IBaseReceiver public baseReceiver;
 
     // ====================================================
     // Storage Variables
@@ -85,8 +85,8 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
     constructor(
         address identityVerificationHubAddress,
         string memory scopeSeed,
-        CeloSender _celoSender,
-        BaseReceiver _baseReceiver
+        ICeloSender _celoSender,
+        IBaseReceiver _baseReceiver
     ) SelfVerificationRoot(identityVerificationHubAddress, scopeSeed) Ownable(_msgSender()) {
         celoSender = _celoSender;
         baseReceiver = _baseReceiver;
