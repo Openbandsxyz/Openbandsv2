@@ -47,4 +47,11 @@ contract OpenbandsV2BadgeManager {
         DataType.NationalityRecordViaSelf memory nationalityRecordViaSelf = abi.decode(nationalityRecordViaSelfInBytes, (DataType.NationalityRecordViaSelf));
         nationalityRecordViaSelfs[nationalityRecordViaSelf.userAddress] = nationalityRecordViaSelf;
     }
+
+    /**
+     * @notice - Get the nationality record data-verified via Self.xyz for a user address.
+     */
+    function getNationalityRecordViaSelf(address userAddress) external view returns (DataType.NationalityRecordViaSelf memory) {
+        return nationalityRecordViaSelfs[userAddress];
+    }
 }

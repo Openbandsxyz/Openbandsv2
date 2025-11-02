@@ -16,9 +16,9 @@ import { OpenbandsV2BadgeManager } from "../../../src/OpenbandsV2BadgeManager.so
 
 /**
  * @title - The script for the Openbands V2 Hyperlane integration contract
- * @dev - Sending a message from Celo Sepolia (to Base Sepolia)
+ * @dev - Receiving a message on Base Sepolia (from Celo Sepolia)
  */
-contract OpenbandsV2HyperlaneIntegrationSendingMessageFromCeloScript is Script {
+contract OpenbandsV2HyperlaneIntegrationReceivingMessageOnBaseScript is Script {
     using TypeCasts for bytes32;
     using TypeCasts for address;
 
@@ -63,62 +63,12 @@ contract OpenbandsV2HyperlaneIntegrationSendingMessageFromCeloScript is Script {
     }
 
     /**
-     * @notice - Send a message from Celo Sepolia (to Base Sepolia) via Hyperlane
-     * @dev - This is just testing the existing "CeloSender" contract
+     * @notice - Receive a message, which was sent from Celo Sepolia (to Base Sepolia) via Hyperlane
+     * @dev - This is testing the "OpenbandsV2NationalityRegistry" contract including the BaseReceiver integration using Hyperlane.
      */
-    // function run() public returns (bytes32 _messageId) {
-    //     bytes memory message = "Cross-chain message from Celo to Base";
+    function run() public returns (bool) {
+        // @dev - [TODO]: Implement the receiving message logic on Base Sepolia via Hyperlane
+        bytes32 messageId;
+    }    
 
-    //     // @dev - Get quote for the message cost from Celo Sepolia (to Base Sepolia, which domain ID is 84532)
-    //     uint256 quotedFee = IMailbox(celoMailbox).quoteDispatch(
-    //         BASE_SEPOLIA_DOMAIN, // @dev - Base Sepolia domain
-    //         address(baseReceiver).addressToBytes32(),
-    //         message
-    //     );
-    //     console.log("Quoted fee (in $CELO on Celo Sepolia):", quotedFee);
-
-    //     // @dev - Add some buffer to the quoted fee (10% extra)
-    //     uint256 totalFee = quotedFee + (quotedFee / 10);
-    //     console.log("Total fee with buffer (in $CELO on Celo Sepolia):", totalFee);
-
-    //     // @dev - Send from Celo with a totalFee
-    //     bytes32 messageId = celoSender.sendToBase{value: totalFee}(address(baseReceiver), message);
-
-    //     console.logBytes32(messageId);
-
-    //     return messageId;
-    // }
-
-
-    /**
-     * @notice - Send a message from Celo Sepolia (to Base Sepolia) via Hyperlane
-     * @dev - This is testing the "OpenbandsV2NationalityRegistry" contract including the CeloSender integration using Hyperlane.
-     */
-    function run() public returns (bytes32 _messageId) {
-        bytes memory message = "Cross-chain message from Celo to Base";
-
-        // @dev - Get quote for the message cost from Celo Sepolia (to Base Sepolia, which domain ID is 84532)
-        uint256 quotedFee = IMailbox(celoMailbox).quoteDispatch(
-            BASE_SEPOLIA_DOMAIN, // @dev - Base Sepolia domain
-            address(baseReceiver).addressToBytes32(),
-            message
-        );
-        console.log("Quoted fee (in $CELO on Celo Sepolia):", quotedFee);
-
-        // @dev - Add some buffer to the quoted fee (10% extra)
-        uint256 totalFee = quotedFee + (quotedFee / 10);
-        console.log("Total fee with buffer (in $CELO on Celo Sepolia):", totalFee);
-
-        // @dev - Store the test values
-        bytes calldata proofPayload;
-        bytes calldata userContextData;
-
-        // @dev - [TODO]: Send from Celo with a totalFee
-        //bytes32 messageId = openbandsV2NationalityRegistry.verifySelfProof{value: totalFee}(proofPayload, userContextData);
-        bytes32 messageId; // @dev - [TODO]: To be replaced with the line above.
-
-        console.logBytes32(messageId);
-
-        return messageId;
-    }
 }
