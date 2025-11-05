@@ -21,3 +21,6 @@ coverage/
 
 # Foundry
 foundry.lock
+
+# mobile first MD
+MOBILE_FIRST_DESIGN_STRATEGY.md
