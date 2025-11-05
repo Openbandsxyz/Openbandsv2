@@ -2,11 +2,11 @@
 pragma solidity >=0.8.19;
 
 import "forge-std/Script.sol";
-import "../src/OpenbandsV2NationalityRegistry.sol";
+import "../../../../../src/OpenbandsV2NationalityRegistry.sol";
 
 // @dev - Hyperlane wrapper contracts
-import { ICeloSender } from "../src/hyperlane/interfaces/ICeloSender.sol";
-import { IBaseReceiver } from "../src/hyperlane/interfaces/IBaseReceiver.sol";
+import { ICeloSender } from "../../../../../src/hyperlane/interfaces/ICeloSender.sol";
+import { IBaseReceiver } from "../../../../../src/hyperlane/interfaces/IBaseReceiver.sol";
 
 /**
  * @title DeployNationalityRegistry

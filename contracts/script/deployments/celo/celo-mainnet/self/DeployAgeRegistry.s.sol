@@ -2,7 +2,7 @@
 pragma solidity ^0.8.28;
 
 import "forge-std/Script.sol";
-import "../src/OpenbandsV2AgeRegistry.sol";
+import "../../../../../src/OpenbandsV2AgeRegistry.sol";
 
 /**
  * @title DeployAgeRegistry
