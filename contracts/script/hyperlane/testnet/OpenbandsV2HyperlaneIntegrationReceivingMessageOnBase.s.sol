@@ -32,7 +32,7 @@ contract OpenbandsV2HyperlaneIntegrationReceivingMessageOnBaseScript is Script {
     address public celoMailbox; // @dev - on Celo Sepolia
     address public baseMailbox; // @dev - on Base Sepolia
 
-    uint256 executorPrivateKey;
+    uint256 callerPrivateKey;
 
     address OPENBANDS_V2_BADGE_MANAGER;
     address OPENBANDS_V2_NATIONALITY_REGISTRY_ADDRESS_ON_CELO_SEPOLIA;
@@ -44,9 +44,9 @@ contract OpenbandsV2HyperlaneIntegrationReceivingMessageOnBaseScript is Script {
     uint32 constant BASE_SEPOLIA_DOMAIN = 84532;
 
     function setUp() public {
-        /// @dev - Set a private key of the executor wallet
-        executorPrivateKey = vm.envUint("PRIVATE_KEY_ON_CELO_SEPOLIA");
-        vm.startBroadcast(executorPrivateKey);
+        /// @dev - Set a private key of the caller wallet
+        callerPrivateKey = vm.envUint("PRIVATE_KEY_EXAMPLE_USER_1_ON_CELO_SEPOLIA");
+        vm.startBroadcast(callerPrivateKey);
 
         // @dev - Store the deployed contract addresses of each Mailbox on Celo Sepolia and Base Sepolia
         celoMailbox = vm.envAddress("CELO_SEPOLIA_MAILBOX_ADDRESS");
