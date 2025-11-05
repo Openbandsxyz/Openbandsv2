@@ -13,6 +13,8 @@ import {TypeCasts} from "@hyperlane-xyz/core/contracts/libs/TypeCasts.sol";
 import { OpenbandsV2NationalityRegistry } from "../../../src/OpenbandsV2NationalityRegistry.sol"; // @dev - on Celo
 import { OpenbandsV2BadgeManager } from "../../../src/OpenbandsV2BadgeManager.sol";               // @dev - on BASE
 
+// @dev - DataType
+import { DataType } from "../../../src/dataType/DataType.sol";
 
 /**
  * @title - The script for the Openbands V2 Hyperlane integration contract
@@ -22,6 +24,7 @@ contract OpenbandsV2HyperlaneIntegrationReceivingMessageOnBaseScript is Script {
     using TypeCasts for bytes32;
     using TypeCasts for address;
 
+    OpenbandsV2BadgeManager public openbandsV2BadgeManager;
     OpenbandsV2NationalityRegistry public openbandsV2NationalityRegistry;
     //OpenbandsV2BadgeManager public openbandsV2BadgeManager;
     ICeloSender public celoSender;
@@ -31,6 +34,7 @@ contract OpenbandsV2HyperlaneIntegrationReceivingMessageOnBaseScript is Script {
 
     uint256 executorPrivateKey;
 
+    address OPENBANDS_V2_BADGE_MANAGER;
     address OPENBANDS_V2_NATIONALITY_REGISTRY_ADDRESS_ON_CELO_SEPOLIA;
     address IDENTITY_VERIFICATION_HUB_ADDRESS;
     address CELO_SENDER_ADDRESS;
@@ -60,6 +64,10 @@ contract OpenbandsV2HyperlaneIntegrationReceivingMessageOnBaseScript is Script {
         //address OPENBANDS_V2_BADGE_MANAGER_ADDRESS_ON_BASE_SEPOLIA = vm.envAddress("OPENBANDS_V2_BADGE_MANAGER_ADDRESS_ON_BASE_SEPOLIA");
         openbandsV2NationalityRegistry = OpenbandsV2NationalityRegistry(OPENBANDS_V2_NATIONALITY_REGISTRY_ADDRESS_ON_CELO_SEPOLIA);
         //openbandsV2BadgeManager = OpenbandsV2BadgeManager(OPENBANDS_V2_BADGE_MANAGER_ADDRESS_ON_BASE_SEPOLIA);
+    
+        // @dev - Create the Openbands V2 Badge Manager instance on Base Sepolia
+        OPENBANDS_V2_BADGE_MANAGER = vm.envAddress("OPENBANDS_V2_BADGE_MANAGER_ADDRESS_ON_BASE_SEPOLIA");
+        openbandsV2BadgeManager = OpenbandsV2BadgeManager(OPENBANDS_V2_BADGE_MANAGER);
     }
 
     /**
@@ -68,7 +76,11 @@ contract OpenbandsV2HyperlaneIntegrationReceivingMessageOnBaseScript is Script {
      */
     function run() public returns (bool) {
         // @dev - [TODO]: Implement the receiving message logic on Base Sepolia via Hyperlane
-        bytes32 messageId;
+        //bytes32 messageId;
+
+        // @dev - Retrieve the nationality record stored in the OpenbandsV2BadgeManager on Base Sepolia
+        address userAddress; // @dev - [TODO]: Assign an actual user address
+        DataType.NationalityRecordViaSelf memory nationalityRecordViaSelf = openbandsV2BadgeManager.getNationalityRecordViaSelf(userAddress);
     }    
 
 }
