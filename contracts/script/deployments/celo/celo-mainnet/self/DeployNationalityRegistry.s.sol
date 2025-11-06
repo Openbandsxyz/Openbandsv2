@@ -15,7 +15,7 @@ import { IBaseReceiver } from "../../../../../src/hyperlane/interfaces/IBaseRece
  */
 contract DeployNationalityRegistry is Script {
     function run() external {
-        vm.createSelectFork("celo_sepolia");  // [NOTE]: foundry.toml - Celo Sepolia RPC URL
+        //vm.createSelectFork("celo_mainnet");  // [NOTE]: foundry.toml - Celo Mainnet RPC URL
         //vm.createSelectFork("https://forno.celo-sepolia.celo-testnet.org");
 
         // Get private key from environment
@@ -36,18 +36,18 @@ contract DeployNationalityRegistry is Script {
         IBaseReceiver baseReceiver;
 
         // @dev - Mailbox addresses
-        address celoMailbox;
-        address baseMailbox;
+        //address celoMailbox;
+        //address baseMailbox;
 
-        // @dev - Store the deployed contract addresses of the Hyperlane wrapper contracts on Celo Sepolia and Base Sepolia
-        address CELO_SENDER_ADDRESS = vm.envAddress("CELO_SENDER_ADDRESS");
-        address BASE_RECEIVER_ADDRESS = vm.envAddress("BASE_RECEIVER_ADDRESS");
-        celoSender = ICeloSender(payable(CELO_SENDER_ADDRESS));
-        baseReceiver = IBaseReceiver(payable(BASE_RECEIVER_ADDRESS));
+        // @dev - Store the deployed contract addresses of the Hyperlane wrapper contracts on Celo mainnet and Base mainnet
+        address CELO_SENDER = vm.envAddress("CELO_SENDER_ON_CELO_MAINNET");
+        address BASE_RECEIVER = vm.envAddress("BASE_RECEIVER_ON_BASE_MAINNET");
+        celoSender = ICeloSender(payable(CELO_SENDER));
+        baseReceiver = IBaseReceiver(payable(BASE_RECEIVER));
 
-        // @dev - Store the deployed contract addresses of each Mailbox on Celo Sepolia and Base Sepolia
-        celoMailbox = vm.envAddress("CELO_SEPOLIA_MAILBOX_ADDRESS");
-        baseMailbox = vm.envAddress("BASE_SEPOLIA_MAILBOX_ADDRESS");
+        // @dev - Store the deployed contract addresses of each Mailbox on Celo Mainnet and Base Mainnet
+        //celoMailbox = vm.envAddress("CELO_MAINNET_MAILBOX_ADDRESS");
+        //baseMailbox = vm.envAddress("BASE_MAINNET_MAILBOX_ADDRESS");
 
         // Start broadcasting transactions
         vm.startBroadcast(deployerPrivateKey);

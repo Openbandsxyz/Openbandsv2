@@ -12,7 +12,7 @@ import "../../../../../src/OpenbandsV2AgeRegistry.sol";
 contract DeployAgeRegistry is Script {
     function run() external {
         // Get private key from environment
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
         
         // Self.xyz Identity Verification Hub V2 on Celo Mainnet
         // Source: https://docs.self.xyz/contract-integration/deployed-contracts
