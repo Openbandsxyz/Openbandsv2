@@ -14,7 +14,7 @@ import { OpenbandsV2NationalityRegistry } from "../../../../src/OpenbandsV2Natio
 import { OpenbandsV2BadgeManager } from "../../../../src/OpenbandsV2BadgeManager.sol";               // @dev - on BASE
 
 // @dev - DataType
-import { DataType } from "../../../../../src/dataType/DataType.sol";
+import { DataType } from "../../../../src/dataType/DataType.sol";
 
 /**
  * @title - The script for the Openbands V2 Hyperlane integration contract

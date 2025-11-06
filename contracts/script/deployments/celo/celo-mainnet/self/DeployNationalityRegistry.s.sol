@@ -24,8 +24,8 @@ contract DeployNationalityRegistry is Script {
         // Self.xyz Identity Verification Hub V2 on Celo Mainnet
         // Source: https://docs.self.xyz/contract-integration/deployed-contracts
         // Verified: https://celoscan.io/address/0xe57F4773bd9c9d8b6Cd70431117d353298B9f5BF
-        address identityVerificationHub = 0xe57F4773bd9c9d8b6Cd70431117d353298B9f5BF;              // @dev - The deployed address of the IdentityVerificationHub contract on Celo Mainnet
-        address identityVerificationHubOnCeloSepolia = 0x16ECBA51e18a4a7e61fdC417f0d47AFEeDfbed74; // @dev - The deployed address of the IdentityVerificationHub contract on Celo Sepolia
+        address identityVerificationHubOnCeloMainnet = 0xe57F4773bd9c9d8b6Cd70431117d353298B9f5BF;              // @dev - The deployed address of the IdentityVerificationHub contract on Celo Mainnet
+        //address identityVerificationHubOnCeloSepolia = 0x16ECBA51e18a4a7e61fdC417f0d47AFEeDfbed74; // @dev - The deployed address of the IdentityVerificationHub contract on Celo Sepolia
 
         // Scope seed for OpenBands v2
         // The official SelfVerificationRoot handles scope calculation with Poseidon hash
@@ -54,8 +54,8 @@ contract DeployNationalityRegistry is Script {
         
         // Deploy the contract
         OpenbandsV2NationalityRegistry registry = new OpenbandsV2NationalityRegistry(
-            //identityVerificationHub,            // @dev - IdentityVerificationHub contract on Celo Mainnet
-            identityVerificationHubOnCeloSepolia, // @dev - IdentityVerificationHub contract on Celo Sepolia testnet
+            identityVerificationHubOnCeloMainnet,   // @dev - IdentityVerificationHub contract on Celo Mainnet
+            //identityVerificationHubOnCeloSepolia, // @dev - IdentityVerificationHub contract on Celo Sepolia testnet
             scopeSeed,
             celoSender,
             baseReceiver

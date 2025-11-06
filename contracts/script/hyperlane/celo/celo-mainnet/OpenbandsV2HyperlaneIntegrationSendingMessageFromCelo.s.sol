@@ -97,9 +97,9 @@ contract OpenbandsV2HyperlaneIntegrationSendingMessageFromCeloScript is Script {
     function run() public returns (bytes32 _messageId) {
         bytes memory message = "Cross-chain message from Celo to Base";
 
-        // @dev - Get quote for the message cost from Celo Sepolia (to Base Sepolia, which domain ID is 84532)
+        // @dev - Get quote for the message cost from Celo mainnet (to Base mainnet, which domain ID is 8453)
         uint256 quotedFee = IMailbox(celoMailbox).quoteDispatch(
-            BASE_SEPOLIA_DOMAIN, // @dev - Base Sepolia domain
+            BASE_MAINNET_DOMAIN, // @dev - Base mainnet domain
             address(baseReceiver).addressToBytes32(),
             message
         );

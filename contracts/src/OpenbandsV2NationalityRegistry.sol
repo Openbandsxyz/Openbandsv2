@@ -68,6 +68,7 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
     event NationalityVerified(
         address indexed user,
         string nationality,
+        bytes message,      // @dev - a message via Hyperlane to bridge from Celo to Base
         uint256 timestamp
     );
     
@@ -257,6 +258,7 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
         emit NationalityVerified(
             user,
             nationality,
+            message,      // @dev - a message via Hyperlane to bridge from Celo to Base
             block.timestamp
         );
     }
