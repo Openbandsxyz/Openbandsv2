@@ -58,7 +58,7 @@ contract OpenbandsV2HyperlaneIntegrationSendingMessageFromCeloScript is Script {
         IDENTITY_VERIFICATION_HUB_ON_CELO_MAINNET = 0xe57F4773bd9c9d8b6Cd70431117d353298B9f5BF;  // @dev - The deployed address of the IdentityVerificationHub contract on Celo Mainnet
         OPENBANDS_V2_NATIONALITY_REGISTRY_ON_CELO_MAINNET = vm.envAddress("OPENBANDS_V2_NATIONALITY_REGISTRY_ON_CELO_MAINNET");
         //address OPENBANDS_V2_BADGE_MANAGER_ON_BASE_SEPOLIA = vm.envAddress("OPENBANDS_V2_BADGE_MANAGER_ON_BASE_SEPOLIA");
-        openbandsV2NationalityRegistry = OpenbandsV2NationalityRegistry(OPENBANDS_V2_NATIONALITY_REGISTRY_ON_CELO_MAINNET);
+        openbandsV2NationalityRegistry = OpenbandsV2NationalityRegistry(payable(OPENBANDS_V2_NATIONALITY_REGISTRY_ON_CELO_MAINNET));
         //openbandsV2BadgeManager = OpenbandsV2BadgeManager(OPENBANDS_V2_BADGE_MANAGER_ON_BASE_SEPOLIA);
     }
 

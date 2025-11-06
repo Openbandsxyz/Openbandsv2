@@ -73,7 +73,10 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
     );
     
     event RecordRevoked(address indexed user, uint256 timestamp);
-    
+
+    event NativeTokenReceived(address indexed user, uint256 amount); // @dev - Event for receiving native tokens ($CELO)
+
+
     // ====================================================
     // Constructor
     // ====================================================
@@ -261,5 +264,12 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
             message,      // @dev - a message via Hyperlane to bridge from Celo to Base
             block.timestamp
         );
+    }
+
+    /**
+     * @notice - Receive Ether function to receive native tokens ($CELO)
+     */
+    receive() external payable {
+        emit NativeTokenReceived(msg.sender, msg.value);
     }
 }
