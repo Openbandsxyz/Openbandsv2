@@ -75,10 +75,6 @@ contract OpenbandsV2HyperlaneIntegrationReceivingMessageOnBaseScript is Script {
      * @dev - This is testing the "OpenbandsV2NationalityRegistry" contract including the BaseReceiver integration using Hyperlane.
      */
     function run() public returns (bool) {
-        // @dev - [TODO]: Implement the receiving message logic on Base Sepolia via Hyperlane
-        bytes memory nationalityRecordViaSelfInBytes; // [TODO]:
-        openbandsV2BadgeManager.receiveNationalityRecordViaSelf(nationalityRecordViaSelfInBytes);
-
         // @dev - Retrieve the nationality record stored in the OpenbandsV2BadgeManager on Base Sepolia
         address userAddress; // @dev - [TODO]: Assign an actual user address
         DataType.NationalityRecordViaSelf memory nationalityRecordViaSelf = openbandsV2BadgeManager.getNationalityRecordViaSelf(userAddress);
