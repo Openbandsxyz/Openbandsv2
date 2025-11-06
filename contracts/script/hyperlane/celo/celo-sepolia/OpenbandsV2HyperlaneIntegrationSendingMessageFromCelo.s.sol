@@ -4,14 +4,14 @@ pragma solidity ^0.8.28;
 import { Script } from "forge-std/Script.sol";
 import "forge-std/console.sol";
 //import {console2} from "forge-std/console2.sol";
-import {ICeloSender} from "../../../src/hyperlane/interfaces/ICeloSender.sol";
-import {IBaseReceiver} from "../../../src/hyperlane/interfaces/IBaseReceiver.sol";
+import {ICeloSender} from "../../../../src/hyperlane/interfaces/ICeloSender.sol";
+import {IBaseReceiver} from "../../../../src/hyperlane/interfaces/IBaseReceiver.sol";
 import {IMailbox} from "@hyperlane-xyz/core/contracts/interfaces/IMailbox.sol";
 import {TypeCasts} from "@hyperlane-xyz/core/contracts/libs/TypeCasts.sol";
 
 // @dev - Openbands V2 contracts
-import { OpenbandsV2NationalityRegistry } from "../../../src/OpenbandsV2NationalityRegistry.sol"; // @dev - on Celo
-import { OpenbandsV2BadgeManager } from "../../../src/OpenbandsV2BadgeManager.sol";               // @dev - on BASE
+import { OpenbandsV2NationalityRegistry } from "../../../../src/OpenbandsV2NationalityRegistry.sol"; // @dev - on Celo
+import { OpenbandsV2BadgeManager } from "../../../../src/OpenbandsV2BadgeManager.sol";               // @dev - on BASE
 
 
 /**
