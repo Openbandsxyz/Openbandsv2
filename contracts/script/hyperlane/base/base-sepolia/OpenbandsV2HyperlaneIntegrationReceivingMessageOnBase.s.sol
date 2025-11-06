@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import { Script } from "forge-std/Script.sol";
+import { Script, console } from "forge-std/Script.sol";
 import "forge-std/console.sol";
 //import {console2} from "forge-std/console2.sol";
 import {ICeloSender} from "../../../../src/hyperlane/interfaces/ICeloSender.sol";
@@ -76,11 +76,13 @@ contract OpenbandsV2HyperlaneIntegrationReceivingMessageOnBaseScript is Script {
      */
     function run() public returns (bool) {
         // @dev - [TODO]: Implement the receiving message logic on Base Sepolia via Hyperlane
-        //bytes32 messageId;
+        bytes memory nationalityRecordViaSelfInBytes; // [TODO]:
+        openbandsV2BadgeManager.receiveNationalityRecordViaSelf(nationalityRecordViaSelfInBytes);
 
         // @dev - Retrieve the nationality record stored in the OpenbandsV2BadgeManager on Base Sepolia
         address userAddress; // @dev - [TODO]: Assign an actual user address
         DataType.NationalityRecordViaSelf memory nationalityRecordViaSelf = openbandsV2BadgeManager.getNationalityRecordViaSelf(userAddress);
-    }    
+        console.log("Nationality Record for user:", nationalityRecordViaSelf.nationality);
+    }
 
 }
