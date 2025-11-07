@@ -91,23 +91,23 @@ contract OpenbandsV2HyperlaneIntegrationSendingMessageFromCeloScript is Script {
 
 
     /**
-     * @notice - Send a message from Celo Sepolia (to Base Sepolia) via Hyperlane
-     * @dev - This is testing the "OpenbandsV2NationalityRegistry" contract including the CeloSender integration using Hyperlane.
+     * @notice - Send a message from Celo Mainnet (to Base Mainnet) via Hyperlane
+     * @dev - This is just testing the existing "CeloSender" contract
      */
     function run() public returns (bytes32 _messageId) {
         bytes memory message = "Cross-chain message from Celo to Base";
 
-        // @dev - Get quote for the message cost from Celo mainnet (to Base mainnet, which domain ID is 8453)
+        // @dev - Get quote for the message cost from Celo Mainnet (to Base Mainnet, which domain ID is 8453)
         uint256 quotedFee = IMailbox(celoMailbox).quoteDispatch(
-            BASE_MAINNET_DOMAIN, // @dev - Base mainnet domain
+            BASE_MAINNET_DOMAIN, // @dev - Base Mainnet domain
             address(baseReceiver).addressToBytes32(),
             message
         );
-        console.log("Quoted fee (in $CELO on Celo Sepolia):", quotedFee);
+        console.log("Quoted fee (in $CELO on Celo Mainnet):", quotedFee);
 
-        // @dev - Add some buffer to the quoted fee (10% extra)
-        uint256 totalFee = quotedFee + (quotedFee / 10);
-        console.log("Total fee with buffer (in $CELO on Celo Sepolia):", totalFee);
+        // @dev - Add some buffer to the quoted fee (20% extra to ensure sufficient value)
+        uint256 totalFee = quotedFee + (quotedFee / 5);
+        console.log("Total fee with buffer (in $CELO on Celo Mainnet):", totalFee);
 
         // @dev - Store the test values
         bytes calldata proofPayload;

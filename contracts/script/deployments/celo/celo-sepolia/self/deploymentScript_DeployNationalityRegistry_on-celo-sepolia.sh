@@ -4,7 +4,7 @@ echo "Deploy the DeployNationalityRegistry contract on Celo Sepolia..."
 #   --broadcast \
 #   --verify
 
-forge script script/DeployNationalityRegistry.s.sol:DeployNationalityRegistry \
+forge script script/deployments/celo/celo-sepolia/self/DeployNationalityRegistry.s.sol:DeployNationalityRegistry \
   --rpc-url https://forno.celo-sepolia.celo-testnet.org \
   --broadcast \
   --verify
