@@ -79,10 +79,21 @@ const NATIONALITY_REGISTRY_ABI = [
 
 /**
  * @notice Contract configuration
- * @dev Address is loaded from environment variable
+ * @dev Get contract address based on chain ID
  */
+export function getNationalityRegistryAddress(chainId?: number): `0x${string}` {
+  // Celo Mainnet (42220)
+  if (chainId === 42220) {
+    return (process.env.NEXT_PUBLIC_OPENBANDS_V2_NATIONALITY_REGISTRY_ON_CELO_MAINNET || '') as `0x${string}`;
+  }
+  // Celo Sepolia Testnet (11142220)
+  if (chainId === 11142220) {
+    return (process.env.NEXT_PUBLIC_OPENBANDS_V2_NATIONALITY_REGISTRY_ON_CELO_SEPOLIA || '') as `0x${string}`;
+  }
+}
+
 export const nationalityRegistryContractConfig = {
-  address: (process.env.NEXT_PUBLIC_NATIONALITY_REGISTRY_CONTRACT_ADDRESS || '') as `0x${string}`,
+  address: getNationalityRegistryAddress(),
   abi: NATIONALITY_REGISTRY_ABI as Abi,
 } as const;
 
@@ -101,28 +112,33 @@ export interface NationalityRecord {
  * @param nationality - ISO 3166-1 alpha-3 country code (e.g., "USA", "GBR", "IND")
  * @param isAboveMinimumAge - Whether user meets minimum age requirement
  * @param isValidNationality - Whether nationality was successfully verified
+ * @param chainId - Optional chain ID to determine which contract to use
  * @returns Promise with transaction hash
  */
 export async function storeNationalityVerification(
   nationality: string,
   isAboveMinimumAge: boolean,
-  isValidNationality: boolean
+  isValidNationality: boolean,
+  chainId?: number
 ): Promise<`0x${string}`> {
   try {
+    const contractAddress = getNationalityRegistryAddress(chainId);
+    
     console.log('📝 Storing nationality verification on-chain:', {
       nationality,
       isAboveMinimumAge,
       isValidNationality,
-      contractAddress: nationalityRegistryContractConfig.address
+      contractAddress,
+      chainId
     });
 
-    if (!nationalityRegistryContractConfig.address) {
-      throw new Error('Nationality Registry contract address not configured. Please add NEXT_PUBLIC_NATIONALITY_REGISTRY_CONTRACT_ADDRESS to .env.local');
+    if (!contractAddress) {
+      throw new Error('Nationality Registry contract address not configured. Please add environment variables for CELO_MAINNET or CELO_SEPOLIA');
     }
 
     // Simulate the transaction first
     const { request } = await simulateContract(wagmiConfig, {
-      address: nationalityRegistryContractConfig.address,
+      address: contractAddress,
       abi: nationalityRegistryContractConfig.abi,
       functionName: 'storeNationalityVerification',
       args: [nationality, isAboveMinimumAge, isValidNationality]
@@ -145,17 +161,22 @@ export async function storeNationalityVerification(
 /**
  * @notice Get nationality record for a specific user
  * @param userAddress - The address of the user
+ * @param chainId - Optional chain ID to determine which contract to use
  * @returns Promise with the nationality record
  */
 export async function getNationalityRecord(
-  userAddress: `0x${string}`
+  userAddress: `0x${string}`,
+  chainId?: number
 ): Promise<NationalityRecord> {
   try {
+    const contractAddress = getNationalityRegistryAddress(chainId);
+    
     console.log(`🔍 Reading nationality record for ${userAddress}`);
-    console.log(`📋 Contract address: ${nationalityRegistryContractConfig.address}`);
+    console.log(`📋 Contract address: ${contractAddress}`);
+    console.log(`🔗 Chain ID: ${chainId}`);
     
     const result = await readContract(wagmiConfig, {
-      address: nationalityRegistryContractConfig.address,
+      address: contractAddress,
       abi: nationalityRegistryContractConfig.abi,
       functionName: 'getNationalityRecord',
       args: [userAddress],
@@ -178,14 +199,18 @@ export async function getNationalityRecord(
 /**
  * @notice Check if a user has an active nationality verification
  * @param userAddress - The address of the user
+ * @param chainId - Optional chain ID to determine which contract to use
  * @returns Promise with boolean result
  */
 export async function isUserVerified(
-  userAddress: `0x${string}`
+  userAddress: `0x${string}`,
+  chainId?: number
 ): Promise<boolean> {
   try {
+    const contractAddress = getNationalityRegistryAddress(chainId);
+    
     const result = await readContract(wagmiConfig, {
-      address: nationalityRegistryContractConfig.address,
+      address: contractAddress,
       abi: nationalityRegistryContractConfig.abi,
       functionName: 'isUserVerified',
       args: [userAddress],
@@ -201,14 +226,18 @@ export async function isUserVerified(
 /**
  * @notice Get nationality for a specific user
  * @param userAddress - The address of the user
+ * @param chainId - Optional chain ID to determine which contract to use
  * @returns Promise with nationality string
  */
 export async function getUserNationality(
-  userAddress: `0x${string}`
+  userAddress: `0x${string}`,
+  chainId?: number
 ): Promise<string> {
   try {
+    const contractAddress = getNationalityRegistryAddress(chainId);
+    
     const result = await readContract(wagmiConfig, {
-      address: nationalityRegistryContractConfig.address,
+      address: contractAddress,
       abi: nationalityRegistryContractConfig.abi,
       functionName: 'getUserNationality',
       args: [userAddress],

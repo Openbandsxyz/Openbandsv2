@@ -120,20 +120,45 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess, 
       // Self.xyz SDK sends proof to your contract, which calls Hub for verification
       // See: https://docs.self.xyz/frontend-integration/qrcode-sdk
       
-      // Determine contract address and scope based on attribute type
-      const contractAddress = attributeType === 'age' 
-        ? (process.env.NEXT_PUBLIC_AGE_REGISTRY_CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000000")
-        : (process.env.NEXT_PUBLIC_NATIONALITY_REGISTRY_CONTRACT_ADDRESS || "0xC64C921399b8dea7B4bAA438de3518d04023Ae97");
+      // Get the OpenbandsV2NationalityRegistry contract address and scope based on attribute type and chain ID
+      const getOpenbandsV2NationalityRegistryContractAddress = () => {
+        if (attributeType === 'age') {
+          return (process.env.NEXT_PUBLIC_AGE_REGISTRY_CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000000");
+        }
+        
+        // For nationality, use chain-specific contract addresses
+        if (chainId === 42220) {
+          // Celo Mainnet
+          return (process.env.NEXT_PUBLIC_OPENBANDS_V2_NATIONALITY_REGISTRY_ON_CELO_MAINNET || "0xE4531177030A7bD88eb58c6ADEe0e4155AfCaeCf");
+        } else if (chainId === 11142220) {
+          // Celo Sepolia Testnet
+          return (process.env.NEXT_PUBLIC_OPENBANDS_V2_NATIONALITY_REGISTRY_ON_CELO_SEPOLIA || "0xED169AF4E8d68d167B8c7bf66f241f30B8cA8083");
+        }
+        
+        // Fallback to environment variable
+        return (process.env.NEXT_PUBLIC_NATIONALITY_REGISTRY_CONTRACT_ADDRESS || "0xE4531177030A7bD88eb58c6ADEe0e4155AfCaeCf");
+      };
       
+      const openbandsV2NationalityRegistryContractAddress = getOpenbandsV2NationalityRegistryContractAddress();
+      console.log('✅ OpenbandsV2NationalityRegistry contract address:', openbandsV2NationalityRegistryContractAddress);
+
       const scope = attributeType === 'age' ? "openbands-age-v2" : "openbands-v2";
       
+      // Determine endpoint type based on chain ID (NOTE: "celo" for mainnet, "staging_celo" for testnet)
+      let endpointType: string;
+      if (chainId === 42220) { 
+        endpointType = "celo";
+      } else if (chainId === 11142220) {
+        endpointType = "staging_celo";
+      }
+
       const appConfig: Record<string, unknown> = {
         version: 2,
         appName: "Openbands",
         scope: scope,
         // endpoint = YOUR contract address (lowercase!)
-        endpoint: contractAddress.toLowerCase(),
-        endpointType: "celo", // "celo" for mainnet, "staging_celo" for testnet
+        endpoint: openbandsV2NationalityRegistryContractAddress.toLowerCase(),
+        endpointType: endpointType,
         logoBase64: "https://i.postimg.cc/mrmVf9hm/self.png",
         userId: address,
         userIdType: "hex",
