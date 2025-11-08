@@ -2,7 +2,8 @@
 import { useEffect, useState, useMemo } from 'react'
 import { countries, SelfQRcodeWrapper } from '@selfxyz/qrcode'
 import { SelfAppBuilder } from '@selfxyz/qrcode'
-import { useAccount, useChainId, useSwitchChain } from 'wagmi'
+import { getAccount, getChainId, switchChain } from '@wagmi/core'
+import { wagmiConfig } from "@/lib/blockchains/evm/smart-contracts/wagmi/config";
 import { VerificationStatusDisplay, VerificationStatus } from './VerificationStatusDisplay'
 
 // @dev - OpenbandsV2NationalityRegistry.sol related module
@@ -34,10 +35,9 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess, 
   // Use useMemo to cache the array to avoid creating a new array on each render
   const excludedCountries = useMemo(() => [], []);
 
-  // @dev - Wagmi
-  const { address, isConnected } = useAccount() // @dev - Get connected wallet address
-  const chainId = useChainId()
-  const { switchChain } = useSwitchChain()
+  // @dev - Wagmi - Get account and chain info using @wagmi/core
+  const { address, isConnected } = getAccount(wagmiConfig);
+  const chainId = getChainId(wagmiConfig);
 
   // Check if we're on Celo network (for display purposes)
   const isOnCeloNetwork = chainId === 42220 // Celo Mainnet chain ID
@@ -243,15 +243,19 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess, 
     }
 
     // @dev - Send a message from Celo mainnet to BASE mainnet via Hyperlane
-    bridgeVerificationResultFromCeloToBase();
+    await bridgeVerificationResultFromCeloToBase();
   }
 
   // @dev - Send a message from Celo mainnet to BASE mainnet via Hyperlane
-  function bridgeVerificationResultFromCeloToBase() {
-    const nationalityRecord = getNationalityRecord(userId, chainId);
+  async function bridgeVerificationResultFromCeloToBase() {
+    // Use the address and chainId from the component scope
+    const userId = address || "";
+
+    const nationalityRecord = await getNationalityRecord(userId as `0x${string}`, chainId);
 
     // @dev - Call the CeloSender#sendToBase()
-    sendToBase(String(nationalityRecord));
+    const txHash = await sendToBase(String(nationalityRecord));
+    console.log('📤 Verification result bridged from Celo to Base via Hyperlane. Tx hash:', txHash);
   }
 
   const handleVerificationError = (error: Error | unknown) => {
@@ -279,7 +283,7 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess, 
   const handleSwitchToCelo = async () => {
     try {
       // Switch to Celo network (chain ID 42220)
-      switchChain({ chainId: 42220 })
+      await switchChain(wagmiConfig, { chainId: 42220 })
     } catch (error) {
       console.error('Failed to switch network:', error)
     }
