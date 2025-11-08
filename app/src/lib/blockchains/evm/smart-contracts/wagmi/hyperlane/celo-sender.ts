@@ -72,7 +72,7 @@ export async function sendToBase(
     const MAILBOX_ADDRESS = process.env.NEXT_PUBLIC_HYPERLANE_MAILBOX_ON_CELO_SEPOLIA || "";
     const BASE_DOMAIN = 84532; // Base Sepolia domain ID
     
-    let estimatedFee = 0n;
+    let estimatedFee = 0;
     try {
       // Try to get fee estimation from Mailbox
       estimatedFee = await readContract(wagmiConfig, {
@@ -87,8 +87,8 @@ export async function sendToBase(
       }) as bigint;
       
       // Add 50% buffer for safety
-      estimatedFee = (estimatedFee * 150n) / 100n;
-      console.log(`💰 Estimated Hyperlane fee: ${estimatedFee.toString()} wei (with 50% buffer)`);
+      estimatedFee = (estimatedFee * 150) / 100;
+      console.log(`💰 Estimated Hyperlane fee: ${estimatedFee.toString()} in wei in $CELO (with 50% buffer)`);
     } catch (feeError) {
       console.warn(`⚠️ Could not estimate fee, using default: ${feeError}`);
       // Fallback to a reasonable default (e.g., 0.001 native token)

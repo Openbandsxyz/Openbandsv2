@@ -7,6 +7,8 @@ import "../../../../../src/OpenbandsV2NationalityRegistry.sol";
 // @dev - Hyperlane wrapper contracts
 import { ICeloSender } from "../../../../../src/hyperlane/interfaces/ICeloSender.sol";
 import { IBaseReceiver } from "../../../../../src/hyperlane/interfaces/IBaseReceiver.sol";
+import { IMailbox } from "../../../../../src/hyperlane/interfaces/IMailbox.sol";
+import { OpenbandsV2GasFeePayer } from "../../../../../src/OpenbandsV2GasFeePayer.sol";
 
 /**
  * @title DeployNationalityRegistry
@@ -34,6 +36,8 @@ contract DeployNationalityRegistry is Script {
         // @dev - Hyperlane wrapper contracts
         ICeloSender celoSender;
         IBaseReceiver baseReceiver;
+        IMailbox celoMailbox;
+        OpenbandsV2GasFeePayer openbandsV2GasFeePayer;
 
         // @dev - Mailbox addresses
         //address celoMailbox;
@@ -45,9 +49,13 @@ contract DeployNationalityRegistry is Script {
         celoSender = ICeloSender(payable(CELO_SENDER));
         baseReceiver = IBaseReceiver(payable(BASE_RECEIVER));
 
-        // @dev - Store the deployed contract addresses of each Mailbox on Celo Mainnet and Base Mainnet
-        //celoMailbox = vm.envAddress("CELO_MAINNET_MAILBOX_ADDRESS");
-        //baseMailbox = vm.envAddress("BASE_MAINNET_MAILBOX_ADDRESS");
+        // @dev - Store the deployed contract addresses of each Mailbox on Celo Sepolia and Base Sepolia
+        address CELO_SEPOLIA_MAILBOX = vm.envAddress("CELO_SEPOLIA_MAILBOX_ADDRESS");
+        celoMailbox = IMailbox(CELO_SEPOLIA_MAILBOX);
+
+        // @dev - OpenbandsV2GasFeePayer contract on Celo Sepolia
+        address OPENBANDS_V2_GAS_FEE_PAYER_ON_CELO_SEPOLIA = vm.envAddress("OPENBANDS_V2_GAS_FEE_PAYER_ON_CELO_SEPOLIA");
+        openbandsV2GasFeePayer = OpenbandsV2GasFeePayer(payable(OPENBANDS_V2_GAS_FEE_PAYER_ON_CELO_SEPOLIA));
 
         // Start broadcasting transactions
         vm.startBroadcast(deployerPrivateKey);
@@ -58,7 +66,9 @@ contract DeployNationalityRegistry is Script {
             //identityVerificationHubOnCeloSepolia, // @dev - IdentityVerificationHub contract on Celo Sepolia testnet
             scopeSeed,
             celoSender,
-            baseReceiver
+            baseReceiver,
+            celoMailbox,
+            openbandsV2GasFeePayer
         );
         
         console.log("====================================");

@@ -12,6 +12,13 @@ import {IIdentityVerificationHubV2} from "@selfxyz/contracts/interfaces/IIdentit
 // @dev - Hyperlane wrapper contracts
 import { ICeloSender } from "./hyperlane/interfaces/ICeloSender.sol";
 import { IBaseReceiver } from "./hyperlane/interfaces/IBaseReceiver.sol";
+import { IMailbox } from "./hyperlane/interfaces/IMailbox.sol";
+
+// @dev - OpenbandsV2 Gas Fee Payer contract
+import { OpenbandsV2GasFeePayer } from "./OpenbandsV2GasFeePayer.sol";
+
+// @dev - Converter library
+import { Converter } from "./dataType/converters/Converter.sol";
 
 
 /**
@@ -21,9 +28,13 @@ import { IBaseReceiver } from "./hyperlane/interfaces/IBaseReceiver.sol";
  *      Nationality is disclosed as a public output from the ZK proof and stored on-chain
  */
 contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
+
+    using Converter for address;
     
     ICeloSender public celoSender;
     IBaseReceiver public baseReceiver;
+    IMailbox public mailbox;
+    OpenbandsV2GasFeePayer public openbandsV2GasFeePayer;
 
     // ====================================================
     // Storage Variables
@@ -53,7 +64,10 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
     
     /// @notice Verification config ID for identity verification
     bytes32 public verificationConfigId;
-    
+
+    uint32 public constant BASE_MAINNET_DOMAIN = 8453; // @dev - BASE mainnet domain
+    uint32 private constant BASE_SEPOLIA_DOMAIN = 84532; // @dev - BASE sepolia domain
+
     // ====================================================
     // Errors
     // ====================================================
@@ -68,7 +82,7 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
     event NationalityVerified(
         address indexed user,
         string nationality,
-        //bytes message,      // @dev - a message via Hyperlane to bridge from Celo to Base
+        bytes32 messageId,  // @dev - a message ID via Hyperlane to bridge from Celo to Base
         uint256 timestamp
     );
     
@@ -90,10 +104,14 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
         address identityVerificationHubAddress,
         string memory scopeSeed,
         ICeloSender _celoSender,
-        IBaseReceiver _baseReceiver
+        IBaseReceiver _baseReceiver,
+        IMailbox _mailbox,
+        OpenbandsV2GasFeePayer _openbandsV2GasFeePayer
     ) SelfVerificationRoot(identityVerificationHubAddress, scopeSeed) Ownable(_msgSender()) {
         celoSender = _celoSender;
         baseReceiver = _baseReceiver;
+        mailbox = _mailbox;
+        openbandsV2GasFeePayer = _openbandsV2GasFeePayer;
 
         // Create unformatted config (human-readable)
         string[] memory forbiddenCountries = new string[](0); // No country restrictions
@@ -243,7 +261,8 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
             chainId: block.chainid
         });
 
-        // // @dev - Send a message from Celo mainnet to BASE mainnet via Hyperlane
+        // @dev - Send a message from Celo mainnet to BASE mainnet via Hyperlane
+        bytes32 messageId = _sendNationalityRecordToBase(user);
         // //bytes memory message = "test";
         // bytes memory message = abi.encode(nationalityRecords[user]);
         // celoSender.sendToBase(address(baseReceiver), message); // @dev - TODO: Replace the SC address (of the Badge Manager contract) with the actual address
@@ -261,9 +280,33 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
         emit NationalityVerified(
             user,
             nationality,
-            //message,      // @dev - a message via Hyperlane to bridge from Celo to Base
+            messageId,      // @dev - a message ID via Hyperlane to bridge from Celo to Base
             block.timestamp
         );
+    }
+
+
+    /**
+     * @notice - Send a message from Celo mainnet to BASE mainnet via Hyperlane
+     */
+    function _sendNationalityRecordToBase(address user) internal returns(bytes32 messageId) {
+        // @dev - Estimate the fee for sending the message
+        uint256 estimatedGasFee = mailbox.quoteDispatch(
+            //BASE_MAINNET_DOMAIN, // @dev - BASE mainnet domain
+            BASE_SEPOLIA_DOMAIN,   // @dev - BASE sepolia domain
+            Converter.addressToBytes32(address(baseReceiver)),
+            abi.encode(nationalityRecords[user])
+        );
+
+        // @dev - Top up a native tokens ($CELO) from the OpenbandsV2GasFeePayer contract to cover the message fee using Hyperlane.
+        openbandsV2GasFeePayer.topUpGasFeeFromOpenbandsV2GasFeePayer(payable(address(this)), estimatedGasFee);
+        require(address(this).balance >= estimatedGasFee, "Insufficient $CELO balance of the OpenbandsV2NationalityRegistry contract to cover the message fee via Hyperlane");
+
+        // @dev - Send a message from Celo mainnet to BASE mainnet via Hyperlane
+        //bytes memory message = "test";
+        bytes memory message = abi.encode(nationalityRecords[user]);
+        bytes32 messageId = celoSender.sendToBase{value: estimatedGasFee}(address(baseReceiver), message); // @dev - TODO: Replace the SC address (of the Badge Manager contract) with the actual address
+        return messageId;
     }
 
     /**
