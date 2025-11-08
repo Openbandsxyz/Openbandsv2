@@ -38,14 +38,14 @@ function MiniKitWrapper({ children }: { children: React.ReactNode }) {
 
 export default function Home() {
   const [desktopTab, setDesktopTab] = useState<'home' | 'badges' | 'employees' | 'communities'>('home');
-  const [selectedCommunity, setSelectedCommunity] = useState<{ name: string; code: string; flag: string } | null>(null);
+  const [selectedCommunity, setSelectedCommunity] = useState<{ name: string; code: string; flag: string; communityId?: string } | null>(null);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  const handleCommunitySelect = (community: { name: string; code: string; flag: string }) => {
+  const handleCommunitySelect = (community: { name: string; code: string; flag: string; communityId?: string }) => {
     setSelectedCommunity(community);
   };
 

@@ -1,19 +1,22 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import ConnectWalletButtonWithRainbowkit from '@/components/connect-wallets/ConnectWalletButtonWithRainbowkit';
 import { useAccount, useChainId } from 'wagmi';
+import { CreateCommunityButton } from '@/components/communities/CreateCommunityButton';
 
 interface LayoutProps {
   children: React.ReactNode;
   activeTab?: 'home' | 'badges' | 'employees' | 'communities';
   onTabChange?: (tab: 'home' | 'badges' | 'employees' | 'communities') => void;
-  onCommunitySelect?: (community: { name: string; code: string; flag: string }) => void;
+  onCommunitySelect?: (community: { name: string; code: string; flag: string; communityId?: string }) => void;
 }
 
 export default function Layout({ children, activeTab = 'home', onTabChange, onCommunitySelect }: LayoutProps) {
   const { isAuthenticated, anonymousId, companyDomain, signOut } = useApp();
   const [showCommunities, setShowCommunities] = useState(false);
+  const [communities, setCommunities] = useState<any[]>([]);
+  const [loadingCommunities, setLoadingCommunities] = useState(false);
   
   // Get wallet connection and network information
   const { isConnected } = useAccount();
@@ -35,12 +38,46 @@ export default function Layout({ children, activeTab = 'home', onTabChange, onCo
   
   const networkName = getNetworkName(chainId);
 
-  const communities = [
-    { name: 'United States', code: 'US', flag: '🇺🇸' },
-    { name: 'Germany', code: 'DE', flag: '🇩🇪' },
-    { name: 'France', code: 'FR', flag: '🇫🇷' },
-    { name: 'Japan', code: 'JP', flag: '🇯🇵' },
-  ];
+  // Fetch communities from API
+  const fetchCommunities = async () => {
+    setLoadingCommunities(true);
+    try {
+      const response = await fetch('/api/communities?limit=50');
+      const result = await response.json();
+      
+      if (result.success && result.communities) {
+        // Transform API communities to match our format
+        const transformedCommunities = result.communities.map((c: any) => ({
+          name: c.name,
+          code: c.attestation_value,
+          flag: getFlagEmoji(c.attestation_value),
+          communityId: c.community_id,
+        }));
+        setCommunities(transformedCommunities);
+      }
+    } catch (error) {
+      console.error('Failed to fetch communities:', error);
+      // Fallback to empty array on error
+      setCommunities([]);
+    } finally {
+      setLoadingCommunities(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchCommunities();
+  }, []);
+  
+  // Helper to get flag emoji from country code
+  const getFlagEmoji = (countryCode: string) => {
+    // Map of common country codes to flags
+    const flagMap: Record<string, string> = {
+      'USA': '🇺🇸', 'DEU': '🇩🇪', 'FRA': '🇫🇷', 'JPN': '🇯🇵',
+      'GBR': '🇬🇧', 'CAN': '🇨🇦', 'AUS': '🇦🇺', 'ITA': '🇮🇹',
+      'ESP': '🇪🇸', 'NLD': '🇳🇱', 'BEL': '🇧🇪', 'CHE': '🇨🇭',
+    };
+    return flagMap[countryCode] || '🌍';
+  };
 
   const handleEmployeesClick = () => {
     onTabChange?.('employees');
@@ -48,7 +85,7 @@ export default function Layout({ children, activeTab = 'home', onTabChange, onCo
     // The main content will show the "Want to share something? Sign in with your work email to post" flow
   };
 
-  const handleCommunityClick = (community: { name: string; code: string; flag: string }) => {
+  const handleCommunityClick = (community: { name: string; code: string; flag: string; communityId?: string }) => {
     // Navigate to community-specific page or filter
     onTabChange?.('communities');
     // Pass the selected community to the parent component
@@ -141,18 +178,33 @@ export default function Layout({ children, activeTab = 'home', onTabChange, onCo
             {/* Communities List */}
             {showCommunities && (
               <div className="ml-6 space-y-1">
-                {communities.map((community) => (
-                  <button
-                    key={community.code}
-                    onClick={() => handleCommunityClick(community)}
-                    className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                  >
-                    <span className="text-lg">{community.flag}</span>
-                    <span>{community.name}</span>
-                  </button>
-                ))}
+                {loadingCommunities ? (
+                  <div className="px-3 py-2 text-sm text-gray-400">
+                    Loading...
+                  </div>
+                ) : communities.length === 0 ? (
+                  <div className="px-3 py-2 text-sm text-gray-400">
+                    No communities yet. Create one!
+                  </div>
+                ) : (
+                  communities.map((community) => (
+                    <button
+                      key={community.communityId || community.code}
+                      onClick={() => handleCommunityClick(community)}
+                      className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                    >
+                      <span className="text-lg">{community.flag}</span>
+                      <span>{community.name}</span>
+                    </button>
+                  ))
+                )}
               </div>
             )}
+          </div>
+          
+          {/* Create Community Button */}
+          <div className="mt-4 px-3">
+            <CreateCommunityButton onCommunityCreated={fetchCommunities} />
           </div>
         </nav>
 

@@ -1,14 +1,23 @@
-"use client";
+/**
+ * OpenBands v2 - Community Detail Page
+ * 
+ * Displays a single community with posts and join functionality.
+ * Restored original beautiful design from CountryCommunity.tsx
+ */
+
+'use client';
+
 import { useState, useEffect } from 'react';
-import { useCountryPosts } from '@/lib/supabase';
-import { CountryPost } from '@/lib/supabase';
-import svgPaths from "./imports/svg-x50u5iglgo";
-import { commonNames, getCountryFlagEmoji } from '@/lib/utils/country-translation';
 import { useAccount } from 'wagmi';
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
+import { JoinCommunityButton } from '@/components/communities/JoinCommunityButton';
 import { PostComposer } from '@/components/communities/PostComposer';
 import { PostFeed } from '@/components/communities/PostFeed';
+import svgPaths from "@/components/imports/svg-x50u5iglgo";
+import { commonNames, getCountryFlagEmoji } from '@/lib/utils/country-translation';
 
-// Icon Components
+// Icon Components (from original design)
 function IconUserCheck() {
   return (
     <div className="relative shrink-0 size-[16px]">
@@ -69,109 +78,89 @@ function IconMail({ verified = false }: { verified?: boolean }) {
   );
 }
 
-// Country Post Card Component
-function CountryPostCard({ post }: { post: CountryPost }) {
-  const formatDate = (timestamp: number) => {
-    const date = new Date(timestamp);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
-
-  return (
-    <div className="bg-white rounded-lg border p-6 text-left">
-      <div className="flex items-start justify-between mb-3">
-        <h3 className="text-lg font-semibold text-gray-900 flex-1 pr-4">
-          {post.postTitle}
-        </h3>
-        <span className="text-sm text-gray-500 whitespace-nowrap">
-          {formatDate(post.createdAt)}
-        </span>
-      </div>
-      <p className="text-gray-700">
-        {post.content}
-      </p>
-    </div>
-  );
+interface BadgeRequirement {
+  type: 'age' | 'nationality' | 'company';
+  value?: string;
+  values?: string[];
 }
 
-interface CountryCommunityProps {
-  country: {
-    name: string;
-    code: string;
-    flag: string;
-    communityId?: string;
-  };
+interface Community {
+  id: string;
+  communityId: string;
+  name: string;
+  description: string;
+  attestationType: string;
+  attestationValue: string;
+  attestationValues?: string[];
+  creatorAddress: string;
+  memberCount: number;
+  postCount: number;
+  lastPostAt: string | null;
+  createdAt: string;
+  isMember: boolean;
+  badgeRequirements?: BadgeRequirement[];
+  combinationLogic?: 'any' | 'all';
+  avatarUrl?: string | null;
 }
 
-export default function CountryCommunity({ country }: CountryCommunityProps) {
+export default function CommunityPage() {
+  const params = useParams();
+  const communityId = params.communityId as string;
   const { address } = useAccount();
-  const [isJoined, setIsJoined] = useState(false);
-  const [memberCount, setMemberCount] = useState(0);
-  const [postCount, setPostCount] = useState(0);
-  const [communityData, setCommunityData] = useState<any>(null);
-  const [showPostComposer, setShowPostComposer] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
   
-  // Fetch country posts from Supabase (keeping old logic for now)
-  const { posts, loading, error, refetch } = useCountryPosts(country.code, 'new');
-
-  // Fetch community data if communityId is available
+  const [community, setCommunity] = useState<Community | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [showPostComposer, setShowPostComposer] = useState(false);
+  
   useEffect(() => {
-    const fetchCommunityData = async () => {
-      if (!country.communityId) return;
-      
-      try {
-        const params = new URLSearchParams();
-        if (address) {
-          params.append('walletAddress', address);
-        }
-        
-        const response = await fetch(`/api/communities/${country.communityId}?${params.toString()}`);
-        const result = await response.json();
-        
-        if (result.success) {
-          setCommunityData(result.community);
-          setIsJoined(result.community.isMember);
-          setMemberCount(result.community.memberCount);
-          setPostCount(result.community.postCount);
-        }
-      } catch (err) {
-        console.error('Failed to fetch community data:', err);
-      }
-    };
-    
-    fetchCommunityData();
-  }, [country.communityId, address]);
-
-  const handleJoinCommunity = async () => {
-    console.log('Joining community:', country.name);
-    if (!country.communityId || !address) return;
-    
+    fetchCommunity();
+  }, [communityId, address]);
+  
+  const fetchCommunity = async () => {
     try {
-      const response = await fetch(`/api/communities/${country.communityId}/join`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ walletAddress: address }),
-      });
+      setLoading(true);
+      setError(null);
       
+      const params = new URLSearchParams();
+      if (address) {
+        params.append('walletAddress', address);
+      }
+      
+      console.log(`[Community Page] Fetching ${communityId} with address:`, address);
+      
+      const response = await fetch(`/api/communities/${communityId}?${params.toString()}`);
       const result = await response.json();
       
-      if (result.success) {
-        setIsJoined(true);
-        setMemberCount(prev => prev + 1);
-      } else {
-        alert(result.error || 'Failed to join community');
+      console.log('[Community Page] API response:', result);
+      console.log('[Community Page] Member count:', result.community?.memberCount);
+      console.log('[Community Page] Is member:', result.community?.isMember);
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch community');
       }
+      
+      setCommunity(result.community);
     } catch (err) {
-      console.error('Failed to join:', err);
-      alert('Failed to join community');
+      console.error('[Community Page] Error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load community');
+    } finally {
+      setLoading(false);
     }
+  };
+  
+  const handleJoinSuccess = () => {
+    console.log('[Community Page] Join successful, refreshing...');
+    fetchCommunity();
+    setRefreshTrigger(prev => prev + 1);
+  };
+  
+  const handlePostCreated = () => {
+    console.log('[Community Page] Post created, refreshing feed...');
+    setShowPostComposer(false);
+    setRefreshTrigger(prev => prev + 1);
+    fetchCommunity(); // Refresh member count
   };
   
   const getBadgeEmoji = (type: string) => {
@@ -179,7 +168,7 @@ export default function CountryCommunity({ country }: CountryCommunityProps) {
       case 'nationality':
         return '🌍';
       case 'company':
-        return '✉️';
+        return '🏢';
       case 'age':
         return '🎂';
       default:
@@ -190,6 +179,7 @@ export default function CountryCommunity({ country }: CountryCommunityProps) {
   const getBadgeLabel = (type: string, value: string) => {
     switch (type) {
       case 'nationality':
+        // Translate 3-letter country code to English name
         return commonNames[value as keyof typeof commonNames] || value;
       case 'company':
         return `@${value}`;
@@ -202,14 +192,14 @@ export default function CountryCommunity({ country }: CountryCommunityProps) {
   
   // Get all badge requirements for display
   const getAllBadgeRequirements = (): Array<{ type: string; label: string; emoji: string }> => {
-    if (communityData?.badgeRequirements && communityData.badgeRequirements.length > 0) {
+    if (community?.badgeRequirements && community.badgeRequirements.length > 0) {
       // Multi-badge community: use badgeRequirements from metadata
-      return communityData.badgeRequirements.map((req: any) => {
+      return community.badgeRequirements.map(req => {
         if (req.type === 'age') {
           return { type: 'age', label: '18+', emoji: '🎂' };
         } else if (req.type === 'nationality' && req.values) {
           // For nationality, return all values
-          return req.values.map((code: string) => ({
+          return req.values.map(code => ({
             type: 'nationality',
             label: commonNames[code as keyof typeof commonNames] || code,
             emoji: getCountryFlagEmoji(code),
@@ -219,9 +209,9 @@ export default function CountryCommunity({ country }: CountryCommunityProps) {
         }
         return null;
       }).flat().filter(Boolean) as Array<{ type: string; label: string; emoji: string }>;
-    } else if (communityData?.attestationValues && communityData.attestationValues.length > 1) {
+    } else if (community?.attestationValues && community.attestationValues.length > 1) {
       // Multi-nationality community (legacy format)
-      return communityData.attestationValues.map((code: string) => ({
+      return community.attestationValues.map(code => ({
         type: 'nationality',
         label: commonNames[code as keyof typeof commonNames] || code,
         emoji: getCountryFlagEmoji(code),
@@ -229,16 +219,47 @@ export default function CountryCommunity({ country }: CountryCommunityProps) {
     } else {
       // Single badge community
       return [{
-        type: communityData?.attestationType || 'nationality',
-        label: getBadgeLabel(communityData?.attestationType || 'nationality', communityData?.attestationValue || country.code),
-        emoji: communityData?.attestationType === 'nationality' ? getCountryFlagEmoji(country.code) : getBadgeEmoji(communityData?.attestationType || 'nationality'),
+        type: community?.attestationType || 'age',
+        label: getBadgeLabel(community?.attestationType || 'age', community?.attestationValue || 'verified'),
+        emoji: getBadgeEmoji(community?.attestationType || 'age'),
       }];
     }
   };
   
+  if (loading) {
+    return (
+      <div className="relative size-full">
+        <div className="size-full bg-white">
+          <div className="box-border content-stretch flex flex-col items-center justify-center p-[40px] relative size-full">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <p className="mt-4 text-sm text-gray-600">Loading community...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (error || !community) {
+    return (
+      <div className="relative size-full">
+        <div className="size-full bg-white">
+          <div className="box-border content-stretch flex flex-col items-center justify-center p-[40px] relative size-full">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg max-w-md">
+              <p className="text-red-700">Error: {error || 'Community not found'}</p>
+              <Link href="/" className="mt-2 text-sm text-red-600 hover:text-red-800 underline inline-block">
+                ← Back to home
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // Calculate badge requirements for display
   const badgeRequirementsList = getAllBadgeRequirements();
   const hasMultipleBadges = badgeRequirementsList.length > 1;
-
+  
   return (
     <div className="relative size-full">
       <div className="size-full bg-white">
@@ -248,18 +269,18 @@ export default function CountryCommunity({ country }: CountryCommunityProps) {
             <div className="content-stretch flex flex-col gap-[16px] items-start relative shrink-0 w-full">
               {/* Header with Avatar and Buttons */}
               <div className="content-stretch flex gap-[12px] items-center relative shrink-0 w-full">
-                {/* Country Flag Avatar */}
+                {/* Community Avatar */}
                 <div className="relative rounded-[9999px] shrink-0 size-[78px]">
                   <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-[9999px]">
-                    {communityData?.avatarUrl ? (
+                    {community.avatarUrl ? (
                       <img 
-                        src={communityData.avatarUrl} 
-                        alt={`${country.name} avatar`}
+                        src={community.avatarUrl} 
+                        alt={`${community.name} avatar`}
                         className="w-full h-full object-cover"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-4xl bg-gray-100">
-                        {country.flag}
+                        {getBadgeEmoji(community.attestationType)}
                       </div>
                     )}
                   </div>
@@ -271,11 +292,11 @@ export default function CountryCommunity({ country }: CountryCommunityProps) {
                   
                   {/* Title and Buttons Row */}
                   <div className="content-stretch flex gap-[12px] items-center relative shrink-0 w-full">
-                    <p className="leading-none relative shrink-0 text-[24px] text-zinc-900 font-['Inter:Semi_Bold',_sans-serif] font-semibold">{country.name}</p>
+                    <p className="leading-none relative shrink-0 text-[24px] text-zinc-900 font-['Inter:Semi_Bold',_sans-serif] font-semibold">{community.name}</p>
                     
                     {/* Action Buttons */}
                     <div className="content-stretch flex gap-[6px] items-center relative shrink-0">
-                      {isJoined ? (
+                      {community.isMember ? (
                         <>
                           {/* Joined Button */}
                           <div className="bg-zinc-100 box-border content-stretch flex gap-[4px] h-[28px] items-center px-[8px] py-[4px] relative rounded-[6px] shrink-0">
@@ -287,7 +308,7 @@ export default function CountryCommunity({ country }: CountryCommunityProps) {
                           {/* New Post Button */}
                           <button
                             onClick={() => setShowPostComposer(!showPostComposer)}
-                            className="bg-zinc-900 hover:bg-zinc-800 box-border content-stretch flex gap-[4px] h-[28px] items-center justify-center px-[8px] py-[4px] relative rounded-[6px] shrink-0 transition-colors cursor-pointer"
+                            className="bg-zinc-900 hover:bg-zinc-800 box-border content-stretch flex gap-[4px] h-[28px] items-center justify-center px-[8px] py-[4px] relative rounded-[6px] shrink-0 transition-colors"
                           >
                             <IconPlus />
                             <div className="flex flex-col font-['Inter:Medium',_sans-serif] font-medium justify-center leading-[0] not-italic relative shrink-0 text-[12px] text-neutral-50 text-nowrap">
@@ -296,16 +317,14 @@ export default function CountryCommunity({ country }: CountryCommunityProps) {
                           </button>
                         </>
                       ) : (
-                        /* Join Button */
-                        <button
-                          onClick={handleJoinCommunity}
-                          className="bg-blue-600 hover:bg-blue-700 box-border content-stretch flex gap-[4px] h-[28px] items-center justify-center px-[8px] py-[4px] relative rounded-[6px] shrink-0 transition-colors"
-                        >
-                          <IconPlus />
-                          <div className="flex flex-col font-['Inter:Medium',_sans-serif] font-medium justify-center leading-[0] not-italic relative shrink-0 text-[12px] text-white text-nowrap">
-                            <p className="leading-[16px] whitespace-pre">Join</p>
-                          </div>
-                        </button>
+                        /* Join Button - use the component for proper verification */
+                        <JoinCommunityButton
+                          communityId={community.communityId}
+                          attestationType={community.attestationType}
+                          attestationValue={community.attestationValue}
+                          isJoined={false}
+                          onJoinSuccess={handleJoinSuccess}
+                        />
                       )}
                     </div>
                   </div>
@@ -316,7 +335,7 @@ export default function CountryCommunity({ country }: CountryCommunityProps) {
               <div className="content-stretch flex flex-col gap-[20px] items-start relative shrink-0 w-full">
                 <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
                   <p className="font-['Inter:Regular',_sans-serif] font-normal leading-[20px] not-italic text-[14px] text-zinc-500" style={{ maxWidth: '600px' }}>
-                    {communityData?.description || `This is a space for verified citizens to have candid conversations about national issues, government policies, social concerns, and community initiatives that matter to ${country.name} residents.`}
+                    {community.description}
                   </p>
                   
                   {/* Meta info */}
@@ -331,11 +350,11 @@ export default function CountryCommunity({ country }: CountryCommunityProps) {
                 {/* Stats */}
                 <div className="content-stretch flex gap-[24px] items-start relative shrink-0">
                   <div className="content-stretch flex flex-col gap-[2px] items-start not-italic relative shrink-0">
-                    <p className="font-['Inter:Semi_Bold',_sans-serif] font-semibold leading-none relative shrink-0 text-[20px] text-zinc-900 w-full">{memberCount}</p>
+                    <p className="font-['Inter:Semi_Bold',_sans-serif] font-semibold leading-none relative shrink-0 text-[20px] text-zinc-900 w-full">{community.memberCount}</p>
                     <p className="font-['Inter:Medium',_sans-serif] font-medium leading-[16px] relative shrink-0 text-[12px] text-zinc-500 w-full">Members</p>
                   </div>
                   <div className="content-stretch flex flex-col gap-[2px] items-start not-italic relative shrink-0">
-                    <p className="font-['Inter:Semi_Bold',_sans-serif] font-semibold leading-none relative shrink-0 text-[20px] text-zinc-900 w-full">{postCount}</p>
+                    <p className="font-['Inter:Semi_Bold',_sans-serif] font-semibold leading-none relative shrink-0 text-[20px] text-zinc-900 w-full">{community.postCount}</p>
                     <p className="font-['Inter:Medium',_sans-serif] font-medium leading-[16px] relative shrink-0 text-[12px] text-zinc-500 w-full">Posts</p>
                   </div>
                 </div>
@@ -371,37 +390,12 @@ export default function CountryCommunity({ country }: CountryCommunityProps) {
           </div>
 
           {/* Post Composer (shown when New Post is clicked) */}
-          {showPostComposer && isJoined && communityData?.communityId && (
+          {showPostComposer && community.isMember && (
             <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full mt-4">
               <PostComposer
-                communityId={communityData.communityId}
-                isMember={isJoined}
-                onPostCreated={() => {
-                  setShowPostComposer(false);
-                  setRefreshTrigger(prev => prev + 1);
-                  // Refresh community data to update post count
-                  if (country.communityId) {
-                    const fetchCommunityData = async () => {
-                      try {
-                        const params = new URLSearchParams();
-                        if (address) {
-                          params.append('walletAddress', address);
-                        }
-                        const response = await fetch(`/api/communities/${country.communityId}?${params.toString()}`);
-                        const result = await response.json();
-                        if (result.success) {
-                          setCommunityData(result.community);
-                          setIsJoined(result.community.isMember);
-                          setMemberCount(result.community.memberCount);
-                          setPostCount(result.community.postCount);
-                        }
-                      } catch (err) {
-                        console.error('[CountryCommunity] Error refreshing:', err);
-                      }
-                    };
-                    fetchCommunityData();
-                  }
-                }}
+                communityId={communityId}
+                isMember={community.isMember}
+                onPostCreated={handlePostCreated}
                 defaultOpen={true}
                 onCancel={() => setShowPostComposer(false)}
               />
@@ -409,52 +403,13 @@ export default function CountryCommunity({ country }: CountryCommunityProps) {
           )}
 
           {/* Posts Section */}
-          {communityData?.communityId ? (
-            <div className="content-stretch flex flex-col gap-[20px] items-start relative shrink-0 w-full mt-8">
-              <PostFeed
-                communityId={communityData.communityId}
-                sort="newest"
-                refreshTrigger={refreshTrigger}
-              />
-            </div>
-          ) : (
-            <div className="content-stretch flex flex-col gap-[20px] items-start relative shrink-0 w-full">
-            {loading ? (
-              <div className="bg-white rounded-lg border p-8 text-center w-full">
-                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                </div>
-                <p className="text-sm text-gray-600">Loading posts...</p>
-              </div>
-            ) : error ? (
-              <div className="bg-white rounded-lg border p-8 text-center w-full">
-                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-base font-semibold text-gray-900 mb-2">Error loading posts</h3>
-                <p className="text-sm text-gray-600">{error}</p>
-              </div>
-            ) : posts.length === 0 ? (
-              <div className="bg-white rounded-lg border p-8 text-center w-full">
-                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                </div>
-                <h3 className="text-base font-semibold text-gray-900 mb-2">No posts yet</h3>
-                <p className="text-sm text-gray-600 mb-4">Be the first to share something in the {country.name} community!</p>
-              </div>
-            ) : (
-              <div className="content-stretch flex flex-col gap-[16px] items-start relative shrink-0 w-full">
-                {posts.map((post) => (
-                  <CountryPostCard key={post.id} post={post} />
-                ))}
-              </div>
-            )}
+          <div className="content-stretch flex flex-col gap-[20px] items-start relative shrink-0 w-full mt-8">
+            <PostFeed
+              communityId={communityId}
+              sort="newest"
+              refreshTrigger={refreshTrigger}
+            />
           </div>
-          )}
         </div>
       </div>
     </div>

@@ -811,3 +811,32 @@ export function translateMRZToCountryName(mrzCode: string): string {
   // If not found, return the original code
   return mrzCode;
 }
+
+/**
+ * Convert 3-letter country code to flag emoji
+ * @param countryCode - The 3-letter ISO country code (e.g., "DEU", "USA", "FRA")
+ * @returns Flag emoji or 🌍 if not found
+ */
+export function getCountryFlagEmoji(countryCode: string): string {
+  if (!countryCode) return '🌍';
+  
+  // Handle special case for Germany (D<<)
+  if (countryCode === 'D<<') {
+    countryCode = 'DEU';
+  }
+  
+  // Convert 3-letter code to 2-letter code
+  const alpha2 = alpha3ToAlpha2(countryCode);
+  if (!alpha2) {
+    return '🌍';
+  }
+  
+  // Convert 2-letter code to flag emoji using regional indicator symbols
+  // Regional indicator symbols: A=U+1F1E6, B=U+1F1E7, ..., Z=U+1F1FF
+  const codePoints = alpha2
+    .toUpperCase()
+    .split('')
+    .map(char => 0x1F1E6 + (char.charCodeAt(0) - 65)); // 65 is 'A' in ASCII
+  
+  return String.fromCodePoint(...codePoints);
+}
