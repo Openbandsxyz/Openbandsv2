@@ -2,7 +2,7 @@
 //pragma solidity >=0.8.19;
 pragma solidity ^0.8.28;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @notice - The OpenbandsV2 Gas Fee Payer contract
@@ -10,8 +10,6 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 contract OpenbandsV2GasFeePayer is Ownable {
 
     constructor() Ownable(_msgSender()) {}
-
-    event NativeTokenReceived(address indexed from, uint256 amount);
 
     function topUpGasFeeFromOpenbandsV2GasFeePayer(address payable to, uint256 estimatedGasFeeAmount) external payable {
         require(address(this).balance >= estimatedGasFeeAmount, "Insufficient balance to cover the estimated gas fee in the OpenbandsV2GasFeePayer contract");
@@ -43,4 +41,6 @@ contract OpenbandsV2GasFeePayer is Ownable {
     receive() external payable {
         emit NativeTokenReceived(msg.sender, msg.value);
     }
+
+    event NativeTokenReceived(address indexed from, uint256 amount);
 }

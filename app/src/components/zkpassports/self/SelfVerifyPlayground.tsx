@@ -243,20 +243,20 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess, 
     }
 
     // @dev - Send a message from Celo mainnet to BASE mainnet via Hyperlane
-    await bridgeVerificationResultFromCeloToBase();
+    //await bridgeVerificationResultFromCeloToBase();
   }
 
-  // @dev - Send a message from Celo mainnet to BASE mainnet via Hyperlane
-  async function bridgeVerificationResultFromCeloToBase() {
-    // Use the address and chainId from the component scope
-    const userId = address || "";
+  // // @dev - Send a message from Celo mainnet to BASE mainnet via Hyperlane
+  // async function bridgeVerificationResultFromCeloToBase() {
+  //   // Use the address and chainId from the component scope
+  //   const userId = address || "";
 
-    const nationalityRecord = await getNationalityRecord(userId as `0x${string}`, chainId);
+  //   const nationalityRecord = await getNationalityRecord(userId as `0x${string}`, chainId);
 
-    // @dev - Call the CeloSender#sendToBase()
-    const txHash = await sendToBase(String(nationalityRecord));
-    console.log('📤 Verification result bridged from Celo to Base via Hyperlane. Tx hash:', txHash);
-  }
+  //   // @dev - Call the CeloSender#sendToBase()
+  //   const txHash = await sendToBase(String(nationalityRecord));
+  //   console.log('📤 Verification result bridged from Celo to Base via Hyperlane. Tx hash:', txHash);
+  // }
 
   const handleVerificationError = (error: Error | unknown) => {
     console.error('Verification failed:', error)
