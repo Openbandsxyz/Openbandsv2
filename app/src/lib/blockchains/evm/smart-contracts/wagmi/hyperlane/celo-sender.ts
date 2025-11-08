@@ -28,7 +28,7 @@ export const celoSenderContractConfig = {
 } as const
 
 /**
- * @notice - Send verification data via the CeloSender contract using Hyperlane
+ * @notice - Send verification data via the sendToBase() of the CeloSender contract using Hyperlane
  * @param verificationResult - The verification result to be sent from Celo to Base
  * @returns Transaction hash
  */
