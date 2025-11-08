@@ -68,7 +68,7 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
     event NationalityVerified(
         address indexed user,
         string nationality,
-        bytes message,      // @dev - a message via Hyperlane to bridge from Celo to Base
+        //bytes message,      // @dev - a message via Hyperlane to bridge from Celo to Base
         uint256 timestamp
     );
     
@@ -243,10 +243,10 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
             chainId: block.chainid
         });
 
-        // @dev - Send a message from Celo mainnet to BASE mainnet via Hyperlane
-        //bytes memory message = "test";
-        bytes memory message = abi.encode(nationalityRecords[user]);
-        celoSender.sendToBase(address(baseReceiver), message); // @dev - TODO: Replace the SC address (of the Badge Manager contract) with the actual address
+        // // @dev - Send a message from Celo mainnet to BASE mainnet via Hyperlane
+        // //bytes memory message = "test";
+        // bytes memory message = abi.encode(nationalityRecords[user]);
+        // celoSender.sendToBase(address(baseReceiver), message); // @dev - TODO: Replace the SC address (of the Badge Manager contract) with the actual address
 
         // Add to verified users array if new
         if (isNewUser) {
@@ -261,7 +261,7 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
         emit NationalityVerified(
             user,
             nationality,
-            message,      // @dev - a message via Hyperlane to bridge from Celo to Base
+            //message,      // @dev - a message via Hyperlane to bridge from Celo to Base
             block.timestamp
         );
     }

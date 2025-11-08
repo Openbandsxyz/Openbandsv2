@@ -6,10 +6,14 @@ import { useAccount, useChainId, useSwitchChain } from 'wagmi'
 import { VerificationStatusDisplay, VerificationStatus } from './VerificationStatusDisplay'
 
 // @dev - OpenbandsV2NationalityRegistry.sol related module
-import { storeNationalityVerification } from '@/lib/blockchains/evm/smart-contracts/wagmi/nationality-registry';
+import { storeNationalityVerification, getNationalityRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/nationality-registry';
 
 // @dev - OpenbandsV2BadgeManagerOnCelo.sol related module
 import { getProofOfHumanRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/zkpassports/self/openbands-v2-badge-manager-on-celo';
+
+// @dev - CeloSender related module for Hyperlane bridging
+import { sendToBase } from '@/lib/blockchains/evm/smart-contracts/wagmi/hyperlane/celo-sender';
+
 
 interface SelfVerifyPlaygroundProps {
   isMobile?: boolean
@@ -237,6 +241,17 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess, 
         onVerificationSuccess();
       }, 2000);
     }
+
+    // @dev - Send a message from Celo mainnet to BASE mainnet via Hyperlane
+    bridgeVerificationResultFromCeloToBase();
+  }
+
+  // @dev - Send a message from Celo mainnet to BASE mainnet via Hyperlane
+  function bridgeVerificationResultFromCeloToBase() {
+    const nationalityRecord = getNationalityRecord(userId, chainId);
+
+    // @dev - Call the CeloSender#sendToBase()
+    sendToBase(String(nationalityRecord));
   }
 
   const handleVerificationError = (error: Error | unknown) => {
