@@ -58,11 +58,10 @@ export async function sendToBase(
 ): Promise<`0x${string}`> {
   try {
     const BASE_RECEIVER = process.env.NEXT_PUBLIC_BASE_RECEIVER_ON_BASE_SEPOLIA || "";
-    
-    // Convert string to bytes format for Solidity
+
+    // @dev - Convert string to bytes format for Solidity
     // stringToHex converts the string to hex-encoded bytes (0x...)
-    const messageBytes = stringToHex("test message");       // @dev - Test value of message in bytes
-    //const messageBytes = stringToHex(verificationResult);
+    const messageBytes = stringToHex(verificationResult);
     
     console.log(`📤 Sending verification data to Base...`);
     console.log(`📝 Original message: ${verificationResult}`);
