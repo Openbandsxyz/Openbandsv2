@@ -4,7 +4,8 @@ import { wagmiConfig } from "@/lib/blockchains/evm/smart-contracts/wagmi/config"
 import type { Abi } from 'viem';
 
 // @dev - Artifact of the OpenbandsV2NationalityRegistry contract
-import artifactOfOpenbandsV2NationalityRegistry from '@/lib/blockchains/evm/smart-contracts/artifacts/nationality-registry/OpenbandsV2NationalityRegistry.json';
+import artifactOfOpenbandsV2NationalityRegistry from '@/lib/blockchains/evm/smart-contracts/artifacts/OpenbandsV2NationalityRegistry.sol/OpenbandsV2NationalityRegistry.json';
+//import artifactOfOpenbandsV2NationalityRegistry from '@/lib/blockchains/evm/smart-contracts/artifacts/nationality-registry/OpenbandsV2NationalityRegistry.json';
 
 /**
  * @notice - Set the OpenbandsV2NationalityRegistry contract instance
@@ -30,15 +31,20 @@ export const openbandsV2NationalityRegistryContractConfig = {
  * @notice Contract configuration
  * @dev Get contract address based on chain ID
  */
-export function getNationalityRegistryAddress(chainId?: number): `0x${string}` {
+export function getNationalityRegistryAddress(chainId?: number): `0x${string}` | undefined {
   // Celo Mainnet (42220)
   if (chainId === 42220) {
-    return (process.env.NEXT_PUBLIC_OPENBANDS_V2_NATIONALITY_REGISTRY_ON_CELO_MAINNET || '') as `0x${string}`;
+    const address = process.env.NEXT_PUBLIC_OPENBANDS_V2_NATIONALITY_REGISTRY_ON_CELO_MAINNET;
+    return address ? (address as `0x${string}`) : undefined;
   }
   // Celo Sepolia Testnet (11142220)
   if (chainId === 11142220) {
-    return (process.env.NEXT_PUBLIC_OPENBANDS_V2_NATIONALITY_REGISTRY_ON_CELO_SEPOLIA || '') as `0x${string}`;
+    const address = process.env.NEXT_PUBLIC_OPENBANDS_V2_NATIONALITY_REGISTRY_ON_CELO_SEPOLIA;
+    return address ? (address as `0x${string}`) : undefined;
   }
+  
+  console.warn(`⚠️ No contract address configured for chain ID: ${chainId}`);
+  return undefined;
 }
 
 // export const nationalityRegistryContractConfig = {

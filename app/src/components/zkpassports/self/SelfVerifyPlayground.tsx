@@ -7,7 +7,7 @@ import { wagmiConfig } from "@/lib/blockchains/evm/smart-contracts/wagmi/config"
 import { VerificationStatusDisplay, VerificationStatus } from './VerificationStatusDisplay'
 
 // @dev - OpenbandsV2NationalityRegistry.sol related module
-import { storeNationalityVerification, getNationalityRecord, watchNationalityVerifiedEvent } from '@/lib/blockchains/evm/smart-contracts/wagmi/nationality-registry';
+import { storeNationalityVerification, getNationalityRecord, watchNationalityVerifiedEvent, getNationalityRegistryAddress } from '@/lib/blockchains/evm/smart-contracts/wagmi/nationality-registry';
 
 // @dev - OpenbandsV2BadgeManagerOnCelo.sol related module
 import { getProofOfHumanRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/zkpassports/self/openbands-v2-badge-manager-on-celo';
@@ -74,6 +74,69 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess, 
     // @dev - Fetch proof of human record from the OpenbandsV2BadgeManagerOnCelo contract
     fetchProofOfHumanRecord();
   }, [address, isConnected, isMobile]); // Re-run when address, connection status, or view changes
+
+  // @dev - Watch for the NationalityVerified event BEFORE verification happens
+  useEffect(() => {
+    console.log('🔍 Event watcher useEffect triggered');
+    console.log(`   isConnected: ${isConnected}`);
+    console.log(`   chainId: ${chainId}`);
+    console.log(`   address: ${address}`);
+    
+    if (!isConnected || !chainId) {
+      console.log('⏸️ Event watcher paused: wallet not connected or chain ID missing');
+      return;
+    }
+
+    // Verify we have the contract address for this chain
+    const contractAddress = getNationalityRegistryAddress(chainId);
+    console.log(`📋 Contract address for chain ${chainId}: ${contractAddress}`);
+    
+    if (!contractAddress) {
+      console.error(`❌ No contract address configured for chain ID ${chainId}`);
+      console.error(`   Supported chains: 42220 (Celo Mainnet), 11142220 (Celo Sepolia)`);
+      return;
+    }
+
+    console.log('🔔 Starting NationalityVerified event watcher...');
+    console.log(`   Chain ID: ${chainId}`);
+    console.log(`   User Address: ${address}`);
+    console.log(`   Contract Address: ${contractAddress}`);
+    
+    // Start watching for events
+    const unwatch = watchNationalityVerifiedEvent(chainId, (event) => {
+      console.log('\n🎉🎉🎉 NationalityVerified event received in component! 🎉🎉🎉');
+      console.log('   Event details:', JSON.stringify(event, null, 2));
+      
+      // Only process events for the current user
+      if (event.user.toLowerCase() === address?.toLowerCase()) {
+        console.log('✅ Event is for current user - updating UI');
+        console.log(`   Nationality: ${event.nationality}`);
+        console.log(`   Message ID: ${event.messageId}`);
+        
+        // Update verification status
+        setVerificationStatus({
+          status: 'success',
+          message: `Your ${attributeType} has been verified on-chain! Nationality: ${event.nationality}`
+        });
+        
+        // You can also trigger additional UI updates here
+        // e.g., show a success notification, update badge display, etc.
+      } else {
+        console.log(`ℹ️ Event is for different user:`);
+        console.log(`   Event user: ${event.user}`);
+        console.log(`   Current user: ${address}`);
+      }
+    });
+
+    console.log('✅ Event watcher initialized successfully');
+    console.log(`   Unwatch function: ${typeof unwatch}`);
+
+    // Cleanup: stop watching when component unmounts or dependencies change
+    return () => {
+      console.log('🛑 Stopping event watcher');
+      unwatch();
+    };
+  }, [isConnected, chainId, address, attributeType]);
 
   const initializeSelfApp = async () => {
     console.log('🔄 initializeSelfApp called', { address, isMobile });
@@ -235,9 +298,8 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess, 
       message: `Your ${attributeType} has been verified on-chain! Check "My Badges" to see your ${attributeType} badge.`
     })
 
-    // @dev - Watch for the NationalityVerified event, which is emitted via the OpenbandsV2NationalityRegistry#customVerificationHook()
-    const watchedNationalityVerifiedEvent = watchNationalityVerifiedEvent(chainId);
-    console.log('👀 Watching the NationalityVerified event:', watchedNationalityVerifiedEvent);
+    // Note: Event watcher for retrieving the event log of the NationalityVerified event is already running from useEffect, so we don't need to start it here
+    // The event will be caught automatically and the UI will update via the event callback
 
     // @dev - Close the modal after successful verification
     if (onVerificationSuccess) {
