@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useMiniKit } from '@coinbase/onchainkit/minikit';
 import Layout from '@/components/Layout';
 import HomePage from '@/components/HomePage';
@@ -36,7 +37,8 @@ function MiniKitWrapper({ children }: { children: React.ReactNode }) {
   }
 }
 
-export default function Home() {
+function HomeContent() {
+  const searchParams = useSearchParams();
   const [desktopTab, setDesktopTab] = useState<'home' | 'badges' | 'employees' | 'communities'>('home');
   const [selectedCommunity, setSelectedCommunity] = useState<{ name: string; code: string; flag: string; communityId?: string } | null>(null);
   const [isClient, setIsClient] = useState(false);
@@ -44,6 +46,16 @@ export default function Home() {
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  // Read tab from URL parameters
+  useEffect(() => {
+    if (isClient && searchParams) {
+      const tabParam = searchParams.get('tab');
+      if (tabParam && ['home', 'badges', 'employees', 'communities'].includes(tabParam)) {
+        setDesktopTab(tabParam as 'home' | 'badges' | 'employees' | 'communities');
+      }
+    }
+  }, [isClient, searchParams]);
 
   const handleCommunitySelect = (community: { name: string; code: string; flag: string; communityId?: string }) => {
     setSelectedCommunity(community);
@@ -80,9 +92,24 @@ export default function Home() {
 
   return (
     <MiniKitWrapper>
-      <Layout activeTab={desktopTab} onTabChange={setDesktopTab} onCommunitySelect={handleCommunitySelect}>
-        {renderContent()}
-      </Layout>
+          <Layout activeTab={desktopTab} onTabChange={setDesktopTab} onCommunitySelect={handleCommunitySelect}>
+            {renderContent()}
+          </Layout>
     </MiniKitWrapper>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }

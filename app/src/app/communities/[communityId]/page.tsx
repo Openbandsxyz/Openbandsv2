@@ -7,13 +7,14 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useAccount } from 'wagmi';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { JoinCommunityButton } from '@/components/communities/JoinCommunityButton';
 import { PostComposer } from '@/components/communities/PostComposer';
 import { PostFeed } from '@/components/communities/PostFeed';
+import Layout from '@/components/Layout';
 import svgPaths from "@/components/imports/svg-x50u5iglgo";
 import { commonNames, getCountryFlagEmoji } from '@/lib/utils/country-translation';
 
@@ -103,16 +104,45 @@ interface Community {
   avatarUrl?: string | null;
 }
 
-export default function CommunityPage() {
+function CommunityPageContent() {
   const params = useParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const communityId = params.communityId as string;
+  const sortParam = searchParams.get('sort') as 'newest' | 'popular' | null;
   const { address } = useAccount();
+  
+  // Set default sort to "popular" if no sort param exists - do this immediately
+  // Only accept 'newest' or 'popular', default to 'popular' for anything else
+  // IMPORTANT: Only use 'newest' if explicitly set, otherwise always default to 'popular'
+  const effectiveSort: 'newest' | 'popular' = (sortParam === 'newest') ? 'newest' : 'popular';
   
   const [community, setCommunity] = useState<Community | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [showPostComposer, setShowPostComposer] = useState(false);
+  const [activeTab, setActiveTab] = useState<'home' | 'badges' | 'employees' | 'communities'>('home');
+  
+  // Set default sort to "popular" in URL if no sort param exists or invalid
+  // Run this immediately on mount to ensure URL is set
+  useEffect(() => {
+    // Check both searchParams (Next.js) and window.location (for reliability)
+    const currentSortFromParams = searchParams.get('sort');
+    const currentSortFromWindow = new URLSearchParams(window.location.search).get('sort');
+    const currentSort = currentSortFromParams || currentSortFromWindow;
+    
+    // If sort is not explicitly 'newest', always set to 'popular' (this ensures default is always popular)
+    if (currentSort !== 'newest') {
+      // Use replace to update URL without adding to history
+      // This ensures the URL reflects the default
+      const newUrl = `/communities/${communityId}?sort=popular`;
+      const currentUrl = window.location.pathname + window.location.search;
+      if (currentUrl !== newUrl) {
+        router.replace(newUrl, { scroll: false });
+      }
+    }
+  }, [communityId, router, searchParams]); // Include searchParams to react to URL changes
   
   useEffect(() => {
     fetchCommunity();
@@ -226,146 +256,163 @@ export default function CommunityPage() {
     }
   };
   
+  // Calculate badge requirements for display
+  const badgeRequirementsList = getAllBadgeRequirements();
+  const hasMultipleBadges = badgeRequirementsList.length > 1;
+
+  const handleTabChange = (tab: 'home' | 'badges' | 'employees' | 'communities') => {
+    if (tab === 'home') {
+      router.push('/');
+    } else {
+      router.push(`/?tab=${tab}`);
+    }
+  };
+
+  const handleCommunitySelect = (community: { name: string; code: string; flag: string; communityId?: string }) => {
+    if (community.communityId) {
+      router.push(`/communities/${community.communityId}`);
+    }
+  };
+  
   if (loading) {
     return (
-      <div className="relative size-full">
-        <div className="size-full bg-white">
-          <div className="box-border content-stretch flex flex-col items-center justify-center p-[40px] relative size-full">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            <p className="mt-4 text-sm text-gray-600">Loading community...</p>
+      <Layout activeTab={activeTab} onTabChange={handleTabChange} onCommunitySelect={handleCommunitySelect}>
+        <div className="relative size-full">
+          <div className="size-full bg-white">
+            <div className="box-border content-stretch flex flex-col items-center justify-center p-[40px] relative size-full">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <p className="mt-4 text-sm text-gray-600">Loading community...</p>
+            </div>
           </div>
         </div>
-      </div>
+      </Layout>
     );
   }
   
   if (error || !community) {
     return (
-      <div className="relative size-full">
-        <div className="size-full bg-white">
-          <div className="box-border content-stretch flex flex-col items-center justify-center p-[40px] relative size-full">
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg max-w-md">
-              <p className="text-red-700">Error: {error || 'Community not found'}</p>
-              <Link href="/" className="mt-2 text-sm text-red-600 hover:text-red-800 underline inline-block">
-                ← Back to home
-              </Link>
+      <Layout activeTab={activeTab} onTabChange={handleTabChange} onCommunitySelect={handleCommunitySelect}>
+        <div className="relative size-full">
+          <div className="size-full bg-white">
+            <div className="box-border content-stretch flex flex-col items-center justify-center p-[40px] relative size-full">
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg max-w-md">
+                <p className="text-red-700">Error: {error || 'Community not found'}</p>
+                <Link href="/" className="mt-2 text-sm text-red-600 hover:text-red-800 underline inline-block">
+                  ← Back to home
+                </Link>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </Layout>
     );
   }
   
-  // Calculate badge requirements for display
-  const badgeRequirementsList = getAllBadgeRequirements();
-  const hasMultipleBadges = badgeRequirementsList.length > 1;
-  
   return (
-    <div className="relative size-full">
-      <div className="size-full bg-white">
-        <div className="box-border content-stretch flex flex-col items-start p-[40px] relative size-full">
-          <div className="content-stretch flex flex-col gap-[20px] items-start relative w-full">
-            {/* Main Community Info */}
-            <div className="content-stretch flex flex-col gap-[16px] items-start relative shrink-0 w-full">
-              {/* Header with Avatar and Buttons */}
-              <div className="content-stretch flex gap-[12px] items-center relative shrink-0 w-full">
-                {/* Community Avatar */}
-                <div className="relative rounded-[9999px] shrink-0 size-[78px]">
-                  <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-[9999px]">
-                    {community.avatarUrl ? (
-                      <img 
-                        src={community.avatarUrl} 
-                        alt={`${community.name} avatar`}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-4xl bg-gray-100">
-                        {getBadgeEmoji(community.attestationType)}
+    <Layout activeTab={activeTab} onTabChange={handleTabChange} onCommunitySelect={handleCommunitySelect}>
+      <div className="bg-white relative rounded-tl-[24px] rounded-tr-[24px] size-full">
+        <div className="size-full">
+          <div className="box-border content-stretch flex flex-col gap-[32px] items-start pb-0 pt-[16px] px-[16px] relative size-full">
+            {/* Frame8: Main content section */}
+            <div className="content-stretch flex flex-col gap-[20px] items-start relative shrink-0 w-full max-w-3xl">
+              {/* Frame80: Header + Description + Stats */}
+              <div className="content-stretch flex flex-col gap-[16px] items-start relative shrink-0 w-full">
+                {/* Frame23: Header with Avatar and Buttons */}
+                <div className="content-stretch flex gap-[44px] items-start relative shrink-0 w-full">
+                  <div className="basis-0 content-stretch flex gap-[12px] grow items-center min-h-px min-w-px relative shrink-0" data-name="Card">
+                    {/* Avatar */}
+                    <div className="relative rounded-[9999px] shrink-0 size-[78px]" data-name="Avatar">
+                      <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-[9999px]">
+                        {community.avatarUrl ? (
+                          <img 
+                            src={community.avatarUrl} 
+                            alt={`${community.name} avatar`}
+                            className="absolute h-[110%] left-[-5.51%] max-w-none top-[-5%] w-[111.01%] object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-4xl bg-gray-100">
+                            {getBadgeEmoji(community.attestationType)}
+                          </div>
+                        )}
                       </div>
+                    </div>
+                    
+                    {/* Title */}
+                    <div className="basis-0 content-stretch flex flex-col font-['Inter:Semi_Bold',sans-serif] font-semibold gap-[4px] grow h-full items-start justify-center min-h-px min-w-px not-italic relative shrink-0">
+                      <p className="leading-[16px] overflow-ellipsis overflow-hidden relative shrink-0 text-[10px] text-nowrap text-zinc-500 tracking-[0.8px] whitespace-pre">COMMUNITY</p>
+                      <p className="leading-none min-w-full relative shrink-0 text-[24px] text-zinc-900 w-[min-content]">{community.name}</p>
+                    </div>
+                  </div>
+                  
+                  {/* Action Buttons */}
+                  <div className="content-stretch flex gap-[10px] items-center justify-end relative shrink-0">
+                    {community.isMember ? (
+                      <>
+                        <div className="bg-zinc-100 box-border content-stretch flex gap-[8px] h-[32px] items-center px-[12px] py-[8px] relative rounded-[6px] shrink-0" data-name="Join button">
+                          <IconUserCheck />
+                          <div className="flex flex-col font-['Inter:Medium',sans-serif] font-medium justify-center leading-[0] not-italic relative shrink-0 text-[12px] text-nowrap text-zinc-900">
+                            <p className="leading-[16px] whitespace-pre">Joined</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setShowPostComposer(!showPostComposer)}
+                          className="bg-zinc-900 hover:bg-zinc-800 box-border content-stretch flex gap-[8px] h-[32px] items-center justify-center px-[12px] py-[8px] relative rounded-[6px] shrink-0 w-[140px] transition-colors"
+                          data-name="Button"
+                        >
+                          <IconPlus />
+                          <div className="flex flex-col font-['Inter:Medium',sans-serif] font-medium justify-center leading-[0] not-italic relative shrink-0 text-[14px] text-neutral-50 text-nowrap">
+                            <p className="leading-[20px] whitespace-pre">New post</p>
+                          </div>
+                        </button>
+                      </>
+                    ) : (
+                      <JoinCommunityButton
+                        communityId={community.communityId}
+                        attestationType={community.attestationType}
+                        attestationValue={community.attestationValue}
+                        isJoined={false}
+                        onJoinSuccess={handleJoinSuccess}
+                      />
                     )}
                   </div>
                 </div>
-                
-                {/* Title and Buttons Container */}
-                <div className="content-stretch flex flex-col gap-[4px] grow items-start relative shrink-0">
-                  <p className="leading-[16px] overflow-ellipsis overflow-hidden relative shrink-0 text-[10px] text-nowrap text-zinc-500 tracking-[0.8px] whitespace-pre font-['Inter:Medium',_sans-serif] font-medium">COMMUNITY</p>
-                  
-                  {/* Title and Buttons Row */}
-                  <div className="content-stretch flex gap-[12px] items-center relative shrink-0 w-full">
-                    <p className="leading-none relative shrink-0 text-[24px] text-zinc-900 font-['Inter:Semi_Bold',_sans-serif] font-semibold">{community.name}</p>
-                    
-                    {/* Action Buttons */}
-                    <div className="content-stretch flex gap-[6px] items-center relative shrink-0">
-                      {community.isMember ? (
-                        <>
-                          {/* Joined Button */}
-                          <div className="bg-zinc-100 box-border content-stretch flex gap-[4px] h-[28px] items-center px-[8px] py-[4px] relative rounded-[6px] shrink-0">
-                            <IconUserCheck />
-                            <div className="flex flex-col font-['Inter:Medium',_sans-serif] font-medium justify-center leading-[0] not-italic relative shrink-0 text-[12px] text-nowrap text-zinc-900">
-                              <p className="leading-[16px] whitespace-pre">Joined</p>
-                            </div>
-                          </div>
-                          {/* New Post Button */}
-                          <button
-                            onClick={() => setShowPostComposer(!showPostComposer)}
-                            className="bg-zinc-900 hover:bg-zinc-800 box-border content-stretch flex gap-[4px] h-[28px] items-center justify-center px-[8px] py-[4px] relative rounded-[6px] shrink-0 transition-colors"
-                          >
-                            <IconPlus />
-                            <div className="flex flex-col font-['Inter:Medium',_sans-serif] font-medium justify-center leading-[0] not-italic relative shrink-0 text-[12px] text-neutral-50 text-nowrap">
-                              <p className="leading-[16px] whitespace-pre">New post</p>
-                            </div>
-                          </button>
-                        </>
-                      ) : (
-                        /* Join Button - use the component for proper verification */
-                        <JoinCommunityButton
-                          communityId={community.communityId}
-                          attestationType={community.attestationType}
-                          attestationValue={community.attestationValue}
-                          isJoined={false}
-                          onJoinSuccess={handleJoinSuccess}
-                        />
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
 
-              {/* Description and Stats */}
+              {/* Frame75: Description + Stats */}
               <div className="content-stretch flex flex-col gap-[20px] items-start relative shrink-0 w-full">
+                {/* Frame79: Description + Meta */}
                 <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
-                  <p className="font-['Inter:Regular',_sans-serif] font-normal leading-[20px] not-italic text-[14px] text-zinc-500" style={{ maxWidth: '600px' }}>
+                  <p className="font-['Inter:Regular',sans-serif] font-normal leading-[20px] not-italic relative shrink-0 text-[14px] text-zinc-500 w-full">
                     {community.description}
                   </p>
                   
-                  {/* Meta info */}
+                  {/* Frame76: Meta info */}
                   <div className="content-stretch flex flex-col gap-[6px] items-start relative shrink-0 w-full">
                     <div className="content-stretch flex gap-[5px] items-center relative shrink-0 w-full">
                       <IconFence />
-                      <p className="font-['Inter:Regular',_sans-serif] font-normal leading-[20px] not-italic relative shrink-0 text-[14px] text-indigo-400 text-nowrap whitespace-pre">Gated</p>
+                      <p className="font-['Inter:Regular',sans-serif] font-normal leading-[20px] not-italic relative shrink-0 text-[14px] text-indigo-400 text-nowrap whitespace-pre">Gated</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Stats */}
+                {/* Frame78: Stats */}
                 <div className="content-stretch flex gap-[24px] items-start relative shrink-0">
                   <div className="content-stretch flex flex-col gap-[2px] items-start not-italic relative shrink-0">
-                    <p className="font-['Inter:Semi_Bold',_sans-serif] font-semibold leading-none relative shrink-0 text-[20px] text-zinc-900 w-full">{community.memberCount}</p>
-                    <p className="font-['Inter:Medium',_sans-serif] font-medium leading-[16px] relative shrink-0 text-[12px] text-zinc-500 w-full">Members</p>
+                    <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold leading-none relative shrink-0 text-[20px] text-zinc-900 w-full">{community.memberCount}</p>
+                    <p className="font-['Inter:Medium',sans-serif] font-medium leading-[16px] relative shrink-0 text-[12px] text-zinc-500 w-full">Members</p>
                   </div>
                   <div className="content-stretch flex flex-col gap-[2px] items-start not-italic relative shrink-0">
-                    <p className="font-['Inter:Semi_Bold',_sans-serif] font-semibold leading-none relative shrink-0 text-[20px] text-zinc-900 w-full">{community.postCount}</p>
-                    <p className="font-['Inter:Medium',_sans-serif] font-medium leading-[16px] relative shrink-0 text-[12px] text-zinc-500 w-full">Posts</p>
+                    <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold leading-none relative shrink-0 text-[20px] text-zinc-900 w-full">{community.postCount}</p>
+                    <p className="font-['Inter:Medium',sans-serif] font-medium leading-[16px] relative shrink-0 text-[12px] text-zinc-500 w-full">Posts</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Badge Requirements */}
+            {/* Frame81: Badge Requirements */}
             <div className="content-stretch flex flex-col gap-[10px] items-start relative shrink-0 w-full">
               <div className="content-stretch flex gap-[4px] items-center relative shrink-0 w-full">
                 <IconFileBadge />
-                <p className="font-['Inter:Medium',_sans-serif] font-medium leading-[20px] not-italic relative shrink-0 text-[14px] text-indigo-400 text-nowrap whitespace-pre">
+                <p className="font-['Inter:Medium',sans-serif] font-medium leading-[20px] not-italic relative shrink-0 text-[14px] text-indigo-400 text-nowrap whitespace-pre">
                   {hasMultipleBadges
                     ? 'To join this community, you must have at least one of the following badges'
                     : 'To join this community, you must have the following badge'}
@@ -378,7 +425,7 @@ export default function CommunityPage() {
                     <div className="bg-neutral-50 box-border content-stretch flex gap-[8px] items-center justify-center px-[10px] py-[2px] relative rounded-[12px] shrink-0">
                       <div aria-hidden="true" className="absolute border border-solid border-zinc-200 inset-0 pointer-events-none rounded-[12px]" />
                       <div className="content-stretch flex gap-[6px] items-center relative shrink-0">
-                        <p className="font-['Inter:Medium',_sans-serif] font-medium leading-[20px] not-italic relative shrink-0 text-zinc-900 text-[14px] text-nowrap whitespace-pre">
+                        <p className="font-['Inter:Medium',sans-serif] font-medium leading-[20px] not-italic relative shrink-0 text-zinc-900 text-[14px] text-nowrap whitespace-pre">
                           {badge.emoji} {badge.label}
                         </p>
                       </div>
@@ -389,9 +436,20 @@ export default function CommunityPage() {
             </div>
           </div>
 
+          {/* Separator */}
+          <div className="flex h-[1px] items-center justify-center relative shrink-0 w-full">
+            <div className="h-0 relative w-full" data-name="Separator">
+              <div className="absolute bottom-0 left-0 right-0 top-[-1px]">
+                <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 804 1">
+                  <line id="Separator" stroke="rgba(229, 231, 235, 1)" x2="804" y1="0.5" y2="0.5" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
           {/* Post Composer (shown when New Post is clicked) */}
           {showPostComposer && community.isMember && (
-            <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full mt-4">
+            <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full max-w-3xl">
               <PostComposer
                 communityId={communityId}
                 isMember={community.isMember}
@@ -402,16 +460,39 @@ export default function CommunityPage() {
             </div>
           )}
 
-          {/* Posts Section */}
-          <div className="content-stretch flex flex-col gap-[20px] items-start relative shrink-0 w-full mt-8">
+          {/* Frame82: Posts Section */}
+          <div className="content-stretch flex flex-col gap-[24px] items-start relative shrink-0 w-full max-w-3xl">
             <PostFeed
               communityId={communityId}
-              sort="newest"
+              sort={effectiveSort}
               refreshTrigger={refreshTrigger}
+              onSortChange={(newSort) => {
+                router.replace(`/communities/${communityId}?sort=${newSort}`, { scroll: false });
+              }}
             />
+          </div>
           </div>
         </div>
       </div>
-    </div>
+    </Layout>
+  );
+}
+
+export default function CommunityPage() {
+  return (
+    <Suspense fallback={
+      <Layout activeTab="home" onTabChange={() => {}} onCommunitySelect={() => {}}>
+        <div className="relative size-full">
+          <div className="size-full bg-white">
+            <div className="box-border content-stretch flex flex-col items-center justify-center p-[40px] relative size-full">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <p className="mt-4 text-sm text-gray-600">Loading...</p>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    }>
+      <CommunityPageContent />
+    </Suspense>
   );
 }

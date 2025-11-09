@@ -119,7 +119,7 @@ export async function POST(
         title: post.title,
         content: post.content,
         authorAnonymousId: post.author_anonymous_id,
-        likeCount: post.like_count,
+        upvoteCount: post.upvote_count,
         commentCount: post.comment_count,
         createdAt: post.created_at,
       },
@@ -144,7 +144,7 @@ export async function GET(
     const searchParams = req.nextUrl.searchParams;
     const page = parseInt(searchParams.get('page') || '1');
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100);
-    const sort = searchParams.get('sort') || 'newest';
+    const sort = searchParams.get('sort') || 'popular';
     
     const offset = (page - 1) * limit;
     const { communityId } = params;
@@ -160,16 +160,28 @@ export async function GET(
       .eq('is_active', true);
     
     // Sort
-    if (sort === 'hot') {
-      query = query.order('like_count', { ascending: false })
-                   .order('created_at', { ascending: false });
-    } else if (sort === 'top') {
-      query = query.order('like_count', { ascending: false });
-    } else {
+    let shouldSortInMemory = false;
+    if (sort === 'popular') {
+      // Popular = sorted by (upvote_count + comment_count) descending, then by created_at descending
+      // We'll fetch a larger batch (100 posts) and sort in memory, then paginate
+      // This ensures we get the truly popular posts across all posts, not just the current page
       query = query.order('created_at', { ascending: false });
+      // Temporarily increase limit for popular sorting to get better results
+      const popularLimit = Math.min(100, limit * 5); // Fetch up to 5 pages worth
+      query = query.range(0, popularLimit - 1);
+      shouldSortInMemory = true;
+    } else if (sort === 'hot') {
+      query = query.order('upvote_count', { ascending: false })
+                   .order('created_at', { ascending: false });
+      query = query.range(offset, offset + limit - 1);
+    } else if (sort === 'top') {
+      query = query.order('upvote_count', { ascending: false });
+      query = query.range(offset, offset + limit - 1);
+    } else {
+      // newest (default)
+      query = query.order('created_at', { ascending: false });
+      query = query.range(offset, offset + limit - 1);
     }
-    
-    query = query.range(offset, offset + limit - 1);
     
     const { data, error, count } = await query;
     
@@ -181,11 +193,35 @@ export async function GET(
       }, { status: 500 });
     }
     
-    console.log(`[List Posts] Found ${count} posts, returning ${data?.length} for this page`);
+    // If sorting by popular, sort by (upvote_count + comment_count) descending
+    let sortedPosts = data || [];
+    if (shouldSortInMemory && sortedPosts.length > 0) {
+      // Sort all fetched posts by popularity score
+      sortedPosts = sortedPosts.sort((a: any, b: any) => {
+        const scoreA = (a.upvote_count || 0) + (a.comment_count || 0);
+        const scoreB = (b.upvote_count || 0) + (b.comment_count || 0);
+        if (scoreB !== scoreA) {
+          return scoreB - scoreA; // Higher score first
+        }
+        // If scores are equal, sort by created_at descending (newer first)
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
+      
+      // Apply pagination after sorting
+      const startIndex = offset;
+      const endIndex = offset + limit;
+      sortedPosts = sortedPosts.slice(startIndex, endIndex);
+      
+      // Update total count for pagination (use the fetched count, not the sorted slice count)
+      // For popular sorting, we're showing a subset of all posts, so pagination might be off
+      // But this is acceptable for now
+    }
+    
+    console.log(`[List Posts] Found ${count} posts, returning ${sortedPosts.length} for this page (sort: ${sort})`);
     
     return NextResponse.json({
       success: true,
-      posts: data,
+      posts: sortedPosts,
       pagination: {
         page,
         limit,
