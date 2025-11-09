@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { useAccount, useChainId, useSwitchChain } from 'wagmi'
 import { useApp } from '@/context/AppContext';
-import BadgesList from './badges/BadgesList';
 import AddBadgeFlow from './badges/AddBadgeFlow';
 import { useBadgeCheck } from '@/hooks/useBadgeCheck';
 import { useNationalityBadgeCheck } from '@/hooks/useNationalityBadgeCheck';
@@ -375,19 +374,9 @@ export default function BadgesPage() {
 
   // Show badges list (main view)
   return (
-    <>
-    {/* 
-    <BadgesList 
-      badges={badges}
-      onAddNewBadge={addNewBadge}
-      onDeleteBadge={deleteBadge}
-      onReverifyBadge={reverifyBadge}
-    /> 
-    */}
-        
     <div className="flex-1 bg-white">
       {/* Header */}
-      <div className="border-b border-gray-200 py-6">
+      <div className="border-b border-gray-200 py-6 pl-6">
         <h1 className="text-2xl font-bold text-gray-900">My Badges</h1>
         <p className="text-gray-600 mt-2">
           Manage and customize your badges here. You can manage visibility, add new badges, reverify or remove ones you no longer want.
@@ -395,7 +384,7 @@ export default function BadgesPage() {
       </div>
 
       {/* Badges Table */}
-      <div className="py-6">
+      <div className="py-6 pl-6">
         {badges.length === 0 ? (
           <div className="bg-gray-50 rounded-lg border p-8 text-center">
             <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -481,6 +470,5 @@ export default function BadgesPage() {
         </div>
       </div>
     </div>
-    </>
   );
 }

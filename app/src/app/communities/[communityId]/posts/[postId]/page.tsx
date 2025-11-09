@@ -90,7 +90,7 @@ function PostDetailPageContent() {
     <Layout activeTab={activeTab} onTabChange={handleTabChange} onCommunitySelect={handleCommunitySelect}>
       <div className="bg-white relative rounded-tl-[24px] rounded-tr-[24px] size-full">
         <div className="size-full">
-          <div className="box-border content-stretch flex flex-col gap-[32px] items-start pb-0 pt-[16px] px-0 relative size-full">
+          <div className="box-border content-stretch flex flex-col gap-[32px] items-start pb-0 pt-[16px] pl-6 pr-0 relative size-full">
             {/* Back Arrow */}
             <button
               onClick={handleBack}

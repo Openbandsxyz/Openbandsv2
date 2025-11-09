@@ -63,7 +63,7 @@ export default function MainContent() {
   return (
     <div className="flex-1 bg-white">
       {/* Header */}
-      <div className="border-b border-gray-200 py-4">
+      <div className="border-b border-gray-200 py-4 pl-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             {/* Filter Dropdown */}
@@ -219,7 +219,7 @@ export default function MainContent() {
       </div>
 
       {/* Main Content */}
-      <div className="py-6 space-y-4">
+      <div className="py-6 pl-6 space-y-4">
         {/* Post Composer - only show when authenticated */}
         {isAuthenticated && anonymousId && companyDomain ? (
           <PostComposer onPosted={() => refetch({ silent: true })} />
