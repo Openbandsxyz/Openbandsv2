@@ -1,5 +1,5 @@
 // @dev - Wagmi related imports
-import { simulateContract, writeContract, readContract } from '@wagmi/core'
+import { simulateContract, writeContract, readContract, watchContractEvent } from '@wagmi/core'
 import { wagmiConfig } from "@/lib/blockchains/evm/smart-contracts/wagmi/config";
 import type { Abi } from 'viem';
 
@@ -249,4 +249,32 @@ export async function getUserNationality(
     throw error;
   }
 }
+
+
+
+//================= Events =====================//
+
+/**
+ * @notice - Watch for the NationalityVerified event, which is emitted via the OpenbandsV2NationalityRegistry#customVerificationHook()
+ */
+export function watchNationalityVerifiedEvent(chainId?: number) {
+  try {
+    const nationalityRegistryContractAddress = getNationalityRegistryAddress(chainId);
+    
+    const watchedNationalityVerifiedEvent = watchContractEvent(wagmiConfig, {
+      address: nationalityRegistryContractAddress,
+      abi: nationalityRegistryContractConfig.abi,
+      eventName: 'NationalityVerified',
+      onLogs(logs) {
+        console.log('New logs!', logs)
+      },
+    })
+
+    return watchedNationalityVerifiedEvent;
+  } catch (error) {
+    console.error('Error watching the NationalityVerified event-emitted via the OpenbandsV2NationalityRegistry#customVerificationHook():', error);
+    return false;
+  }
+}
+
 

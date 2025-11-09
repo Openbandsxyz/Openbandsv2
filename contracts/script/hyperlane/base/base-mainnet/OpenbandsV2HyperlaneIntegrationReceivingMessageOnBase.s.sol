@@ -61,9 +61,9 @@ contract OpenbandsV2HyperlaneIntegrationReceivingMessageOnBaseScript is Script {
         // @dev - Create the Openbands V2 contracts instances on testnet
         IDENTITY_VERIFICATION_HUB_ON_CELO_MAINNET = 0xe57F4773bd9c9d8b6Cd70431117d353298B9f5BF;  // @dev - The deployed address of the IdentityVerificationHub contract on Celo Mainnet
         OPENBANDS_V2_NATIONALITY_REGISTRY_ON_CELO_MAINNET = vm.envAddress("OPENBANDS_V2_NATIONALITY_REGISTRY_ON_CELO_MAINNET");
-        //address OPENBANDS_V2_BADGE_MANAGER_ADDRESS_ON_BASE_SEPOLIA = vm.envAddress("OPENBANDS_V2_BADGE_MANAGER_ADDRESS_ON_BASE_SEPOLIA");
+        //address OPENBANDS_V2_BADGE_MANAGER_ON_BASE_SEPOLIA = vm.envAddress("OPENBANDS_V2_BADGE_MANAGER_ON_BASE_SEPOLIA");
         openbandsV2NationalityRegistry = OpenbandsV2NationalityRegistry(payable(OPENBANDS_V2_NATIONALITY_REGISTRY_ON_CELO_MAINNET));
-        //openbandsV2BadgeManager = OpenbandsV2BadgeManager(OPENBANDS_V2_BADGE_MANAGER_ADDRESS_ON_BASE_SEPOLIA);
+        //openbandsV2BadgeManager = OpenbandsV2BadgeManager(OPENBANDS_V2_BADGE_MANAGER_ON_BASE_SEPOLIA);
     
         // @dev - Create the Openbands V2 Badge Manager instance on Base Sepolia
         OPENBANDS_V2_BADGE_MANAGER_ON_BASE_MAINNET = vm.envAddress("OPENBANDS_V2_BADGE_MANAGER_ON_BASE_MAINNET");

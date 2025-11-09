@@ -7,7 +7,7 @@ import { wagmiConfig } from "@/lib/blockchains/evm/smart-contracts/wagmi/config"
 import { VerificationStatusDisplay, VerificationStatus } from './VerificationStatusDisplay'
 
 // @dev - OpenbandsV2NationalityRegistry.sol related module
-import { storeNationalityVerification, getNationalityRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/nationality-registry';
+import { storeNationalityVerification, getNationalityRecord, watchNationalityVerifiedEvent } from '@/lib/blockchains/evm/smart-contracts/wagmi/nationality-registry';
 
 // @dev - OpenbandsV2BadgeManagerOnCelo.sol related module
 import { getProofOfHumanRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/zkpassports/self/openbands-v2-badge-manager-on-celo';
@@ -234,6 +234,10 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess, 
       status: 'success',
       message: `Your ${attributeType} has been verified on-chain! Check "My Badges" to see your ${attributeType} badge.`
     })
+
+    // @dev - Watch for the NationalityVerified event, which is emitted via the OpenbandsV2NationalityRegistry#customVerificationHook()
+    const watchedNationalityVerifiedEvent = watchNationalityVerifiedEvent(chainId);
+    console.log('👀 Watching the NationalityVerified event:', watchedNationalityVerifiedEvent);
 
     // @dev - Close the modal after successful verification
     if (onVerificationSuccess) {
