@@ -21,7 +21,7 @@ export default function BadgesList({ badges, onAddNewBadge, onDeleteBadge, onRev
   return (
     <div className="relative size-full">
       <div className="size-full">
-        <div className="box-border content-stretch flex flex-col items-start pb-[24px] pl-[24px] pr-[24px] pt-0 relative size-full">
+        <div className="box-border content-stretch flex flex-col items-start pb-[24px] pt-0 relative size-full">
           {/* Main Content */}
           <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
             {/* Page Header */}

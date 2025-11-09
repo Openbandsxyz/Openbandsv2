@@ -153,9 +153,10 @@ export async function GET(
     
     const supabase = getServerSupabase();
     
+    // Only select needed fields for better performance
     let query = supabase
       .from('posts')
-      .select('*', { count: 'exact' })
+      .select('id, community_id, title, content, author_address, author_anonymous_id, upvote_count, comment_count, created_at', { count: 'exact' })
       .eq('community_id', communityId)
       .eq('is_active', true);
     

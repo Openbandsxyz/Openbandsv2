@@ -6,7 +6,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAccount } from 'wagmi';
 
@@ -96,7 +96,7 @@ function IconMail({ verified = false }: { verified?: boolean }) {
 }
 
 // Post Card Component matching the design
-function PostCard({ post, formatTimestamp, communityId, onUpvote }: { post: Post; formatTimestamp: (date: string) => string; communityId: string; onUpvote?: (postId: string) => void }) {
+const PostCard = memo(function PostCard({ post, formatTimestamp, communityId, onUpvote }: { post: Post; formatTimestamp: (date: string) => string; communityId: string; onUpvote?: (postId: string) => void }) {
   const router = useRouter();
   
   // Generate author name from anonymous ID
@@ -210,7 +210,7 @@ function PostCard({ post, formatTimestamp, communityId, onUpvote }: { post: Post
       </div>
     </div>
   );
-}
+});
 
 interface PostFeedProps {
   communityId: string;
@@ -367,8 +367,18 @@ export function PostFeed({ communityId, communityName, sort: initialSort = 'popu
 
       {/* Loading State */}
       {loading && posts.length === 0 && (
-        <div className="flex items-center justify-center py-12 w-full">
-          <div className="text-gray-500">Loading posts...</div>
+        <div className="content-stretch flex flex-col gap-[16px] items-start relative shrink-0 w-full">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-white min-w-[85px] relative rounded-[6px] shrink-0 w-full animate-pulse">
+              <div className="box-border content-stretch flex gap-[16px] items-start min-w-inherit p-[14px] relative w-full">
+                <div className="basis-0 content-stretch flex flex-col gap-[6px] grow items-start min-h-px min-w-px relative shrink-0">
+                  <div className="h-5 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-full"></div>
+                  <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

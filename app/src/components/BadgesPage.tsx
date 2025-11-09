@@ -387,7 +387,7 @@ export default function BadgesPage() {
         
     <div className="flex-1 bg-white">
       {/* Header */}
-      <div className="border-b border-gray-200 px-6 py-6">
+      <div className="border-b border-gray-200 py-6">
         <h1 className="text-2xl font-bold text-gray-900">My Badges</h1>
         <p className="text-gray-600 mt-2">
           Manage and customize your badges here. You can manage visibility, add new badges, reverify or remove ones you no longer want.
@@ -395,7 +395,7 @@ export default function BadgesPage() {
       </div>
 
       {/* Badges Table */}
-      <div className="p-6">
+      <div className="py-6">
         {badges.length === 0 ? (
           <div className="bg-gray-50 rounded-lg border p-8 text-center">
             <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">

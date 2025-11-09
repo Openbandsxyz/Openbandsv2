@@ -103,30 +103,12 @@ export async function POST(
         }, { status: 404 });
       }
       
-      // Check nesting depth - Reddit-style: API caps at ~8-10 levels
-      // Database supports unlimited nesting, but we cap API responses for performance
-      const API_DEPTH_LIMIT = 10; // Reddit caps at ~8, we use 10 for flexibility
-      let currentParentId = parentComment.parent_comment_id;
-      let depth = 1; // We're already at depth 1 (replying to parentComment)
-      
-      // Traverse up the tree to count depth
-      while (currentParentId && depth < API_DEPTH_LIMIT) {
-        const { data: grandParent } = await supabase
-          .from('comments')
-          .select('parent_comment_id')
-          .eq('id', currentParentId)
-          .single();
-        
-        if (!grandParent) break;
-        
-        currentParentId = grandParent.parent_comment_id;
-        depth++;
-      }
-      
-      if (depth >= API_DEPTH_LIMIT) {
+      // Enforce 2-level limit: only allow replies to root comments (parent_comment_id is null)
+      // This ensures we only have: root comments (level 1) and their direct replies (level 2)
+      if (parentComment.parent_comment_id) {
         return NextResponse.json({ 
           success: false, 
-          error: `Maximum nesting depth (${API_DEPTH_LIMIT} levels) reached. Please use "Continue this thread" to view deeper replies.` 
+          error: 'Only 2 levels of comments are allowed. You can only reply to root comments.' 
         }, { status: 400 });
       }
     }

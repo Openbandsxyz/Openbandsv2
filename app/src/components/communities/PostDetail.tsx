@@ -6,7 +6,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, memo, useCallback } from 'react';
 import { useAccount } from 'wagmi';
 
 interface Post {
@@ -179,13 +179,11 @@ interface CommentItemProps {
   address: string | undefined;
   isPostingComment: boolean;
   isMember: boolean;
-  expandedThreads: Set<string>;
-  toggleThreadExpansion: (commentId: string) => void;
   collapsedComments: Set<string>;
   toggleCommentCollapse: (commentId: string) => void;
 }
 
-function CommentItem({
+const CommentItem = memo(function CommentItem({
   comment,
   depth,
   formatTimestamp,
@@ -201,8 +199,6 @@ function CommentItem({
   address,
   isPostingComment,
   isMember,
-  expandedThreads,
-  toggleThreadExpansion,
   collapsedComments,
   toggleCommentCollapse,
 }: CommentItemProps) {
@@ -220,52 +216,23 @@ function CommentItem({
   const hasReplies = comment.replies && comment.replies.length > 0;
   const isCollapsed = collapsedComments.has(comment.id); // Reddit-style: track collapsed state per comment
   
-  // Reddit-style depth limits (based on RedditDepthLimit.md):
-  // - UI visual cap: 3 levels (Reddit commonly shows 4-6, but user requested 3)
-  // - Visual indentation cap: 10 levels (like old Reddit, then reuse same margin)
-  // - API cap: 10 levels (enforced in backend, Reddit caps at ~8-10)
-  const UI_VISUAL_DEPTH = 3; // Show 3 levels, then "X more replies"
-  const VISUAL_INDENT_CAP = 10; // Cap visual indentation at 10 levels
-  const API_DEPTH_LIMIT = 10; // Backend API limit (Reddit caps at ~8-10)
+  // Simple 2-level structure: root comments (depth 0) and direct replies (depth 1)
+  const MAX_DEPTH = 1; // Only allow 2 levels: root (0) and replies (1)
+  const canReply = depth < MAX_DEPTH; // Only allow replies to root comments (depth 0)
   
-  // Reddit logic: Show "X more replies" when next level would exceed UI_VISUAL_DEPTH
-  // This represents a "more" placeholder - the count should be direct replies being hidden
-  const isExpanded = expandedThreads.has(comment.id);
-  const nextDepth = depth + 1;
-  const shouldShowContinueThread = nextDepth >= UI_VISUAL_DEPTH && hasReplies && !isExpanded;
-  const canReply = depth < API_DEPTH_LIMIT; // Allow replies up to API limit
+  // No need for hidden replies count - we only show 2 levels
   
-  // Reddit-style: Count replies that would be hidden (direct replies + their nested count)
-  // This matches Reddit's "more" object behavior where X = number of comment IDs being omitted
-  const countHiddenReplies = (comment: Comment): number => {
-    if (!comment.replies || comment.replies.length === 0) return 0;
-    // Count direct replies and all their nested descendants
-    return comment.replies.reduce((total, reply) => {
-      return total + 1 + countHiddenReplies(reply);
-    }, 0);
-  };
-  const hiddenRepliesCount = hasReplies ? countHiddenReplies(comment) : 0;
+  // Simple 2-level visual structure
+  // Level 0 (root): no indentation
+  // Level 1 (reply): indented with border-left
+  const borderLeftWidth = depth > 0 ? '1px' : '0px';
+  const borderLeftColor = '#d0d0d0'; // Light gray
+  const paddingLeft = depth > 0 ? '16px' : '0px';
+  const marginLeft = depth > 0 ? '8px' : '0px';
   
-  // Reddit-style: Use border-left for vertical line, padding-left for indentation
-  // Visual indentation caps at 10 levels (like old Reddit), then reuses same margin
-  const visualDepth = Math.min(depth, VISUAL_INDENT_CAP);
-  // Only show border-left for nested comments (depth > 0) that have replies
-  // Comments without replies should not have a vertical line extending down
-  const borderLeftWidth = (visualDepth > 0 && hasReplies) ? '1px' : '0px';
-  const borderLeftColor = '#d0d0d0'; // Light gray like Reddit
-  // Cumulative indentation: each level adds 16px padding and 8px margin
-  const paddingLeft = `${visualDepth * 16}px`;
-  const marginLeft = visualDepth > 0 ? `${visualDepth * 8}px` : '0px';
-  const indentPx = visualDepth * 16; // Calculate pixel indentation (16px per level)
-  
-  // Calculate positions for Reddit-style layout
-  // Vertical line position: at the left edge of the border (position 0 relative to container)
+  // For level 1 replies: vertical line and horizontal connector
   const verticalLineLeft = 0;
-  // Avatar position: paddingLeft brings content in, avatar is at paddingLeft from container left
-  // For nested comments: paddingLeft is cumulative (16px * depth), so avatar is at that position
-  // For top-level: paddingLeft is 0, so avatar is at 0
-  const avatarLeft = visualDepth * 16; // Cumulative: 16px per level
-  // Horizontal connector should go from vertical line (0) to avatar edge (touching with no gap)
+  const avatarLeft = 16; // 16px indentation for level 1
   const horizontalConnectorWidth = avatarLeft;
   
   return (
@@ -282,32 +249,14 @@ function CommentItem({
       {/* Nested comments don't need their own vertical line - they use the parent's line via borderLeft */}
       {/* The parent root comment's vertical line extends through all nested replies */}
       
-      {/* Reddit-style collapse/expand button - positioned directly on the vertical line */}
-      {hasReplies && (
-        <button
-          onClick={() => toggleCommentCollapse(comment.id)}
-          className="absolute flex items-center justify-center w-5 h-5 rounded-full bg-zinc-100 border border-zinc-300 hover:bg-zinc-200 transition-colors cursor-pointer z-10"
-          style={{
-            left: depth === 0 ? '-10px' : `${verticalLineLeft - 10}px`, // Center 20px button on 1px vertical line (10px offset)
-            top: '12px', // Align with center of avatar (24px / 2 = 12px)
-          }}
-          aria-label={isCollapsed ? 'Expand replies' : 'Collapse replies'}
-          title={isCollapsed ? 'Expand replies' : 'Collapse replies'}
-        >
-          <span className="text-zinc-800 font-bold" style={{ fontSize: '12px', lineHeight: '1', fontWeight: '600' }}>
-            {isCollapsed ? '+' : '−'}
-          </span>
-        </button>
-      )}
-      
-      {/* Reddit-style horizontal elbow connector - connects vertical line directly to avatar with no gap */}
-      {depth > 0 && (
+      {/* Horizontal connector for level 1 replies - connects vertical line to avatar */}
+      {depth === 1 && (
         <div
           style={{
             position: 'absolute',
             top: '12px', // Align with center of avatar (24px / 2 = 12px)
             left: `${verticalLineLeft}px`, // Start from the vertical line
-            width: `${horizontalConnectorWidth}px`, // Extend all the way to avatar edge
+            width: `${horizontalConnectorWidth}px`, // Extend to avatar edge
             height: '1px',
             backgroundColor: borderLeftColor,
             zIndex: 1,
@@ -350,23 +299,26 @@ function CommentItem({
                   <p className="leading-[16px] whitespace-pre">{comment.upvote_count || 0}</p>
                 </div>
               </button>
-              <button
-                onClick={() => handleReplyClick(comment.id, depth)}
-                disabled={!address || !isMember || !canReply}
-                className="bg-white box-border content-stretch flex gap-[8px] h-[32px] items-center justify-center px-[12px] py-[8px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-zinc-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                data-name="Button"
-                title={!address ? 'Connect wallet to reply' : !isMember ? 'Join community to reply' : !canReply ? `Maximum nesting depth (${API_DEPTH_LIMIT} levels) reached` : 'Reply'}
-              >
-                <div aria-hidden="true" className="absolute border border-solid border-zinc-200 inset-0 pointer-events-none rounded-[6px]" />
-                <IconReply />
-              </button>
+              {/* Only show reply button on root comments (depth 0) */}
+              {depth === 0 && (
+                <button
+                  onClick={() => handleReplyClick(comment.id, depth)}
+                  disabled={!address || !isMember}
+                  className="bg-white box-border content-stretch flex gap-[8px] h-[32px] items-center justify-center px-[12px] py-[8px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-zinc-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  data-name="Button"
+                  title={!address ? 'Connect wallet to reply' : !isMember ? 'Join community to reply' : 'Reply'}
+                >
+                  <div aria-hidden="true" className="absolute border border-solid border-zinc-200 inset-0 pointer-events-none rounded-[6px]" />
+                  <IconReply />
+                </button>
+              )}
             </div>
 
             {/* Reply Input */}
             {isReplying && !canReply && (
               <div className="bg-zinc-50 border border-zinc-200 relative rounded-[6px] shrink-0 w-full mt-2 p-3" data-name="Max depth message">
                 <p className="text-sm text-zinc-600">
-                  Maximum nesting depth ({API_DEPTH_LIMIT} levels) reached. Please use "Continue this thread" to view deeper replies.
+                  Only 2 levels of comments are allowed. You can only reply to root comments.
                 </p>
               </div>
             )}
@@ -441,8 +393,8 @@ function CommentItem({
         </div>
       </div>
 
-      {/* Nested Replies - Reddit style: nested comments are just nested divs */}
-      {hasReplies && !isCollapsed && (
+      {/* Direct Replies - Only show for root comments (depth 0) */}
+      {hasReplies && !isCollapsed && depth === 0 && (
         <div 
           style={{ 
             marginTop: '8px', 
@@ -450,124 +402,73 @@ function CommentItem({
             paddingBottom: '0px', 
             marginBottom: '0px', 
             overflow: 'visible',
-            // Ensure the container shrinks to fit content exactly
             display: 'flex',
             flexDirection: 'column',
-            // Remove any min-height that might create extra space
-            minHeight: '0',
-            // Ensure container height matches content
-            height: 'auto',
           }}
         >
-          {/* For comments with replies: vertical line extends from parent avatar down through replies */}
-          {/* This line connects the parent comment to all its nested replies */}
-          {/* The line stops at the end of the last reply (no line extending down from last reply) */}
-          {/* For root comments: line starts from avatar and extends down */}
-          {/* For nested comments: line starts from top of replies container and extends down */}
-          {hasReplies && (() => {
-            // Check if the last reply has no replies - if so, the line should stop at the end of that reply
-            const lastReply = comment.replies && comment.replies.length > 0 
-              ? comment.replies[comment.replies.length - 1] 
-              : null;
-            const lastReplyHasNoReplies = lastReply && (!lastReply.replies || lastReply.replies.length === 0);
-            
-            // If the last reply has no replies, the line should stop at the end of that reply
-            // The key is: the line should NOT extend past the last reply when it has no replies
-            // We'll use bottom: '0px' but the container should have no extra space
-            // The display: flex on the container should make it shrink to fit content
-            return (
-              <div
-                style={{
-                  position: 'absolute',
-                  // For root comments: position at marginLeft of nested comments (8px)
-                  // For nested comments: position at the left edge (0px) where the borderLeft would be
-                  left: depth === 0 ? '8px' : '0px',
-                  // For root comments: start from avatar center (negative to go up to parent's avatar)
-                  // For nested comments: start from top of replies container
-                  top: depth === 0 ? '-12px' : '0px',
-                  // Extend to bottom of container
-                  // The container should have no extra space due to display: flex and removed margins
-                  bottom: '0px',
-                  width: '1px',
-                  backgroundColor: borderLeftColor,
-                  zIndex: 0,
-                  pointerEvents: 'none',
-                }}
-              />
-            );
-          })()}
-          {shouldShowContinueThread ? (
-            // Reddit-style: Show "X more replies" - represents a "more" placeholder
-            // When clicked, expands to show the hidden replies (like /api/morechildren)
-            <button
-              onClick={() => toggleThreadExpansion(comment.id)}
-              className="flex items-center gap-2 py-2 px-3 text-sm text-blue-600 hover:text-blue-700 cursor-pointer hover:underline transition-colors"
-              aria-label={`Show ${hiddenRepliesCount} more ${hiddenRepliesCount === 1 ? 'reply' : 'replies'}`}
-            >
-              <span className="font-medium">{hiddenRepliesCount} more {hiddenRepliesCount === 1 ? 'reply' : 'replies'}</span>
-            </button>
-          ) : (
-            // Render replies normally (either within UI_VISUAL_DEPTH or expanded)
-            comment.replies!.map((reply, index) => {
-              const isLastReply = index === comment.replies!.length - 1;
-              const lastReplyHasNoReplies = !reply.replies || reply.replies.length === 0;
-              // If this is the last reply and it has no replies, remove all bottom spacing
-              // This ensures the vertical line stops exactly at the end of this reply
-              // If this is the last reply and it has no replies, remove ALL spacing
-              // This ensures the vertical line stops exactly at the end of this reply
-              const wrapperStyle = isLastReply && lastReplyHasNoReplies 
-                ? { 
-                    marginBottom: '0px', 
-                    paddingBottom: '0px',
-                    marginTop: '0px',
-                    paddingTop: '0px',
-                  } 
-                : {};
-              
-              return (
-                <div key={reply.id} style={wrapperStyle}>
-                  <div style={isLastReply && lastReplyHasNoReplies ? { 
-                    marginBottom: '0px',
-                    paddingBottom: '0px',
-                  } : {}}>
-                    <CommentItem
-                      comment={reply}
-                      depth={depth + 1}
-                      formatTimestamp={formatTimestamp}
-                      handleUpvoteComment={handleUpvoteComment}
-                      handleReplyClick={handleReplyClick}
-                      handlePostComment={handlePostComment}
-                      handleCancelReply={handleCancelReply}
-                      replyingTo={replyingTo}
-                      replyTexts={replyTexts}
-                      setReplyTexts={setReplyTexts}
-                      replyTextareaHeights={replyTextareaHeights}
-                      setReplyTextareaHeights={setReplyTextareaHeights}
-                      address={address}
-                      isPostingComment={isPostingComment}
-                      isMember={isMember}
-                      expandedThreads={expandedThreads}
-                      toggleThreadExpansion={toggleThreadExpansion}
-                      collapsedComments={collapsedComments}
-                      toggleCommentCollapse={toggleCommentCollapse}
-                    />
-                  </div>
-                </div>
-              );
-            })
+          {/* Vertical line for root comments - extends from avatar down through all replies */}
+          {hasReplies && (
+            <div
+              style={{
+                position: 'absolute',
+                left: '0px', // Position at the start (no offset to prevent cutoff)
+                top: '-12px', // Start from avatar center (negative to go up to parent's avatar)
+                bottom: '0px', // Extend to bottom of container
+                width: '1px',
+                backgroundColor: borderLeftColor,
+                zIndex: 0,
+                pointerEvents: 'none',
+              }}
+            />
           )}
+          {/* Render direct replies (level 1 only) */}
+          {comment.replies!.map((reply) => (
+            <CommentItem
+              key={reply.id}
+              comment={reply}
+              depth={1} // Always depth 1 for replies
+              formatTimestamp={formatTimestamp}
+              handleUpvoteComment={handleUpvoteComment}
+              handleReplyClick={handleReplyClick}
+              handlePostComment={handlePostComment}
+              handleCancelReply={handleCancelReply}
+              replyingTo={replyingTo}
+              replyTexts={replyTexts}
+              setReplyTexts={setReplyTexts}
+              replyTextareaHeights={replyTextareaHeights}
+              setReplyTextareaHeights={setReplyTextareaHeights}
+              address={address}
+              isPostingComment={isPostingComment}
+              isMember={isMember}
+              collapsedComments={collapsedComments}
+              toggleCommentCollapse={toggleCommentCollapse}
+            />
+          ))}
+          
+          {/* Show "Collapse replies" button after replies when expanded */}
+          <button
+            onClick={() => toggleCommentCollapse(comment.id)}
+            className="flex items-center gap-2 py-2 px-3 text-sm text-blue-600 hover:text-blue-700 cursor-pointer hover:underline transition-colors mt-2"
+            aria-label="Collapse replies"
+          >
+            <span className="font-medium">Collapse replies</span>
+          </button>
         </div>
       )}
       
-      {/* Reddit-style: Show "X more replies collapsed" when comment is collapsed */}
-      {hasReplies && isCollapsed && (
-        <div className="flex items-center gap-2 py-2 px-3 text-sm text-zinc-500">
-          <span className="font-medium">[{hiddenRepliesCount} more {hiddenRepliesCount === 1 ? 'reply' : 'replies'} collapsed]</span>
-        </div>
+      {/* Show "X more replies" when collapsed - clickable to expand */}
+      {hasReplies && isCollapsed && depth === 0 && (
+        <button
+          onClick={() => toggleCommentCollapse(comment.id)}
+          className="flex items-center gap-2 py-2 px-3 text-sm text-blue-600 hover:text-blue-700 cursor-pointer hover:underline transition-colors"
+          aria-label={`Show ${comment.replies!.length} more ${comment.replies!.length === 1 ? 'reply' : 'replies'}`}
+        >
+          <span className="font-medium">{comment.replies!.length} more {comment.replies!.length === 1 ? 'reply' : 'replies'}</span>
+        </button>
       )}
     </div>
   );
-}
+});
 
 export function PostDetail({ communityId, postId, communityName, sort: externalSort, onSortChange }: PostDetailProps) {
   const { address } = useAccount();
@@ -583,22 +484,9 @@ export function PostDetail({ communityId, postId, communityName, sort: externalS
   const [replyingTo, setReplyingTo] = useState<string | null>(null); // ID of comment being replied to
   const [replyTexts, setReplyTexts] = useState<Record<string, string>>({}); // Store reply text for each comment
   const [replyTextareaHeights, setReplyTextareaHeights] = useState<Record<string, number>>({}); // Store textarea heights
-  const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set()); // Track expanded threads (for "X more replies" at depth limit)
-  const [collapsedComments, setCollapsedComments] = useState<Set<string>>(new Set()); // Track collapsed comments (Reddit-style collapse/expand)
+  const [collapsedComments, setCollapsedComments] = useState<Set<string>>(new Set()); // Track collapsed comments
 
-  const toggleThreadExpansion = (commentId: string) => {
-    setExpandedThreads(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(commentId)) {
-        newSet.delete(commentId);
-      } else {
-        newSet.add(commentId);
-      }
-      return newSet;
-    });
-  };
-
-  // Reddit-style: Toggle collapse/expand for a comment subtree
+  // Toggle collapse/expand for root comments with replies
   const toggleCommentCollapse = (commentId: string) => {
     setCollapsedComments(prev => {
       const newSet = new Set(prev);
@@ -666,7 +554,7 @@ export function PostDetail({ communityId, postId, communityName, sort: externalS
       // Ensure comments is always an array
       let commentsArray = Array.isArray(result.comments) ? result.comments : [];
       
-      // Build comment tree structure
+      // Build simple 2-level comment structure: root comments and their direct replies only
       const buildCommentTree = (comments: Comment[]): Comment[] => {
         const commentMap = new Map<string, Comment>();
         const rootComments: Comment[] = [];
@@ -676,21 +564,24 @@ export function PostDetail({ communityId, postId, communityName, sort: externalS
           commentMap.set(comment.id, { ...comment, replies: [] });
         });
         
-        // Second pass: build tree structure
+        // Second pass: build 2-level structure (root + direct replies only)
         comments.forEach(comment => {
           const commentWithReplies = commentMap.get(comment.id)!;
           if (comment.parent_comment_id) {
+            // This is a reply - find its parent
             const parent = commentMap.get(comment.parent_comment_id);
             if (parent) {
-              if (!parent.replies) parent.replies = [];
-              parent.replies.push(commentWithReplies);
-              // Debug: Log parent-child relationships
-              if (comment.content.includes('yoooo') || comment.content.includes('heee')) {
-                console.log('[buildCommentTree] Linking comment to parent:', {
-                  childId: comment.id,
-                  childContent: comment.content.substring(0, 30),
-                  parentId: comment.parent_comment_id,
-                  parentContent: parent.content.substring(0, 30),
+              // Only add as reply if parent is a root comment (parent_comment_id is null)
+              // This ensures we only have 2 levels: root and direct replies
+              if (!parent.parent_comment_id) {
+                if (!parent.replies) parent.replies = [];
+                parent.replies.push(commentWithReplies);
+              } else {
+                // Parent is already a reply - ignore this comment (would be level 3+)
+                console.warn('[buildCommentTree] Ignoring nested reply beyond level 2:', {
+                  commentId: comment.id,
+                  parentCommentId: comment.parent_comment_id,
+                  content: comment.content.substring(0, 30),
                 });
               }
             } else {
@@ -708,54 +599,6 @@ export function PostDetail({ communityId, postId, communityName, sort: externalS
           }
         });
         
-        // Debug: Log full tree structure to verify nesting
-        const logCommentTree = (comment: Comment, indent: string = '') => {
-          const depth = indent.length / 2;
-          console.log(`${indent}${comment.content.substring(0, 30)} (id: ${comment.id}, parent: ${comment.parent_comment_id || 'root'}, depth: ${depth}, replies: ${comment.replies?.length || 0})`);
-          if (comment.replies && comment.replies.length > 0) {
-            comment.replies.forEach(reply => logCommentTree(reply, indent + '  '));
-          }
-        };
-        console.log('[buildCommentTree] Full comment tree:');
-        rootComments.forEach(c => logCommentTree(c));
-        
-        // Debug: Check for specific comments
-        const findComment = (comments: Comment[], searchContent: string): Comment | null => {
-          for (const comment of comments) {
-            if (comment.content.includes(searchContent)) return comment;
-            if (comment.replies) {
-              const found = findComment(comment.replies, searchContent);
-              if (found) return found;
-            }
-          }
-          return null;
-        };
-        const heeeComment = findComment(rootComments, 'heee');
-        const yooooComment = findComment(rootComments, 'yoooo');
-        if (heeeComment) {
-          console.log('[buildCommentTree] Found "heee" comment:', {
-            id: heeeComment.id,
-            content: heeeComment.content,
-            parent: heeeComment.parent_comment_id,
-            replies: heeeComment.replies?.map(r => ({ id: r.id, content: r.content.substring(0, 30) })) || [],
-          });
-        }
-        if (yooooComment) {
-          console.log('[buildCommentTree] Found "yoooo" comment:', {
-            id: yooooComment.id,
-            content: yooooComment.content,
-            parent: yooooComment.parent_comment_id,
-            replies: yooooComment.replies?.map(r => ({ id: r.id, content: r.content.substring(0, 30) })) || [],
-          });
-        }
-        
-        // Debug: Log root comments to verify structure
-        console.log('[buildCommentTree] Root comments:', rootComments.map(c => ({
-          id: c.id,
-          content: c.content.substring(0, 30),
-          replyCount: c.replies?.length || 0,
-        })));
-        
         // Sort root comments
         if (sortParam === 'popular') {
           rootComments.sort((a, b) => {
@@ -772,16 +615,14 @@ export function PostDetail({ communityId, postId, communityName, sort: externalS
           });
         }
         
-        // Sort replies recursively (always by created_at for replies to maintain conversation flow)
-        const sortReplies = (comment: Comment) => {
-          if (comment.replies && comment.replies.length > 0) {
-            comment.replies.sort((a, b) => {
+        // Sort direct replies by created_at (chronological order)
+        rootComments.forEach(rootComment => {
+          if (rootComment.replies && rootComment.replies.length > 0) {
+            rootComment.replies.sort((a, b) => {
               return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
             });
-            comment.replies.forEach(sortReplies);
           }
-        };
-        rootComments.forEach(sortReplies);
+        });
         
         return rootComments;
       };
@@ -894,10 +735,10 @@ export function PostDetail({ communityId, postId, communityName, sort: externalS
   };
 
   const handleReplyClick = (commentId: string, depth?: number) => {
-    const API_DEPTH_LIMIT = 10; // Matches backend API limit
+    const MAX_DEPTH = 1; // Only allow 2 levels: root (0) and replies (1)
     // Check depth if provided (from CommentItem)
-    if (depth !== undefined && depth >= API_DEPTH_LIMIT) {
-      alert(`Maximum nesting depth (${API_DEPTH_LIMIT} levels) reached. Please use "Continue this thread" to view deeper replies.`);
+    if (depth !== undefined && depth >= MAX_DEPTH) {
+      alert('Only 2 levels of comments are allowed. You can only reply to root comments.');
       return;
     }
     setReplyingTo(commentId);
@@ -918,6 +759,14 @@ export function PostDetail({ communityId, postId, communityName, sort: externalS
       return;
     }
 
+    // Optimistic update: update UI immediately
+    const previousCount = post?.upvote_count || 0;
+    const optimisticCount = previousCount + 1;
+    
+    if (post) {
+      setPost({ ...post, upvote_count: optimisticCount });
+    }
+
     try {
       const response = await fetch(`/api/communities/${communityId}/posts/${postId}/upvote`, {
         method: 'POST',
@@ -928,13 +777,23 @@ export function PostDetail({ communityId, postId, communityName, sort: externalS
       const result = await response.json();
 
       if (!result.success) {
+        // Revert optimistic update on error
+        if (post) {
+          setPost({ ...post, upvote_count: previousCount });
+        }
         throw new Error(result.error || 'Failed to upvote');
       }
 
-      // Refresh post data to get updated counts
-      fetchPost();
+      // Update with server response (handles both increment and decrement)
+      if (post && result.upvoteCount !== undefined) {
+        setPost({ ...post, upvote_count: result.upvoteCount });
+      }
     } catch (err) {
       console.error('[Post Detail] Error upvoting:', err);
+      // Revert optimistic update on error
+      if (post) {
+        setPost({ ...post, upvote_count: previousCount });
+      }
       alert(err instanceof Error ? err.message : 'Failed to upvote');
     }
   };
@@ -943,6 +802,28 @@ export function PostDetail({ communityId, postId, communityName, sort: externalS
     if (!address) {
       alert('Please connect your wallet to upvote');
       return;
+    }
+
+    // Optimistic update: find comment and update immediately
+    const updateCommentUpvote = (commentList: Comment[]): Comment[] => {
+      return commentList.map(comment => {
+        if (comment.id === commentId) {
+          const previousCount = comment.upvote_count || 0;
+          return { ...comment, upvote_count: previousCount + 1 };
+        }
+        if (comment.replies) {
+          return { ...comment, replies: updateCommentUpvote(comment.replies) };
+        }
+        return comment;
+      });
+    };
+
+    // Store previous state for rollback
+    const previousComments = comments ? JSON.parse(JSON.stringify(comments)) : null;
+    
+    // Optimistically update UI
+    if (comments) {
+      setComments(updateCommentUpvote(comments));
     }
 
     try {
@@ -955,21 +836,53 @@ export function PostDetail({ communityId, postId, communityName, sort: externalS
       const result = await response.json();
 
       if (!result.success) {
+        // Revert optimistic update on error
+        if (previousComments) {
+          setComments(previousComments);
+        }
         throw new Error(result.error || 'Failed to upvote');
       }
 
-      // Refresh post data to get updated counts
-      fetchPost();
+      // Update with server response (handles both increment and decrement)
+      if (result.upvoteCount !== undefined && comments) {
+        const updateWithServerCount = (commentList: Comment[]): Comment[] => {
+          return commentList.map(comment => {
+            if (comment.id === commentId) {
+              return { ...comment, upvote_count: result.upvoteCount };
+            }
+            if (comment.replies) {
+              return { ...comment, replies: updateWithServerCount(comment.replies) };
+            }
+            return comment;
+          });
+        };
+        setComments(updateWithServerCount(comments));
+      }
     } catch (err) {
       console.error('[Post Detail] Error upvoting comment:', err);
+      // Revert optimistic update on error
+      if (previousComments) {
+        setComments(previousComments);
+      }
       alert(err instanceof Error ? err.message : 'Failed to upvote');
     }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-gray-500">Loading post...</div>
+      <div className="content-stretch flex flex-col gap-[28px] items-center relative size-full pl-6">
+        {/* Skeleton loader for post */}
+        <div className="content-stretch flex flex-col gap-[16px] items-start relative shrink-0 w-full max-w-3xl">
+          <div className="bg-white min-w-[85px] relative rounded-[6px] shrink-0 w-full animate-pulse">
+            <div className="box-border content-stretch flex gap-[16px] items-start min-w-inherit p-[14px] relative w-full">
+              <div className="basis-0 content-stretch flex flex-col gap-[24px] grow items-start min-h-px min-w-px relative shrink-0">
+                <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-4 bg-gray-200 rounded w-full"></div>
+                <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -990,7 +903,7 @@ export function PostDetail({ communityId, postId, communityName, sort: externalS
   const authorBadges: Array<{ domain: string; verified: boolean }> = [];
 
   return (
-    <div className="content-stretch flex flex-col gap-[28px] items-center relative size-full">
+    <div className="content-stretch flex flex-col gap-[28px] items-center relative size-full pl-6">
       {/* Post Card */}
       <div className="content-stretch flex flex-col gap-[16px] items-start relative shrink-0 w-full max-w-3xl">
         <div className="bg-white min-w-[85px] relative rounded-[6px] shrink-0 w-full" data-name="Post details card">
@@ -1209,8 +1122,6 @@ export function PostDetail({ communityId, postId, communityName, sort: externalS
               address={address}
               isPostingComment={isPostingComment}
               isMember={isMember}
-              expandedThreads={expandedThreads}
-              toggleThreadExpansion={toggleThreadExpansion}
               collapsedComments={collapsedComments}
               toggleCommentCollapse={toggleCommentCollapse}
             />

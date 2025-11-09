@@ -56,9 +56,10 @@ export async function GET(
     }
     
     // Get the post - query by ID only (postId is unique, no need to filter by community_id)
+    // Only select needed fields for better performance
     const { data: post, error: postError } = await supabase
       .from('posts')
-      .select('*')
+      .select('id, community_id, title, content, author_address, author_anonymous_id, upvote_count, comment_count, created_at')
       .eq('id', postId)
       .eq('is_active', true)
       .single();
@@ -112,10 +113,10 @@ export async function GET(
     let comments = null;
     let commentsError = null;
     
-    // Try querying comments
+    // Try querying comments - only select needed fields
     const commentsResult = await supabase
       .from('comments')
-      .select('*')
+      .select('id, post_id, parent_comment_id, author_address, author_anonymous_id, content, upvote_count, created_at')
       .eq('post_id', postId)
       .eq('is_active', true)
       .order('created_at', { ascending: true });

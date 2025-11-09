@@ -211,7 +211,7 @@ export default function Layout({ children, activeTab = 'home', onTabChange, onCo
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col pl-8 pr-8">
         {/* Top Right Wallet Button */}
         <div className="absolute top-4 right-4 z-10">
           <div className="flex flex-col items-end space-y-2">

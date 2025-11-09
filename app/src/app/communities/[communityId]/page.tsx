@@ -312,7 +312,7 @@ function CommunityPageContent() {
     <Layout activeTab={activeTab} onTabChange={handleTabChange} onCommunitySelect={handleCommunitySelect}>
       <div className="bg-white relative rounded-tl-[24px] rounded-tr-[24px] size-full">
         <div className="size-full">
-          <div className="box-border content-stretch flex flex-col gap-[32px] items-start pb-0 pt-[16px] px-[16px] relative size-full">
+          <div className="box-border content-stretch flex flex-col gap-[32px] items-start pb-0 pt-[16px] relative size-full">
             {/* Frame8: Main content section */}
             <div className="content-stretch flex flex-col gap-[20px] items-start relative shrink-0 w-full max-w-3xl">
               {/* Frame80: Header + Description + Stats */}
