@@ -204,25 +204,142 @@ export async function getUserNationality(
 //================= Events =====================//
 
 /**
- * @notice - Watch for the NationalityVerified event, which is emitted via the OpenbandsV2NationalityRegistry#customVerificationHook()
+ * @notice Event data structure for NationalityVerified event
+ * @dev Matches the event signature in OpenbandsV2NationalityRegistry.sol:
+ *      event NationalityVerified(address indexed user, string nationality, bytes32 messageId, uint256 timestamp)
  */
-export function watchNationalityVerifiedEvent(chainId?: number) {
+export interface NationalityVerifiedEvent {
+  user: `0x${string}`;
+  nationality: string;
+  messageId: `0x${string}`;  // Hyperlane message ID for cross-chain bridging to Base
+  timestamp: bigint;
+  blockNumber: bigint;
+  transactionHash: `0x${string}`;
+}
+
+/**
+ * @notice Watch for the NationalityVerified event, which is emitted via the OpenbandsV2NationalityRegistry#customVerificationHook()
+ * @dev This event is triggered when a user successfully verifies their nationality via Self.xyz
+ *      The event includes a Hyperlane messageId which tracks the cross-chain message to Base
+ *      Uses polling mode to avoid "filter not found" errors on public RPC endpoints
+ * @param chainId - Optional chain ID to determine which contract to watch (42220 for Celo Mainnet, 11142220 for Celo Sepolia)
+ * @param onEvent - Callback function to handle parsed event data
+ * @returns Unwatch function to stop listening for events
+ */
+export function watchNationalityVerifiedEvent(
+  chainId?: number,
+  onEvent?: (event: NationalityVerifiedEvent) => void
+) {
   try {
     const nationalityRegistryContractAddress = getNationalityRegistryAddress(chainId);
     
-    const watchedNationalityVerifiedEvent = watchContractEvent(wagmiConfig, {
+    if (!nationalityRegistryContractAddress) {
+      console.error('❌ Cannot watch events: Nationality Registry contract address not configured');
+      console.error(`   Please set environment variable for chain ID: ${chainId}`);
+      return () => {}; // Return empty unwatch function
+    }
+
+    console.log('👀 Watching NationalityVerified events...');
+    console.log(`📍 Contract Address: ${nationalityRegistryContractAddress}`);
+    console.log(`🔗 Chain ID: ${chainId || 'default'}`);
+    console.log(`🔄 Using polling mode to avoid RPC filter issues`);
+    console.log('─────────────────────────────────────────────');
+    
+    const unwatch = watchContractEvent(wagmiConfig, {
       address: nationalityRegistryContractAddress,
       abi: openbandsV2NationalityRegistryContractConfig.abi,
       eventName: 'NationalityVerified',
+      poll: true, // Use polling instead of filters to avoid "filter not found" errors
+      pollingInterval: 5_000, // Poll every 5 seconds (adjust as needed)
       onLogs(logs) {
-        console.log('New logs!', logs)
+        console.log('\n🎉 NationalityVerified event detected!');
+        console.log(`📊 Total logs received: ${logs.length}`);
+        
+        // Process each log entry
+        logs.forEach((log, index) => {
+          try {
+            console.log(`\n╔════════════════════════════════════════════╗`);
+            console.log(`║  📋 Processing Event Log #${index + 1}              ║`);
+            console.log(`╚════════════════════════════════════════════╝`);
+            
+            // Parse event arguments matching the Solidity event signature
+            const { user, nationality, messageId, timestamp } = log.args;
+            
+            // Log detailed event information
+            console.log(`\n🔹 Event Details:`);
+            console.log(`   👤 User Address: ${user}`);
+            console.log(`   🌍 Nationality: ${nationality}`);
+            console.log(`   📨 Hyperlane Message ID: ${messageId}`);
+            console.log(`   ⏰ Timestamp: ${timestamp}`);
+            console.log(`   📅 Date: ${new Date(Number(timestamp) * 1000).toISOString()}`);
+            console.log(`\n🔹 Transaction Info:`);
+            console.log(`   📦 Block Number: ${log.blockNumber}`);
+            console.log(`   🔗 Transaction Hash: ${log.transactionHash}`);
+            console.log(`\n🔹 Cross-Chain Info:`);
+            console.log(`   🌉 Message ID (Hyperlane): ${messageId}`);
+            console.log(`   🎯 This message bridges nationality data from Celo → Base`);
+            console.log(`   ✅ Track this messageId to verify delivery on Base chain`);
+            console.log(`\n${'═'.repeat(50)}\n`);
+            
+            // Create structured event data
+            const eventData: NationalityVerifiedEvent = {
+              user: user as `0x${string}`,
+              nationality: nationality as string,
+              messageId: messageId as `0x${string}`,
+              timestamp: timestamp as bigint,
+              blockNumber: log.blockNumber,
+              transactionHash: log.transactionHash
+            };
+            
+            // Call the callback function if provided
+            if (onEvent) {
+              console.log('📞 Calling event callback handler...');
+              onEvent(eventData);
+            }
+            
+            // Emit a custom browser event for UI updates
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('nationalityVerified', {
+                detail: eventData
+              }));
+              console.log('📡 Browser event dispatched: "nationalityVerified"');
+            }
+            
+          } catch (parseError) {
+            console.error(`\n❌ Error parsing log #${index + 1}:`);
+            console.error('   Error:', parseError);
+            console.error('   Raw log data:', log);
+          }
+        });
+        
+        console.log('\n✅ Event processing completed!\n');
       },
-    })
+      onError(error) {
+        // Filter out common "filter not found" errors that are expected with polling
+        const errorMessage = error?.message || String(error);
+        if (errorMessage.includes('filter not found')) {
+          console.warn('⚠️ Filter expired (expected with polling mode) - will recreate on next poll');
+          return;
+        }
+        
+        console.error('\n❌ Error in NationalityVerified event watcher:');
+        console.error('   Error:', error);
+        console.error('   Contract Address:', nationalityRegistryContractAddress);
+        console.error('   Chain ID:', chainId);
+        console.error('   Note: If you see "filter not found" errors, this is normal with public RPC nodes');
+      }
+    });
 
-    return watchedNationalityVerifiedEvent;
+    console.log('✅ Event watcher successfully initialized');
+    console.log('🔔 Listening for NationalityVerified events...\n');
+    
+    return unwatch;
+    
   } catch (error) {
-    console.error('Error watching the NationalityVerified event-emitted via the OpenbandsV2NationalityRegistry#customVerificationHook():', error);
-    return false;
+    console.error('\n❌ Error setting up NationalityVerified event watcher:');
+    console.error('   Error:', error);
+    console.error('   Chain ID:', chainId);
+    return () => {}; // Return empty unwatch function on error
   }
 }
 
