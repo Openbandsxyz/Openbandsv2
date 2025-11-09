@@ -7,7 +7,7 @@ import { wagmiConfig } from "@/lib/blockchains/evm/smart-contracts/wagmi/config"
 import { VerificationStatusDisplay, VerificationStatus } from './VerificationStatusDisplay'
 
 // @dev - OpenbandsV2NationalityRegistry.sol related module
-import { storeNationalityVerification, getNationalityRecord, watchNationalityVerifiedEvent, getNationalityRegistryAddress } from '@/lib/blockchains/evm/smart-contracts/wagmi/nationality-registry';
+import { storeNationalityVerification, getNationalityRecord, watchNationalityVerifiedEvent, getNationalityRegistryAddress, queryNationalityVerifiedEvents } from '@/lib/blockchains/evm/smart-contracts/wagmi/nationality-registry';
 
 // @dev - OpenbandsV2BadgeManagerOnCelo.sol related module
 import { getProofOfHumanRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/zkpassports/self/openbands-v2-badge-manager-on-celo';
@@ -298,8 +298,38 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess, 
       message: `Your ${attributeType} has been verified on-chain! Check "My Badges" to see your ${attributeType} badge.`
     })
 
-    // Note: Event watcher for retrieving the event log of the NationalityVerified event is already running from useEffect, so we don't need to start it here
-    // The event will be caught automatically and the UI will update via the event callback
+    // Note: Event watcher is already running from useEffect
+    // But as a fallback, also query recent past events in case the watcher missed it
+    console.log('🔍 Querying recent events as fallback...');
+    
+    try {
+      // Wait a few seconds for the transaction to be mined
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      
+      // Query past events (last 1000 blocks ~5 minutes)
+      const pastEvents = await queryNationalityVerifiedEvents(
+        address as `0x${string}`,
+        chainId,
+        1000
+      );
+      
+      if (pastEvents.length > 0) {
+        console.log(`✅ Found ${pastEvents.length} past event(s) for current user!`);
+        const latestEvent = pastEvents[pastEvents.length - 1];
+        console.log('📋 Latest event:', latestEvent);
+        
+        // Update UI with the event data
+        setVerificationStatus({
+          status: 'success',
+          message: `Your ${attributeType} has been verified! Nationality: ${latestEvent.nationality}`
+        });
+      } else {
+        console.log('ℹ️ No past events found yet, event might still be processing');
+      }
+    } catch (error) {
+      console.error('❌ Error querying past events:', error);
+      // Don't fail the whole flow, just log the error
+    }
 
     // @dev - Close the modal after successful verification
     if (onVerificationSuccess) {

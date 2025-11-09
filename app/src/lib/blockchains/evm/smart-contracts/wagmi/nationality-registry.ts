@@ -1,7 +1,8 @@
 // @dev - Wagmi related imports
-import { simulateContract, writeContract, readContract, watchContractEvent } from '@wagmi/core'
+import { simulateContract, writeContract, readContract, watchContractEvent, getBlockNumber } from '@wagmi/core'
 import { wagmiConfig } from "@/lib/blockchains/evm/smart-contracts/wagmi/config";
 import type { Abi } from 'viem';
+import { createPublicClient, http, parseAbiItem } from 'viem';
 
 // @dev - Artifact of the OpenbandsV2NationalityRegistry contract
 import artifactOfOpenbandsV2NationalityRegistry from '@/lib/blockchains/evm/smart-contracts/artifacts/OpenbandsV2NationalityRegistry.sol/OpenbandsV2NationalityRegistry.json';
@@ -224,17 +225,118 @@ export interface NationalityVerifiedEvent {
 }
 
 /**
+ * @notice Query past NationalityVerified events for a specific user
+ * @param userAddress - The address to query events for
+ * @param chainId - Chain ID to query on
+ * @param blocksBack - Number of blocks to look back (default: 1000 blocks ~5 minutes on Celo)
+ * @returns Array of NationalityVerifiedEvent
+ */
+/**
+ * @notice Query past NationalityVerified events from blockchain
+ * @dev Useful for checking if an event was emitted but missed by the real-time watcher
+ * @param userAddress - The user's address to query events for
+ * @param chainId - The chain ID (42220 for Celo Mainnet, 11142220 for Celo Sepolia)
+ * @param blocksBack - How many blocks to look back (default: 1000)
+ * @returns Array of NationalityVerifiedEvent objects
+ */
+export async function queryNationalityVerifiedEvents(
+  userAddress: `0x${string}`,
+  chainId: number,
+  blocksBack: number = 1000
+): Promise<NationalityVerifiedEvent[]> {
+  try {
+    const contractAddress = getNationalityRegistryAddress(chainId);
+    
+    if (!contractAddress) {
+      console.error(`❌ No contract address for chain ${chainId}`);
+      return [];
+    }
+
+    // Get current block number
+    const currentBlock = await getBlockNumber(wagmiConfig, { chainId });
+    const fromBlock = currentBlock - BigInt(blocksBack);
+
+    console.log(`🔍 Querying past NationalityVerified events...`);
+    console.log(`   User: ${userAddress}`);
+    console.log(`   Blocks: ${fromBlock} to ${currentBlock} (${blocksBack} blocks)`);
+    console.log(`   Contract: ${contractAddress}`);
+    console.log(`   Chain ID: ${chainId}`);
+
+    // Get RPC URL for the chain
+    let rpcUrl: string;
+    if (chainId === 42220) {
+      rpcUrl = 'https://forno.celo.org';
+    } else if (chainId === 11142220) {
+      rpcUrl = process.env.NEXT_PUBLIC_CELO_SEPOLIA_RPC_URL || 'https://forno.celo-sepolia.celo-testnet.org';
+    } else {
+      console.error(`❌ Unsupported chain ID: ${chainId}`);
+      return [];
+    }
+
+    // Create a public client to query logs
+    const publicClient = createPublicClient({
+      transport: http(rpcUrl)
+    });
+
+    // Query logs using viem's getLogs
+    const logs = await publicClient.getLogs({
+      address: contractAddress,
+      event: parseAbiItem('event NationalityVerified(address indexed user, string nationality, bytes32 messageId, uint256 timestamp)'),
+      args: {
+        user: userAddress
+      },
+      fromBlock,
+      toBlock: currentBlock
+    });
+
+    console.log(`📊 Found ${logs.length} event(s)`);
+
+    // Parse logs into events
+    const events: NationalityVerifiedEvent[] = logs.map(log => {
+      const args = log.args as { user: `0x${string}`; nationality: string; messageId: `0x${string}`; timestamp: bigint };
+      return {
+        user: args.user,
+        nationality: args.nationality,
+        messageId: args.messageId,
+        timestamp: args.timestamp,
+        blockNumber: log.blockNumber,
+        transactionHash: log.transactionHash
+      };
+    });
+
+    // Log each event found
+    events.forEach((event, index) => {
+      console.log(`\n📋 Event #${index + 1}:`);
+      console.log(`   User: ${event.user}`);
+      console.log(`   Nationality: ${event.nationality}`);
+      console.log(`   Message ID: ${event.messageId}`);
+      console.log(`   Timestamp: ${event.timestamp}`);
+      console.log(`   Block: ${event.blockNumber}`);
+      console.log(`   Tx: ${event.transactionHash}`);
+    });
+
+    return events;
+  } catch (error) {
+    console.error('❌ Error querying past events:', error);
+    console.error('   Error details:', error instanceof Error ? error.message : String(error));
+    return [];
+  }
+}
+
+/**
  * @notice Watch for the NationalityVerified event, which is emitted via the OpenbandsV2NationalityRegistry#customVerificationHook()
  * @dev This event is triggered when a user successfully verifies their nationality via Self.xyz
  *      The event includes a Hyperlane messageId which tracks the cross-chain message to Base
  *      Uses polling mode to avoid "filter not found" errors on public RPC endpoints
  * @param chainId - Optional chain ID to determine which contract to watch (42220 for Celo Mainnet, 11142220 for Celo Sepolia)
  * @param onEvent - Callback function to handle parsed event data
+ * @param fromBlock - Block number to start watching from (defaults to 'latest' for new events only)
  * @returns Unwatch function to stop listening for events
  */
 export function watchNationalityVerifiedEvent(
   chainId?: number,
-  onEvent?: (event: NationalityVerifiedEvent) => void
+  onEvent?: (event: NationalityVerifiedEvent) => void,
+  fromBlock?: bigint | 'latest'
 ) {
   try {
     const nationalityRegistryContractAddress = getNationalityRegistryAddress(chainId);
@@ -245,10 +347,14 @@ export function watchNationalityVerifiedEvent(
       return () => {}; // Return empty unwatch function
     }
 
+    // Use 'latest' by default to only catch new events, or allow specifying a starting block
+    const watchFromBlock = fromBlock || 'latest';
+    
     console.log('👀 Watching NationalityVerified events...');
     console.log(`📍 Contract Address: ${nationalityRegistryContractAddress}`);
     console.log(`🔗 Chain ID: ${chainId || 'default'}`);
-    console.log(`🔄 Using polling mode to avoid RPC filter issues`);
+    console.log(`🔄 Polling mode enabled (every 3 seconds)`);
+    console.log(`📊 Watching from block: ${watchFromBlock}`);
     console.log('─────────────────────────────────────────────');
     
     const unwatch = watchContractEvent(wagmiConfig, {
@@ -256,7 +362,9 @@ export function watchNationalityVerifiedEvent(
       abi: openbandsV2NationalityRegistryContractConfig.abi,
       eventName: 'NationalityVerified',
       poll: true, // Use polling instead of filters to avoid "filter not found" errors
-      pollingInterval: 5_000, // Poll every 5 seconds (adjust as needed)
+      pollingInterval: 3_000, // Poll every 3 seconds for faster event detection
+      // @ts-ignore - fromBlock is not in the type but is supported
+      fromBlock: watchFromBlock, // Start watching from this block
       onLogs(logs) {
         console.log('\n🎉 NationalityVerified event detected!');
         console.log(`📊 Total logs received: ${logs.length}`);
