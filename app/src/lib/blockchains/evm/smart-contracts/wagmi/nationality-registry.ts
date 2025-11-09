@@ -3,79 +3,28 @@ import { simulateContract, writeContract, readContract, watchContractEvent } fro
 import { wagmiConfig } from "@/lib/blockchains/evm/smart-contracts/wagmi/config";
 import type { Abi } from 'viem';
 
-/**
- * @notice OpenbandsV2NationalityRegistry contract ABI and address configuration
- * @dev This will be populated after contract deployment
- */
+// @dev - Artifact of the OpenbandsV2NationalityRegistry contract
+import artifactOfOpenbandsV2NationalityRegistry from '@/lib/blockchains/evm/smart-contracts/artifacts/nationality-registry/OpenbandsV2NationalityRegistry.json';
 
-// Temporary ABI - will be replaced after deployment
-const NATIONALITY_REGISTRY_ABI = [
-  {
-    "type": "function",
-    "name": "storeNationalityVerification",
-    "inputs": [
-      { "name": "_nationality", "type": "string", "internalType": "string" },
-      { "name": "_isAboveMinimumAge", "type": "bool", "internalType": "bool" },
-      { "name": "_isValidNationality", "type": "bool", "internalType": "bool" }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "getNationalityRecord",
-    "inputs": [
-      { "name": "_user", "type": "address", "internalType": "address" }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "tuple",
-        "internalType": "struct OpenbandsV2NationalityRegistry.NationalityRecord",
-        "components": [
-          { "name": "nationality", "type": "string", "internalType": "string" },
-          { "name": "isValidNationality", "type": "bool", "internalType": "bool" },
-          { "name": "verifiedAt", "type": "uint256", "internalType": "uint256" },
-          { "name": "isActive", "type": "bool", "internalType": "bool" }
-        ]
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "isUserVerified",
-    "inputs": [
-      { "name": "_user", "type": "address", "internalType": "address" }
-    ],
-    "outputs": [
-      { "name": "", "type": "bool", "internalType": "bool" }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getUserNationality",
-    "inputs": [
-      { "name": "_user", "type": "address", "internalType": "address" }
-    ],
-    "outputs": [
-      { "name": "", "type": "string", "internalType": "string" }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "event",
-    "name": "NationalityVerified",
-    "inputs": [
-      { "name": "user", "type": "address", "indexed": true, "internalType": "address" },
-      { "name": "nationality", "type": "string", "indexed": false, "internalType": "string" },
-      { "name": "isAboveMinimumAge", "type": "bool", "indexed": false, "internalType": "bool" },
-      { "name": "timestamp", "type": "uint256", "indexed": false, "internalType": "uint256" }
-    ],
-    "anonymous": false
-  }
-] as const;
+/**
+ * @notice - Set the OpenbandsV2NationalityRegistry contract instance
+ */
+export function setOpenbandsV2NationalityRegistryContractInstance(): { openbandsV2NationalityRegistryContractAddress: string, openbandsV2NationalityRegistryAbi: Abi } {
+  // @dev - Create the OpenbandsV2NationalityRegistry contract instance
+  const openbandsV2NationalityRegistryContractAddress: string = process.env.NEXT_PUBLIC_OPENBANDS_V2_NATIONALITY_REGISTRY_CONTRACT_ON_CELO_TESTNET || "";  
+  const openbandsV2NationalityRegistryAbi = artifactOfOpenbandsV2NationalityRegistry.abi;
+  //console.log(`openbandsV2NationalityRegistryContractAddress: ${openbandsV2NationalityRegistryContractAddress}`);
+  return { openbandsV2NationalityRegistryContractAddress, openbandsV2NationalityRegistryAbi: openbandsV2NationalityRegistryAbi as Abi };
+}
+
+/**
+ * @notice - Set the OpenbandsV2NationalityRegistry contract instance as a "openbandsV2NationalityRegistryContractConfig"
+ */
+const { openbandsV2NationalityRegistryContractAddress, openbandsV2NationalityRegistryAbi } = setOpenbandsV2NationalityRegistryContractInstance();
+export const openbandsV2NationalityRegistryContractConfig = {
+  address: openbandsV2NationalityRegistryContractAddress as `0x${string}`,
+  abi: openbandsV2NationalityRegistryAbi,
+} as const
 
 /**
  * @notice Contract configuration
@@ -92,10 +41,10 @@ export function getNationalityRegistryAddress(chainId?: number): `0x${string}` {
   }
 }
 
-export const nationalityRegistryContractConfig = {
-  address: getNationalityRegistryAddress(),
-  abi: NATIONALITY_REGISTRY_ABI as Abi,
-} as const;
+// export const nationalityRegistryContractConfig = {
+//   address: getNationalityRegistryAddress(),
+//   abi: NATIONALITY_REGISTRY_ABI as Abi,
+// } as const;
 
 /**
  * @notice Nationality record type returned from contract
@@ -139,7 +88,7 @@ export async function storeNationalityVerification(
     // Simulate the transaction first
     const { request } = await simulateContract(wagmiConfig, {
       address: contractAddress,
-      abi: nationalityRegistryContractConfig.abi,
+      abi: openbandsV2NationalityRegistryContractConfig.abi,
       functionName: 'storeNationalityVerification',
       args: [nationality, isAboveMinimumAge, isValidNationality]
     });
@@ -177,7 +126,7 @@ export async function getNationalityRecord(
     
     const result = await readContract(wagmiConfig, {
       address: contractAddress,
-      abi: nationalityRegistryContractConfig.abi,
+      abi: openbandsV2NationalityRegistryContractConfig.abi,
       functionName: 'getNationalityRecord',
       args: [userAddress],
     }) as any;
@@ -211,7 +160,7 @@ export async function isUserVerified(
     
     const result = await readContract(wagmiConfig, {
       address: contractAddress,
-      abi: nationalityRegistryContractConfig.abi,
+      abi: openbandsV2NationalityRegistryContractConfig.abi,
       functionName: 'isUserVerified',
       args: [userAddress],
     });
@@ -238,7 +187,7 @@ export async function getUserNationality(
     
     const result = await readContract(wagmiConfig, {
       address: contractAddress,
-      abi: nationalityRegistryContractConfig.abi,
+      abi: openbandsV2NationalityRegistryContractConfig.abi,
       functionName: 'getUserNationality',
       args: [userAddress],
     });
@@ -263,7 +212,7 @@ export function watchNationalityVerifiedEvent(chainId?: number) {
     
     const watchedNationalityVerifiedEvent = watchContractEvent(wagmiConfig, {
       address: nationalityRegistryContractAddress,
-      abi: nationalityRegistryContractConfig.abi,
+      abi: openbandsV2NationalityRegistryContractConfig.abi,
       eventName: 'NationalityVerified',
       onLogs(logs) {
         console.log('New logs!', logs)
