@@ -303,19 +303,21 @@ export const SelfVerifyPlayground = ({ isMobile = false, onVerificationSuccess, 
     console.log('🔍 Querying recent events as fallback...');
     
     try {
-      // Wait a few seconds for the transaction to be mined
+      // @dev - Wait a few seconds for the transaction to be mined
       await new Promise(resolve => setTimeout(resolve, 5000));
       
-      // Query past events (last 1000 blocks ~5 minutes)
+      // @dev - Query past events (last 1000 blocks ~5 minutes)
       const pastEvents = await queryNationalityVerifiedEvents(
         address as `0x${string}`,
         chainId,
         1000
       );
-      
+
+      // @dev - Get the latest event (NationalityVerified event) log for the user
+      let latestEvent;
       if (pastEvents.length > 0) {
         console.log(`✅ Found ${pastEvents.length} past event(s) for current user!`);
-        const latestEvent = pastEvents[pastEvents.length - 1];
+        latestEvent = pastEvents[pastEvents.length - 1];
         console.log('📋 Latest event:', latestEvent);
         
         // Update UI with the event data

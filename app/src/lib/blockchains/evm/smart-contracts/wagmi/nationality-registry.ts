@@ -225,15 +225,7 @@ export interface NationalityVerifiedEvent {
 }
 
 /**
- * @notice Query past NationalityVerified events for a specific user
- * @param userAddress - The address to query events for
- * @param chainId - Chain ID to query on
- * @param blocksBack - Number of blocks to look back (default: 1000 blocks ~5 minutes on Celo)
- * @returns Array of NationalityVerifiedEvent
- */
-/**
- * @notice Query past NationalityVerified events from blockchain
- * @dev Useful for checking if an event was emitted but missed by the real-time watcher
+ * @notice Query past NationalityVerified events from (a given "chain ID" of) blockchain
  * @param userAddress - The user's address to query events for
  * @param chainId - The chain ID (42220 for Celo Mainnet, 11142220 for Celo Sepolia)
  * @param blocksBack - How many blocks to look back (default: 1000)
@@ -265,7 +257,7 @@ export async function queryNationalityVerifiedEvents(
     // Get RPC URL for the chain
     let rpcUrl: string;
     if (chainId === 42220) {
-      rpcUrl = 'https://forno.celo.org';
+      rpcUrl = process.env.NEXT_PUBLIC_CELO_MAINNET_RPC_URL || 'https://forno.celo.org';
     } else if (chainId === 11142220) {
       rpcUrl = process.env.NEXT_PUBLIC_CELO_SEPOLIA_RPC_URL || 'https://forno.celo-sepolia.celo-testnet.org';
     } else {
