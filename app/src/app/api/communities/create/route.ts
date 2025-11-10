@@ -11,7 +11,7 @@ import { verifyMessage } from 'viem';
 import { createClient } from '@supabase/supabase-js';
 import { verifyUserBadge } from '@/lib/verification/badge-verification';
 import { communityCreationLimiter } from '@/lib/rate-limit';
-import { translateMRZToCountryName } from '@/lib/utils/country-translation';
+import { translateMRZToCountryName, normalizeMRZCode } from '@/lib/utils/country-translation';
 
 // Initialize Supabase client for server-side operations
 // Use SERVICE_ROLE key to bypass RLS (we do our own access control via badge verification)
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
       }, { status: 429 });
     }
     
-    // Validate input
+    // Validate input - name first
     if (!name || name.length < 3 || name.length > 100) {
       return NextResponse.json({ 
         success: false, 
@@ -70,13 +70,33 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
     
-    if (!description || description.length < 10 || description.length > 500) {
+    // Check for duplicate community name (case-insensitive)
+    // This happens early to give immediate feedback
+    const supabase = getServerSupabase();
+    const { data: existingByName, error: nameCheckError } = await supabase
+      .from('communities')
+      .select('name, community_id')
+      .eq('is_active', true)
+      .ilike('name', name.trim()); // Case-insensitive comparison
+    
+    if (nameCheckError) {
+      console.error('[Community Creation] Failed to check for duplicate name:', nameCheckError);
+      // Don't block creation if check fails, but log it
+    } else if (existingByName && existingByName.length > 0) {
+      const existing = existingByName[0];
+      console.log(`[Community Creation] Duplicate name detected: ${existing.name} (${existing.community_id})`);
       return NextResponse.json({ 
         success: false, 
-        error: 'Invalid description (10-500 characters required)' 
-      }, { status: 400 });
+        error: `A community with the name "${existing.name}" already exists. Please choose a different name.`,
+        existingCommunity: {
+          name: existing.name,
+          id: existing.community_id
+        }
+      }, { status: 409 });
     }
     
+    // Parse and validate badge requirements BEFORE description validation
+    // This allows duplicate check to happen early
     // Support both new multi-badge format and legacy single-badge format
     let finalBadgeRequirements: Array<{ type: 'age' | 'nationality' | 'company'; value?: string; values?: string[] }>;
     let finalPrimaryAttestationType: 'nationality' | 'age' | 'company';
@@ -172,6 +192,89 @@ export async function POST(req: NextRequest) {
       finalCombinationLogic = undefined;
     }
     
+    // Check for duplicate badge requirements EARLY (before description validation)
+    // This gives users immediate feedback about duplicates
+    // Note: supabase client already initialized above for name check
+    
+    const normalizeBadgeRequirements = (reqs: Array<{ type: string; value?: string; values?: string[] }>) => {
+      return reqs.map(req => {
+        if (req.type === 'nationality' && req.values) {
+          return { type: req.type, values: [...req.values].map(c => normalizeMRZCode(c)).sort() };
+        } else if (req.type === 'company' && req.value) {
+          return { type: req.type, value: req.value.toLowerCase().replace('@', '').trim() };
+        } else if (req.type === 'age') {
+          return { type: req.type, value: 'verified' };
+        }
+        return req;
+      }).sort((a, b) => {
+        if (a.type !== b.type) return a.type.localeCompare(b.type);
+        if (a.type === 'nationality' && a.values && b.values) {
+          return JSON.stringify(a.values).localeCompare(JSON.stringify(b.values));
+        }
+        return (a.value || '').localeCompare(b.value || '');
+      });
+    };
+    
+    const normalizedNewRequirements = normalizeBadgeRequirements(finalBadgeRequirements);
+    const normalizedNewRequirementsStr = JSON.stringify(normalizedNewRequirements);
+    
+    const { data: existingCommunities, error: fetchError } = await supabase
+      .from('communities')
+      .select('name, community_id, metadata')
+      .eq('is_active', true);
+    
+    if (fetchError) {
+      console.error('[Community Creation] Failed to check for duplicates:', fetchError);
+    } else if (existingCommunities) {
+      for (const existing of existingCommunities) {
+        const existingMetadata = existing.metadata || {};
+        const existingBadgeRequirements = existingMetadata.badgeRequirements;
+        
+        if (existingBadgeRequirements && Array.isArray(existingBadgeRequirements)) {
+          const normalizedExisting = normalizeBadgeRequirements(existingBadgeRequirements);
+          const normalizedExistingStr = JSON.stringify(normalizedExisting);
+          
+          if (normalizedNewRequirementsStr === normalizedExistingStr) {
+            console.log(`[Community Creation] Duplicate detected: ${existing.name} (${existing.community_id})`);
+            return NextResponse.json({ 
+              success: false, 
+              error: `A community with these exact badge requirements already exists: "${existing.name}". Please join that community instead or create one with different requirements.`,
+              existingCommunity: {
+                name: existing.name,
+                id: existing.community_id
+              }
+            }, { status: 409 });
+          }
+        }
+      }
+    }
+    
+    // Validate description (after duplicate check)
+    // Use shortDescription as fallback if description is missing or too short
+    let finalDescription = description;
+    
+    // If description is missing or too short, try shortDescription
+    if (!finalDescription || finalDescription.trim().length < 10) {
+      if (shortDescription && shortDescription.trim().length >= 10) {
+        finalDescription = shortDescription.trim();
+      } else {
+        // Both are too short - require at least one to be valid
+        return NextResponse.json({ 
+          success: false, 
+          error: 'Description must be at least 10 characters. Please add a short description or community details.' 
+        }, { status: 400 });
+      }
+    } else {
+      finalDescription = finalDescription.trim();
+    }
+    
+    if (finalDescription.length > 500) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Description is too long (maximum 500 characters)' 
+      }, { status: 400 });
+    }
+    
     if (!walletAddress || !walletAddress.match(/^0x[a-fA-F0-9]{40}$/)) {
       return NextResponse.json({ 
         success: false, 
@@ -249,14 +352,10 @@ export async function POST(req: NextRequest) {
           continue;
         }
         
-        // Normalize user nationality (D<< -> DEU)
-        let userNationality = verification.actualValue!;
-        if (userNationality === 'D<<') {
-          userNationality = 'DEU';
-        }
-        
-        // Normalize required nationalities
-        const normalizedRequired = (req.values || []).map((code: string) => code === 'D<<' ? 'DEU' : code);
+        // Normalize nationality codes (MRZ format -> ISO-3 standard)
+        // E.g., D<< -> DEU, and any other non-standard passport codes
+        const userNationality = normalizeMRZCode(verification.actualValue || '');
+        const normalizedRequired = (req.values || []).map((code: string) => normalizeMRZCode(code));
         
         if (normalizedRequired.includes(userNationality)) {
           ownedBadges.push({ type: 'nationality', value: userNationality });
@@ -324,86 +423,14 @@ export async function POST(req: NextRequest) {
     let finalAttestationValues: string[] | null = null;
     
     if (finalPrimaryAttestationType === 'nationality' && finalPrimaryAttestationValues) {
-      const normalized = finalPrimaryAttestationValues.map((code: string) => code === 'D<<' ? 'DEU' : code);
+      // Normalize all nationality codes (MRZ format -> ISO-3 standard)
+      const normalized = finalPrimaryAttestationValues.map((code: string) => normalizeMRZCode(code));
       finalAttestationValues = normalized;
       finalAttestationValue = normalized[0];
     } else if (finalPrimaryAttestationType === 'company') {
       finalAttestationValue = finalBadgeRequirements.find(r => r.type === 'company')?.value?.replace('@', '').trim() || 'verified';
     } else {
       finalAttestationValue = 'verified';
-    }
-    
-    const supabase = getServerSupabase();
-    
-    // Check for duplicate community with same badge requirements
-    // We need to compare the full badge requirements, not just primary type
-    // Normalize badge requirements for comparison (sort arrays, normalize values)
-    const normalizeBadgeRequirements = (reqs: Array<{ type: string; value?: string; values?: string[] }>) => {
-      return reqs.map(req => {
-        if (req.type === 'nationality' && req.values) {
-          return { type: req.type, values: [...req.values].sort() };
-        } else if (req.type === 'company' && req.value) {
-          return { type: req.type, value: req.value.toLowerCase().replace('@', '').trim() };
-        } else if (req.type === 'age') {
-          return { type: req.type, value: 'verified' };
-        }
-        return req;
-      }).sort((a, b) => {
-        // Sort by type first, then by value
-        if (a.type !== b.type) return a.type.localeCompare(b.type);
-        if (a.type === 'nationality' && a.values && b.values) {
-          return JSON.stringify(a.values).localeCompare(JSON.stringify(b.values));
-        }
-        return (a.value || '').localeCompare(b.value || '');
-      });
-    };
-    
-    const normalizedNewRequirements = normalizeBadgeRequirements(finalBadgeRequirements);
-    const normalizedNewRequirementsStr = JSON.stringify(normalizedNewRequirements);
-    
-    // Fetch all existing communities with metadata
-    const { data: existingCommunities, error: fetchError } = await supabase
-      .from('communities')
-      .select('name, metadata, attestation_type, attestation_value')
-      .eq('is_active', true);
-    
-    if (fetchError) {
-      console.error('[Community Creation] Failed to check for duplicates:', fetchError);
-      // Continue anyway - better to allow duplicate than block legitimate creation
-    } else if (existingCommunities) {
-      // Check each existing community's badge requirements
-      for (const existing of existingCommunities) {
-        const existingMetadata = existing.metadata || {};
-        const existingBadgeRequirements = existingMetadata.badgeRequirements;
-        
-        if (existingBadgeRequirements && Array.isArray(existingBadgeRequirements)) {
-          // Normalize existing badge requirements
-          const normalizedExisting = normalizeBadgeRequirements(existingBadgeRequirements);
-          const normalizedExistingStr = JSON.stringify(normalizedExisting);
-          
-          // Compare normalized badge requirements
-          if (normalizedNewRequirementsStr === normalizedExistingStr) {
-            return NextResponse.json({ 
-              success: false, 
-              error: `A community with these exact badge requirements already exists: "${existing.name}". Please join that community or create one with different requirements.` 
-            }, { status: 409 });
-          }
-        } else {
-          // Legacy communities without metadata - check based on primary attestation type
-          // Only check if the new community is also single-badge (no metadata)
-          if (finalBadgeRequirements.length === 1) {
-            const existingType = existing.attestation_type;
-            const existingValue = existing.attestation_value;
-            
-            if (existingType === finalPrimaryAttestationType && existingValue === finalAttestationValue) {
-              return NextResponse.json({ 
-                success: false, 
-                error: `A community with this badge requirement already exists: "${existing.name}". Please join that community instead.` 
-              }, { status: 409 });
-            }
-          }
-        }
-      }
     }
     
     // Determine contract info based on primary attestation type
@@ -491,7 +518,7 @@ export async function POST(req: NextRequest) {
       .insert({
         community_id: communityId,
         name,
-        description,
+        description: finalDescription, // Use validated/fallback description
         attestation_type: finalPrimaryAttestationType,
         attestation_value: finalAttestationValue,
         attestation_values: finalAttestationValues,

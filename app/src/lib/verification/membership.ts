@@ -7,6 +7,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { verifyUserBadge } from './badge-verification';
+import { normalizeMRZCode } from '@/lib/utils/country-translation';
 
 // Initialize Supabase client for server-side operations
 function getServerSupabase() {
@@ -76,19 +77,111 @@ export async function canJoinCommunity(
       return { canJoin: false, reason: 'Community not found' };
     }
     
-    // Check if already a member
-    const isAlreadyMember = await isCommunityMember(userAddress, communityId);
-    if (isAlreadyMember) {
-      return { canJoin: false, reason: 'Already a member', community };
+  // Check if already a member
+  const isAlreadyMember = await isCommunityMember(userAddress, communityId);
+  if (isAlreadyMember) {
+    return { canJoin: false, reason: 'Already a member', community };
+  }
+  
+  // Check if community has multi-badge requirements in metadata
+  const metadata = community.metadata || {};
+  const badgeRequirements = metadata.badgeRequirements;
+  const combinationLogic = metadata.combinationLogic;
+  
+  if (badgeRequirements && Array.isArray(badgeRequirements) && badgeRequirements.length > 0) {
+    // Multi-badge community - verify based on combination logic
+    console.log(`[Membership] Multi-badge community verification for ${userAddress}, logic: ${combinationLogic}`);
+    
+    const ownedBadges: Array<{ type: string; value: string }> = [];
+    const missingBadges: Array<{ type: string; value: string; error: string }> = [];
+    
+    // Verify each badge requirement
+    for (const req of badgeRequirements) {
+      if (req.type === 'age') {
+        const verification = await verifyUserBadge(userAddress, 'age');
+        if (verification.isVerified) {
+          ownedBadges.push({ type: 'age', value: 'verified' });
+        } else {
+          missingBadges.push({ type: 'age', value: 'verified', error: verification.error || 'User has not verified age' });
+        }
+      } else if (req.type === 'nationality') {
+        const verification = await verifyUserBadge(userAddress, 'nationality');
+        if (!verification.isVerified) {
+          missingBadges.push({ type: 'nationality', value: req.values?.join(', ') || '', error: 'User has not verified nationality' });
+          continue;
+        }
+        
+        // Normalize nationality codes (MRZ format -> ISO-3 standard)
+        const userNationality = normalizeMRZCode(verification.actualValue || '');
+        const normalizedRequired = (req.values || []).map((code: string) => normalizeMRZCode(code));
+        
+        if (normalizedRequired.includes(userNationality)) {
+          ownedBadges.push({ type: 'nationality', value: userNationality });
+        } else {
+          missingBadges.push({ 
+            type: 'nationality', 
+            value: normalizedRequired.join(', '), 
+            error: `User nationality (${userNationality}) not in required list: ${normalizedRequired.join(', ')}` 
+          });
+        }
+      } else if (req.type === 'company') {
+        const verification = await verifyUserBadge(userAddress, 'company');
+        if (!verification.isVerified) {
+          missingBadges.push({ type: 'company', value: req.value || '', error: 'User has not verified company email' });
+          continue;
+        }
+        
+        const userDomain = verification.actualValue!.toLowerCase();
+        const requiredDomain = (req.value || '').toLowerCase().replace('@', '');
+        
+        if (userDomain === requiredDomain) {
+          ownedBadges.push({ type: 'company', value: userDomain });
+        } else {
+          missingBadges.push({ 
+            type: 'company', 
+            value: requiredDomain, 
+            error: `User domain (${userDomain}) does not match required (${requiredDomain})` 
+          });
+        }
+      }
     }
     
-  // Verify user has required badge
+    // Apply combination logic
+    if (combinationLogic === 'all') {
+      // User must own ALL badges
+      if (missingBadges.length > 0) {
+        const missingList = missingBadges.map(b => `${b.type}`).join(', ');
+        return {
+          canJoin: false,
+          reason: `You need all required badges: ${missingList}. You have: ${ownedBadges.map(b => b.type).join(', ') || 'none'}.`,
+          community,
+        };
+      }
+    } else {
+      // User must own AT LEAST ONE badge (or default to "any" if not specified)
+      if (ownedBadges.length === 0) {
+        const requiredList = badgeRequirements.map(req => req.type).join(', ');
+        return {
+          canJoin: false,
+          reason: `You need at least one of: ${requiredList}`,
+          community,
+        };
+      }
+    }
+    
+    console.log(`[Membership] Multi-badge verification passed. Owned: ${ownedBadges.length}, Missing: ${missingBadges.length}`);
+    return { canJoin: true, community };
+  }
+  
+  // Legacy verification for single-badge communities
   // For nationality communities with multiple values, check if user has ANY of them
   if (community.attestation_type === 'nationality' && community.attestation_values && Array.isArray(community.attestation_values)) {
     // Multi-nationality community
+    console.log(`[Membership] Legacy multi-nationality verification for ${userAddress}`);
     const userVerification = await verifyUserBadge(userAddress, 'nationality');
     
     if (!userVerification.isVerified) {
+      console.log(`[Membership] User nationality not verified`);
       return {
         canJoin: false,
         reason: 'You need to verify your nationality first',
@@ -96,15 +189,32 @@ export async function canJoinCommunity(
       };
     }
     
+    // Normalize user nationality (MRZ format -> ISO-3 standard)
+    // E.g., D<< -> DEU, and any other non-standard passport codes
+    const userNationality = normalizeMRZCode(userVerification.actualValue || '');
+    
+    // Normalize stored values to ensure consistent comparison
+    // (defensive coding - values should already be normalized, but this ensures it)
+    const normalizedStoredValues = community.attestation_values.map((code: string) => 
+      normalizeMRZCode(code || '').trim().toUpperCase()
+    ).filter(Boolean);
+    
+    const normalizedUserNationality = userNationality.trim().toUpperCase();
+    
+    console.log(`[Membership] User nationality: "${normalizedUserNationality}"`);
+    console.log(`[Membership] Allowed nationalities: [${normalizedStoredValues.join(', ')}]`);
+    console.log(`[Membership] Match: ${normalizedStoredValues.includes(normalizedUserNationality)}`);
+    
     // Check if user's nationality is in the allowed list
-    if (!community.attestation_values.includes(userVerification.actualValue || '')) {
+    if (!normalizedStoredValues.includes(normalizedUserNationality)) {
       return {
         canJoin: false,
-        reason: `This community is for ${community.attestation_values.join(', ')} citizens only`,
+        reason: `This community is for ${normalizedStoredValues.join(', ')} citizens only. You have: ${normalizedUserNationality}`,
         community,
       };
     }
     
+    console.log(`[Membership] Legacy multi-nationality verification passed`);
     return { canJoin: true, community };
   }
   

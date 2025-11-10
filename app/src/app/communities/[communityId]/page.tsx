@@ -224,23 +224,24 @@ function CommunityPageContent() {
   const getAllBadgeRequirements = (): Array<{ type: string; label: string; emoji: string }> => {
     if (community?.badgeRequirements && community.badgeRequirements.length > 0) {
       // Multi-badge community: use badgeRequirements from metadata
+      // Each badge is separate (including each nationality)
       return community.badgeRequirements.map(req => {
         if (req.type === 'age') {
           return { type: 'age', label: '18+', emoji: '🎂' };
-        } else if (req.type === 'nationality' && req.values) {
-          // For nationality, return all values
-          return req.values.map(code => ({
-            type: 'nationality',
-            label: commonNames[code as keyof typeof commonNames] || code,
-            emoji: getCountryFlagEmoji(code),
-          }));
+        } else if (req.type === 'nationality' && req.values && req.values.length === 1) {
+          // Single nationality badge
+          return { 
+            type: 'nationality', 
+            label: commonNames[req.values[0] as keyof typeof commonNames] || req.values[0], 
+            emoji: getCountryFlagEmoji(req.values[0]) 
+          };
         } else if (req.type === 'company' && req.value) {
           return { type: 'company', label: `@${req.value}`, emoji: '✉️' };
         }
         return null;
-      }).flat().filter(Boolean) as Array<{ type: string; label: string; emoji: string }>;
+      }).filter(Boolean) as Array<{ type: string; label: string; emoji: string }>;
     } else if (community?.attestationValues && community.attestationValues.length > 1) {
-      // Multi-nationality community (legacy format)
+      // Multi-nationality community (legacy format) - show each nationality separately
       return community.attestationValues.map(code => ({
         type: 'nationality',
         label: commonNames[code as keyof typeof commonNames] || code,
@@ -259,6 +260,7 @@ function CommunityPageContent() {
   // Calculate badge requirements for display
   const badgeRequirementsList = getAllBadgeRequirements();
   const hasMultipleBadges = badgeRequirementsList.length > 1;
+  const combinationLogic = community?.combinationLogic || 'any'; // Get combination logic from metadata
 
   const handleTabChange = (tab: 'home' | 'badges' | 'employees' | 'communities') => {
     if (tab === 'home') {
@@ -328,10 +330,11 @@ function CommunityPageContent() {
                             src={community.avatarUrl} 
                             alt={`${community.name} avatar`}
                             className="absolute h-[110%] left-[-5.51%] max-w-none top-[-5%] w-[111.01%] object-cover"
+                            loading="lazy"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-4xl bg-gray-100">
-                            {getBadgeEmoji(community.attestationType)}
+                            🌍
                           </div>
                         )}
                       </div>
@@ -412,16 +415,21 @@ function CommunityPageContent() {
             <div className="content-stretch flex flex-col gap-[10px] items-start relative shrink-0 w-full">
               <div className="content-stretch flex gap-[4px] items-center relative shrink-0 w-full">
                 <IconFileBadge />
-                <p className="font-['Inter:Medium',sans-serif] font-medium leading-[20px] not-italic relative shrink-0 text-[14px] text-indigo-400 text-nowrap whitespace-pre">
+                <p className="font-['Inter:Medium',sans-serif] font-medium leading-[20px] not-italic relative shrink-0 text-[14px] text-indigo-400 whitespace-pre-wrap">
                   {hasMultipleBadges
-                    ? 'To join this community, you must have at least one of the following badges'
+                    ? (combinationLogic === 'all' 
+                        ? 'To join this community, you must have all of the following badges' 
+                        : 'To join this community, you must have at least one of the following badges')
                     : 'To join this community, you must have the following badge'}
                 </p>
               </div>
               
               <div className="content-stretch flex gap-[10px] items-center flex-wrap relative shrink-0 w-full">
                 {badgeRequirementsList.map((badge, index) => (
-                  <div key={`${badge.type}-${index}`} className="content-stretch flex items-start relative rounded-[12px] shrink-0">
+                  <div 
+                    key={`${badge.type}-${badge.label}-${index}`} 
+                    className="content-stretch flex items-start relative rounded-[12px] shrink-0"
+                  >
                     <div className="bg-neutral-50 box-border content-stretch flex gap-[8px] items-center justify-center px-[10px] py-[2px] relative rounded-[12px] shrink-0">
                       <div aria-hidden="true" className="absolute border border-solid border-zinc-200 inset-0 pointer-events-none rounded-[12px]" />
                       <div className="content-stretch flex gap-[6px] items-center relative shrink-0">

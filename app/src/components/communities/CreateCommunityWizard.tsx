@@ -15,7 +15,7 @@ import { useAccount, useSignMessage } from 'wagmi';
 import { useNationalityBadgeCheck } from '@/hooks/useNationalityBadgeCheck';
 import { useBadgeCheck } from '@/hooks/useBadgeCheck';
 import { useAgeBadgeCheck } from '@/hooks/useAgeBadgeCheck';
-import { commonNames, getCountryFlagEmoji } from '@/lib/utils/country-translation';
+import { commonNames, getCountryFlagEmoji, normalizeMRZCode, isMRZCode } from '@/lib/utils/country-translation';
 import { COUNTRY_GROUPS, type CountryGroupKey } from '@/lib/utils/country-groups';
 
 interface BadgeRequirement {
@@ -92,27 +92,19 @@ export function CreateCommunityWizard({ onCommunityCreated, onClose }: CreateCom
       return;
     }
     
-    // Check if nationality badge already exists
-    const existingNationalityIndex = badgeRequirements.findIndex(b => b.type === 'nationality');
-    
-    if (existingNationalityIndex >= 0) {
-      // Merge new nationalities with existing ones (avoid duplicates)
-      const existingValues = badgeRequirements[existingNationalityIndex].values || [];
-      const mergedValues = [...new Set([...existingValues, ...selectedNationalities])];
+    // Each nationality is a SEPARATE badge (so "match all" requires ALL countries)
+    // Add each selected nationality as its own badge entry
+    setBadgeRequirements(prev => {
+      const newBadges = selectedNationalities
+        .filter(code => !prev.some(b => b.type === 'nationality' && b.values?.includes(code))) // Avoid duplicates
+        .map(code => ({ type: 'nationality' as const, values: [code] }));
       
-      // Update the existing nationality badge
-      setBadgeRequirements(prev => {
-        const updated = [...prev];
-        updated[existingNationalityIndex] = { type: 'nationality', values: mergedValues };
-        return updated;
-      });
-    } else {
-      // Create new nationality badge
-      setBadgeRequirements(prev => [...prev, { type: 'nationality', values: [...selectedNationalities] }]);
-    }
+      return [...prev, ...newBadges];
+    });
     
     setSelectedNationalities([]);
     setShowNationalityPicker(false);
+    setShowIndividualCountryPicker(false);
   };
 
   const handleAddEmailBadge = () => {
@@ -141,14 +133,23 @@ export function CreateCommunityWizard({ onCommunityCreated, onClose }: CreateCom
         setError('Community name is required');
         return;
       }
+      if (communityDetails.name.length > 20) {
+        setError('Community name must be 20 characters or less');
+        return;
+      }
       if (!communityDetails.shortDescription.trim()) {
         setError('Short description is required');
+        return;
+      }
+      if (communityDetails.shortDescription.trim().length < 10) {
+        setError('Short description must be at least 10 characters');
         return;
       }
       if (communityDetails.shortDescription.length > 80) {
         setError('Short description must be 80 characters or less');
         return;
       }
+      // Avatar is optional - will default to globe emoji if not provided
     }
     if (currentStep === 2) {
       // Validate step 2
@@ -185,12 +186,20 @@ export function CreateCommunityWizard({ onCommunityCreated, onClose }: CreateCom
     const userNationality = nationalityBadge?.nationality || null; // e.g., "DEU" or "D<<"
     const userEmailDomain = companyBadge?.domain || null; // e.g., "openbands.xyz"
 
-    // Normalize user nationality (D<< -> DEU)
-    const normalizedUserNationality = userNationality === 'D<<' ? 'DEU' : userNationality;
+    // Normalize user nationality (MRZ format -> ISO-3 standard)
+    const normalizedUserNationality = userNationality ? normalizeMRZCode(userNationality) : null;
 
     // Check each required badge
     const ownedBadges: string[] = [];
     const missingBadges: string[] = [];
+
+    console.log('[Wizard] Verifying badge ownership:', {
+      userHasAge,
+      userNationality: normalizedUserNationality,
+      userEmailDomain,
+      combinationLogic,
+      badgeRequirements
+    });
 
     for (const requirement of badgeRequirements) {
       if (requirement.type === 'age') {
@@ -201,8 +210,15 @@ export function CreateCommunityWizard({ onCommunityCreated, onClose }: CreateCom
         }
       } else if (requirement.type === 'nationality') {
         // Check if user's nationality is in the required list
+        // NOTE: Multiple nationalities = ONE badge (user needs ANY of them)
         const requiredNationalities = requirement.values || [];
-        const normalizedRequired = requiredNationalities.map(code => code === 'D<<' ? 'DEU' : code);
+        const normalizedRequired = requiredNationalities.map(code => normalizeMRZCode(code));
+        
+        console.log('[Wizard] Checking nationality:', {
+          userNationality: normalizedUserNationality,
+          required: normalizedRequired,
+          match: normalizedRequired.includes(normalizedUserNationality || '')
+        });
         
         if (normalizedUserNationality && normalizedRequired.includes(normalizedUserNationality)) {
           ownedBadges.push(`Nationality (${commonNames[normalizedUserNationality as keyof typeof commonNames] || normalizedUserNationality})`);
@@ -221,6 +237,8 @@ export function CreateCommunityWizard({ onCommunityCreated, onClose }: CreateCom
         }
       }
     }
+
+    console.log('[Wizard] Verification result:', { ownedBadges, missingBadges, combinationLogic });
 
     // Apply combination logic
     if (combinationLogic === 'all') {
@@ -402,33 +420,36 @@ export function CreateCommunityWizard({ onCommunityCreated, onClose }: CreateCom
             <input
               type="text"
               value={communityDetails.name}
-              onChange={(e) => setCommunityDetails(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="e.g., Privacy + Scaling Explorations"
+              onChange={(e) => setCommunityDetails(prev => ({ ...prev, name: e.target.value.slice(0, 20) }))}
+              placeholder="e.g., PSE Community"
               required
-              maxLength={100}
+              maxLength={20}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            <p className="text-xs text-gray-500 mt-1">{communityDetails.name.length}/20 characters</p>
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-2 text-gray-700">
-              Short Description * (80 characters max)
+              Short Description *
             </label>
             <input
               type="text"
               value={communityDetails.shortDescription}
               onChange={(e) => setCommunityDetails(prev => ({ ...prev, shortDescription: e.target.value.slice(0, 80) }))}
-              placeholder="Brief description of your community"
+              placeholder="Brief description of your community (at least 10 characters)"
               required
               maxLength={80}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <p className="text-xs text-gray-500 mt-1">{communityDetails.shortDescription.length}/80 characters</p>
+            <p className={`text-xs mt-1 ${communityDetails.shortDescription.length < 10 ? 'text-red-500' : 'text-gray-500'}`}>
+              {communityDetails.shortDescription.length}/80 characters (minimum 10)
+            </p>
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-2 text-gray-700">
-              About
+              About (optional)
             </label>
             <textarea
               value={communityDetails.about}
@@ -457,7 +478,7 @@ export function CreateCommunityWizard({ onCommunityCreated, onClose }: CreateCom
 
           <div>
             <label className="block text-sm font-medium mb-2 text-gray-700">
-              Avatar/Profile Image
+              Community Logo (optional)
             </label>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
               {communityDetails.avatarPreview ? (
@@ -486,6 +507,7 @@ export function CreateCommunityWizard({ onCommunityCreated, onClose }: CreateCom
                   <label htmlFor="avatar-upload" className="cursor-pointer text-sm text-gray-600 hover:text-gray-800">
                     Click to upload
                   </label>
+                  <p className="text-xs text-gray-500 mt-2">Defaults to 🌍 globe emoji if not provided</p>
                 </div>
               )}
             </div>
@@ -498,7 +520,7 @@ export function CreateCommunityWizard({ onCommunityCreated, onClose }: CreateCom
       // Get user's badges for display
       const userHasAge = ageBadge?.hasVerifiedBadge || false;
       const userNationality = nationalityBadge?.nationality || null;
-      const normalizedUserNationality = userNationality === 'D<<' ? 'DEU' : userNationality;
+      const normalizedUserNationality = userNationality ? normalizeMRZCode(userNationality) : null;
       const userEmailDomain = companyBadge?.domain || null;
 
       return (
@@ -562,17 +584,17 @@ export function CreateCommunityWizard({ onCommunityCreated, onClose }: CreateCom
                   </div>
                   <div>
                     <p className="font-medium">Nationality</p>
-                    <p className="text-sm text-gray-500">Select which nationalities can join</p>
+                    <p className="text-sm text-gray-500">Each country will be a separate badge</p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => {
-                    // Pre-populate selectedNationalities with existing countries if nationality badge exists
-                    const existingNationality = badgeRequirements.find(b => b.type === 'nationality');
-                    if (existingNationality && existingNationality.values) {
-                      setSelectedNationalities([...existingNationality.values]);
-                    }
+                    // Pre-populate selectedNationalities with already-selected countries
+                    const existingCodes = badgeRequirements
+                      .filter(b => b.type === 'nationality')
+                      .flatMap(b => b.values || []);
+                    setSelectedNationalities([...existingCodes]);
                     setShowNationalityPicker(!showNationalityPicker);
                   }}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
@@ -616,7 +638,7 @@ export function CreateCommunityWizard({ onCommunityCreated, onClose }: CreateCom
                     <div className="p-3 border border-gray-200 rounded-lg max-h-[200px] overflow-y-auto bg-gray-50">
                       <div className="grid grid-cols-2 gap-1">
                         {Object.entries(commonNames)
-                          .filter(([code]) => code !== 'D<<') // Filter out D<< as we use DEU instead
+                          .filter(([code]) => !isMRZCode(code)) // Filter out non-standard MRZ codes (e.g., D<<)
                           .map(([code, name]) => (
                           <label key={code} className="flex items-center gap-2 text-sm hover:bg-gray-100 p-1 rounded cursor-pointer">
                             <input
@@ -705,21 +727,16 @@ export function CreateCommunityWizard({ onCommunityCreated, onClose }: CreateCom
             {/* Selected Badges */}
             {badgeRequirements.length > 0 && (
               <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm font-medium mb-3">Selected Badges:</p>
+                <p className="text-sm font-medium mb-3">Selected Badges (each is separate):</p>
                 <div className="space-y-2">
                   {badgeRequirements.map((badge, index) => (
                     <div key={index} className="flex items-center justify-between p-2 bg-white rounded border">
                       <div className="flex flex-wrap gap-1 items-center">
                         {badge.type === 'age' && <span className="text-sm">🎂 Age (18+)</span>}
-                        {badge.type === 'nationality' && badge.values && (
-                          <div className="flex flex-wrap gap-1 items-center">
-                            {badge.values.map((code: string, idx: number) => (
-                              <span key={code} className="text-sm flex items-center gap-1">
-                                {getCountryFlagEmoji(code)} {commonNames[code as keyof typeof commonNames] || code}
-                                {idx < badge.values!.length - 1 && <span className="text-gray-400">,</span>}
-                              </span>
-                            ))}
-                          </div>
+                        {badge.type === 'nationality' && badge.values && badge.values.length === 1 && (
+                          <span className="text-sm">
+                            {getCountryFlagEmoji(badge.values[0])} {commonNames[badge.values[0] as keyof typeof commonNames] || badge.values[0]}
+                          </span>
                         )}
                         {badge.type === 'company' && <span className="text-sm">✉️ {badge.value}</span>}
                       </div>
@@ -865,32 +882,36 @@ export function CreateCommunityWizard({ onCommunityCreated, onClose }: CreateCom
 
         {/* Content */}
         <div className="p-6">
-          {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700 text-sm">{error}</p>
-            </div>
-          )}
-
           {renderStepContent()}
         </div>
 
         {/* Footer Navigation */}
         {currentStep < 3 && (
-          <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex justify-between">
-            <button
-              onClick={prevStep}
-              disabled={currentStep === 1}
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Back
-            </button>
-            <button
-              onClick={nextStep}
-              disabled={isCreating}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm font-medium"
-            >
-              {isCreating ? 'Creating...' : currentStep === 2 ? 'Create Community' : 'Next'}
-            </button>
+          <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4">
+            {/* Error Message - Always at the bottom above buttons */}
+            {error && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-700 text-sm">{error}</p>
+              </div>
+            )}
+            
+            {/* Navigation Buttons */}
+            <div className="flex justify-between">
+              <button
+                onClick={prevStep}
+                disabled={currentStep === 1}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Back
+              </button>
+              <button
+                onClick={nextStep}
+                disabled={isCreating}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm font-medium"
+              >
+                {isCreating ? 'Creating...' : currentStep === 2 ? 'Create Community' : 'Next'}
+              </button>
+            </div>
           </div>
         )}
       </div>

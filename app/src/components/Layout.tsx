@@ -52,6 +52,7 @@ export default function Layout({ children, activeTab = 'home', onTabChange, onCo
           code: c.attestation_value,
           flag: getFlagEmoji(c.attestation_value),
           communityId: c.community_id,
+          avatarUrl: c.avatar_url, // Include avatar URL from API
         }));
         setCommunities(transformedCommunities);
       }
@@ -193,8 +194,18 @@ export default function Layout({ children, activeTab = 'home', onTabChange, onCo
                       onClick={() => handleCommunityClick(community)}
                       className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                     >
-                      <span className="text-lg">{community.flag}</span>
-                      <span>{community.name}</span>
+                      {/* Show avatar if available, otherwise show globe emoji */}
+                      {community.avatarUrl ? (
+                        <img 
+                          src={community.avatarUrl} 
+                          alt={`${community.name} avatar`} 
+                          className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <span className="text-lg flex-shrink-0">🌍</span>
+                      )}
+                      <span className="truncate">{community.name}</span>
                     </button>
                   ))
                 )}

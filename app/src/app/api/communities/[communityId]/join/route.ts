@@ -68,18 +68,24 @@ export async function POST(
     }
     
     // Get user's current badge value for snapshot
+    // For multi-badge or multi-nationality communities, we need to verify without requiring a specific value
+    // since canJoinCommunity already verified the user has one of the required badges
     const verification = await verifyUserBadge(
       walletAddress,
-      joinCheck.community.attestation_type,
-      joinCheck.community.attestation_value
+      joinCheck.community.attestation_type
+      // Don't pass attestation_value - just verify the user has the badge type
+      // canJoinCommunity already checked if the specific value matches requirements
     );
     
     if (!verification.isVerified) {
+      console.log(`[Join Community] Badge verification failed for type: ${joinCheck.community.attestation_type}`);
       return NextResponse.json({ 
         success: false, 
         error: 'Badge verification failed' 
       }, { status: 403 });
     }
+    
+    console.log(`[Join Community] Badge verified. Type: ${joinCheck.community.attestation_type}, Value: ${verification.actualValue}`);
     
     // Insert membership
     const supabase = getServerSupabase();

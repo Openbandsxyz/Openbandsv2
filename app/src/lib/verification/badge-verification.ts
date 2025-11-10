@@ -8,6 +8,7 @@
 import { readContract } from '@wagmi/core';
 import { wagmiConfig } from '@/lib/blockchains/evm/smart-contracts/wagmi/config';
 import type { Abi } from 'viem';
+import { normalizeMRZCode } from '@/lib/utils/country-translation';
 
 // Import ABIs from existing wagmi contract configs
 import { nationalityRegistryContractConfig } from '@/lib/blockchains/evm/smart-contracts/wagmi/nationality-registry';
@@ -207,19 +208,24 @@ export async function verifyUserBadge(
         };
       }
       
+      // Normalize nationality codes (MRZ format -> ISO-3 standard)
+      // E.g., D<< -> DEU, and any other non-standard passport codes
+      const userNationality = normalizeMRZCode(result.nationality || '');
+      const normalizedRequiredValue = requiredValue ? normalizeMRZCode(requiredValue) : undefined;
+      
       // Check if nationality matches required value
-      if (requiredValue && result.nationality !== requiredValue) {
+      if (normalizedRequiredValue && userNationality !== normalizedRequiredValue) {
         return {
           isVerified: false,
-          actualValue: result.nationality,
+          actualValue: userNationality,
           verifiedAt: result.verifiedAt,
-          error: `User nationality (${result.nationality}) does not match required (${requiredValue})`,
+          error: `User nationality (${userNationality}) does not match required (${normalizedRequiredValue})`,
         };
       }
       
       return {
         isVerified: true,
-        actualValue: result.nationality,
+        actualValue: userNationality,
         verifiedAt: result.verifiedAt,
       };
     }

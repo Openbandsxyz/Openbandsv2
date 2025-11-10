@@ -1,7 +1,5 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { useCountryPosts } from '@/lib/supabase';
-import { CountryPost } from '@/lib/supabase';
 import svgPaths from "./imports/svg-x50u5iglgo";
 import { commonNames, getCountryFlagEmoji } from '@/lib/utils/country-translation';
 import { useAccount } from 'wagmi';
@@ -69,37 +67,6 @@ function IconMail({ verified = false }: { verified?: boolean }) {
   );
 }
 
-// Country Post Card Component
-function CountryPostCard({ post }: { post: CountryPost }) {
-  const formatDate = (timestamp: number) => {
-    const date = new Date(timestamp);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
-
-  return (
-    <div className="bg-white rounded-lg border p-6 text-left">
-      <div className="flex items-start justify-between mb-3">
-        <h3 className="text-lg font-semibold text-gray-900 flex-1 pr-4">
-          {post.postTitle}
-        </h3>
-        <span className="text-sm text-gray-500 whitespace-nowrap">
-          {formatDate(post.createdAt)}
-        </span>
-      </div>
-      <p className="text-gray-700">
-        {post.content}
-      </p>
-    </div>
-  );
-}
-
 interface CountryCommunityProps {
   country: {
     name: string;
@@ -117,9 +84,6 @@ export default function CountryCommunity({ country }: CountryCommunityProps) {
   const [communityData, setCommunityData] = useState<any>(null);
   const [showPostComposer, setShowPostComposer] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  
-  // Fetch country posts from Supabase (keeping old logic for now)
-  const { posts, loading, error, refetch } = useCountryPosts(country.code, 'new');
 
   // Fetch community data if communityId is available
   useEffect(() => {
@@ -204,23 +168,24 @@ export default function CountryCommunity({ country }: CountryCommunityProps) {
   const getAllBadgeRequirements = (): Array<{ type: string; label: string; emoji: string }> => {
     if (communityData?.badgeRequirements && communityData.badgeRequirements.length > 0) {
       // Multi-badge community: use badgeRequirements from metadata
+      // Each badge is separate (including each nationality)
       return communityData.badgeRequirements.map((req: any) => {
         if (req.type === 'age') {
           return { type: 'age', label: '18+', emoji: '🎂' };
-        } else if (req.type === 'nationality' && req.values) {
-          // For nationality, return all values
-          return req.values.map((code: string) => ({
+        } else if (req.type === 'nationality' && req.values && req.values.length === 1) {
+          // Single nationality badge
+          return {
             type: 'nationality',
-            label: commonNames[code as keyof typeof commonNames] || code,
-            emoji: getCountryFlagEmoji(code),
-          }));
+            label: commonNames[req.values[0] as keyof typeof commonNames] || req.values[0],
+            emoji: getCountryFlagEmoji(req.values[0]),
+          };
         } else if (req.type === 'company' && req.value) {
           return { type: 'company', label: `@${req.value}`, emoji: '✉️' };
         }
         return null;
-      }).flat().filter(Boolean) as Array<{ type: string; label: string; emoji: string }>;
+      }).filter(Boolean) as Array<{ type: string; label: string; emoji: string }>;
     } else if (communityData?.attestationValues && communityData.attestationValues.length > 1) {
-      // Multi-nationality community (legacy format)
+      // Multi-nationality community (legacy format) - show each nationality separately
       return communityData.attestationValues.map((code: string) => ({
         type: 'nationality',
         label: commonNames[code as keyof typeof commonNames] || code,
@@ -238,6 +203,7 @@ export default function CountryCommunity({ country }: CountryCommunityProps) {
   
   const badgeRequirementsList = getAllBadgeRequirements();
   const hasMultipleBadges = badgeRequirementsList.length > 1;
+  const combinationLogic = communityData?.combinationLogic || 'any'; // Get combination logic from metadata
 
   return (
     <div className="bg-white relative rounded-tl-[24px] rounded-tr-[24px] size-full">
@@ -256,12 +222,13 @@ export default function CountryCommunity({ country }: CountryCommunityProps) {
                       {communityData?.avatarUrl ? (
                         <img 
                           src={communityData.avatarUrl} 
-                          alt={`${country.name} avatar`}
+                          alt={`${communityData?.name || country.name} avatar`}
                           className="absolute h-[110%] left-[-5.51%] max-w-none top-[-5%] w-[111.01%] object-cover"
+                          loading="lazy"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-4xl bg-gray-100">
-                          {country.flag}
+                          🌍
                         </div>
                       )}
                     </div>
@@ -313,9 +280,11 @@ export default function CountryCommunity({ country }: CountryCommunityProps) {
               <div className="content-stretch flex flex-col gap-[20px] items-start relative shrink-0 w-full">
                 {/* Frame79: Description + Meta */}
                 <div className="content-stretch flex flex-col gap-[12px] items-start relative shrink-0 w-full">
-                  <p className="font-['Inter:Regular',sans-serif] font-normal leading-[20px] not-italic relative shrink-0 text-[14px] text-zinc-500 w-full">
-                    {communityData?.description || `This is a space for verified citizens to have candid conversations about national issues, government policies, social concerns, and community initiatives that matter to ${country.name} residents.`}
-                  </p>
+                  {communityData?.description && (
+                    <p className="font-['Inter:Regular',sans-serif] font-normal leading-[20px] not-italic relative shrink-0 text-[14px] text-zinc-500 w-full">
+                      {communityData.description}
+                    </p>
+                  )}
                   
                   {/* Frame76: Meta info */}
                   <div className="content-stretch flex flex-col gap-[6px] items-start relative shrink-0 w-full">
@@ -344,16 +313,18 @@ export default function CountryCommunity({ country }: CountryCommunityProps) {
             <div className="content-stretch flex flex-col gap-[10px] items-start relative shrink-0 w-full">
               <div className="content-stretch flex gap-[4px] items-center relative shrink-0 w-full">
                 <IconFileBadge />
-                <p className="font-['Inter:Medium',sans-serif] font-medium leading-[20px] not-italic relative shrink-0 text-[14px] text-indigo-400 text-nowrap whitespace-pre">
+                <p className="font-['Inter:Medium',sans-serif] font-medium leading-[20px] not-italic relative shrink-0 text-[14px] text-indigo-400 whitespace-pre-wrap">
                   {hasMultipleBadges
-                    ? 'To join this community, you must have at least one of the following badges'
+                    ? (combinationLogic === 'all' 
+                        ? 'To join this community, you must have all of the following badges' 
+                        : 'To join this community, you must have at least one of the following badges')
                     : 'To join this community, you must have the following badge'}
                 </p>
               </div>
               
               <div className="content-stretch flex gap-[10px] items-center flex-wrap relative shrink-0 w-full">
                 {badgeRequirementsList.map((badge, index) => (
-                  <div key={`${badge.type}-${index}`} className="content-stretch flex items-start relative rounded-[12px] shrink-0">
+                  <div key={`${badge.type}-${badge.label}-${index}`} className="content-stretch flex items-start relative rounded-[12px] shrink-0">
                     <div className="bg-neutral-50 box-border content-stretch flex gap-[8px] items-center justify-center px-[10px] py-[2px] relative rounded-[12px] shrink-0">
                       <div aria-hidden="true" className="absolute border border-solid border-zinc-200 inset-0 pointer-events-none rounded-[12px]" />
                       <div className="content-stretch flex gap-[6px] items-center relative shrink-0">

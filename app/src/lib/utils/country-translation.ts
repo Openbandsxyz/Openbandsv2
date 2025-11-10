@@ -797,19 +797,60 @@ export function getCountryISO2(key: string) {
 export function translateMRZToCountryName(mrzCode: string): string {
   if (!mrzCode) return mrzCode;
   
-  // Handle special case for Germany
-  if (mrzCode === 'D<<') {
-    return 'Germany';
-  }
+  // Normalize MRZ code first (e.g., D<< -> DEU)
+  const normalizedCode = normalizeMRZCode(mrzCode);
   
   // Try to find the country name in commonNames
-  const countryName = commonNames[mrzCode as keyof typeof commonNames];
+  const countryName = commonNames[normalizedCode as keyof typeof commonNames];
   if (countryName) {
     return countryName;
   }
   
   // If not found, return the original code
   return mrzCode;
+}
+
+/**
+ * Map of MRZ passport codes to standard ISO 3166-1 alpha-3 codes
+ * Some countries use non-standard codes in their passports (MRZ format)
+ * that need to be normalized to ISO-3 standard codes for consistency
+ */
+const MRZ_TO_ISO3_NORMALIZATION: Record<string, string> = {
+  'D<<': 'DEU', // Germany: Bundesrepublik Deutschland uses D<< in passports
+  // Add more MRZ normalization cases here as needed
+  // Example: 'XYZ': 'ABC', // Country: explanation
+};
+
+/**
+ * Normalize MRZ country code to standard ISO 3166-1 alpha-3 code
+ * @param mrzCode - The MRZ country code from passport (e.g., "D<<", "DEU", "USA")
+ * @returns Standard ISO 3166-1 alpha-3 code (e.g., "DEU", "USA")
+ */
+export function normalizeMRZCode(mrzCode: string): string {
+  // Handle null, undefined, empty string
+  if (!mrzCode || typeof mrzCode !== 'string') return '';
+  
+  // Trim whitespace and convert to uppercase
+  const cleanCode = mrzCode.trim().toUpperCase();
+  if (!cleanCode) return '';
+  
+  // Check if this code needs normalization (e.g., D<< -> DEU)
+  const normalized = MRZ_TO_ISO3_NORMALIZATION[cleanCode];
+  if (normalized) {
+    return normalized;
+  }
+  
+  // Already a standard code, return as-is (uppercase)
+  return cleanCode;
+}
+
+/**
+ * Check if a country code is a non-standard MRZ code that needs normalization
+ * @param code - The country code to check
+ * @returns true if this is a non-standard MRZ code
+ */
+export function isMRZCode(code: string): boolean {
+  return code.toUpperCase() in MRZ_TO_ISO3_NORMALIZATION;
 }
 
 /**
@@ -820,13 +861,11 @@ export function translateMRZToCountryName(mrzCode: string): string {
 export function getCountryFlagEmoji(countryCode: string): string {
   if (!countryCode) return '🌍';
   
-  // Handle special case for Germany (D<<)
-  if (countryCode === 'D<<') {
-    countryCode = 'DEU';
-  }
+  // Normalize MRZ codes to ISO-3 standard
+  const normalizedCode = normalizeMRZCode(countryCode);
   
   // Convert 3-letter code to 2-letter code
-  const alpha2 = alpha3ToAlpha2(countryCode);
+  const alpha2 = alpha3ToAlpha2(normalizedCode);
   if (!alpha2) {
     return '🌍';
   }

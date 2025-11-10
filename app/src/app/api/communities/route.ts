@@ -39,6 +39,8 @@ export async function GET(req: NextRequest) {
     
     const supabase = getServerSupabase();
     
+    // Select all fields from community_stats
+    // Note: community_stats view should include avatar_url from communities table
     let query = supabase
       .from('community_stats')
       .select('*', { count: 'exact' });
