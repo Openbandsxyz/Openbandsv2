@@ -8,6 +8,18 @@ import { useBadgeCheck } from '@/hooks/useBadgeCheck';
 import { useNationalityBadgeCheck } from '@/hooks/useNationalityBadgeCheck';
 import { useAgeBadgeCheck } from '@/hooks/useAgeBadgeCheck';
 
+// @dev - OpenbandsV2BadgeManager.sol related functions
+import { 
+  receiveNationalityRecordViaSelf, 
+  getNationalityRecordViaSelf
+} from '@/lib/blockchains/evm/smart-contracts/wagmi/openbands-v2-badge-manager';
+
+// @dev - OpenbandsV2NationalityRegistry.sol related functions
+import { 
+  queryNationalityVerifiedEvents,
+  NationalityVerifiedEvent
+} from '@/lib/blockchains/evm/smart-contracts/wagmi/zkpassports/self/nationality-registry';
+
 interface Badge {
   id: string;
   name: string;
@@ -312,6 +324,57 @@ export default function BadgesPage() {
     setShowAddBadge(true);
   };
 
+  const handleUpdateBadgeStatus = async () => {
+    console.log('🔄 Update badge status clicked');
+
+    // Note: Event watcher is already running from useEffect
+    // But as a fallback, also query recent past events in case the watcher missed it
+    console.log('🔍 Querying recent events as fallback...');
+    
+    let chainIdForEventQuery;  
+    if (chainId === 42220 || chainId === 8453) {             // Celo Mainnet (42220)
+      chainIdForEventQuery = 42220;                          // Base Mainnet (8453)
+    } else if (chainId === 11142220 || chainId === 84532) {  // Celo Sepolia Testnet (11142220)  
+      chainIdForEventQuery = 11142220;                       // Base Sepolia Testnet (84532)
+    }
+
+    let messageId;
+    let message;
+    try {
+      // @dev - Query past events (last 1000 blocks ~5 minutes)
+      const pastEvents: NationalityVerifiedEvent[] = await queryNationalityVerifiedEvents(
+        address as `0x${string}`,
+        chainIdForEventQuery, // @dev - This chainId should be either Celo Mainnet (42220) or Celo Sepolia (11142220)
+        1000
+      );
+
+      // @dev - Get the latest event (NationalityVerified event) log for the user
+      let latestEvent;
+      if (pastEvents.length > 0) {
+        console.log(`✅ Found ${pastEvents.length} past event(s) for current user!`);
+        latestEvent = pastEvents[pastEvents.length - 1];
+        console.log('📋 Latest event:', latestEvent);
+      } else {
+        console.log('ℹ️ No past events found yet, event might still be processing');
+      }
+
+      const eventLength = pastEvents.length;
+      messageId = latestEvent.messageId;
+      message = latestEvent.message;
+      console.log('🔍 Retrieved "messageId" from latest event:', messageId);
+      console.log('🔍 Retrieved "message" from latest event:', message);
+    } catch (error) {
+      console.error('❌ Error querying past events:', error);
+      // Don't fail the whole flow, just log the error
+    }
+
+    // @dev - [TODO]: Fetch the nationality record via Self.xyz by a given "message" (rather than "messageId")
+    // @dev - [TODO]: Update (adding the "message" property to) the NationalityVerified event in the OpenbandV2NationalityRegistry SC. 
+    let nationalityRecordViaSelfInBytes = message;
+    const txHash = await receiveNationalityRecordViaSelf(nationalityRecordViaSelfInBytes);
+    console.log('🔄 Tx Hash of the receiveNationalityRecordViaSelf()', txHash);
+  };
+
   // NOTE: Badge creation is now handled automatically by the useEffect hook
   // that reads from the smart contracts (company email from Base, nationality from Celo)
   // Badges will appear when user refreshes page after successful on-chain storage
@@ -472,12 +535,7 @@ export default function BadgesPage() {
 
             {/* Update Badge Status Button */}
             <button
-              onClick={() => {
-                console.log('🔄 Update badge status clicked');
-                // TODO: Implement badge status update logic
-                // This could refresh badge data from the blockchain
-                // or allow users to manually trigger a verification check
-              }}
+              onClick={() => handleUpdateBadgeStatus()}
               className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

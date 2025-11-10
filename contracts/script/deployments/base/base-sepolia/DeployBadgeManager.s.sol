@@ -34,7 +34,7 @@ contract DeployBadgeManager is Script {
         );
         
         console.log("====================================");
-        console.log("OpenbandsV2BadgeManager deployed!");
+        console.log("OpenbandsV2BadgeManager deployed on BASE!");
         console.log("====================================");
         console.log("Contract address:", address(badgeManager));
         console.log("Deployer (owner):", msg.sender);

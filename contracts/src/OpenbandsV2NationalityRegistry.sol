@@ -83,6 +83,7 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
         address indexed user,
         string nationality,
         bytes32 messageId,  // @dev - a message ID via Hyperlane to bridge from Celo to Base
+        bytes message,      // @dev - a message itself, which the NationalityRecord struct data is encoded, via Hyperlane to bridge from Celo to Base
         uint256 timestamp
     );
     
@@ -262,7 +263,9 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
         });
 
         // @dev - Send a message from Celo mainnet to BASE mainnet via Hyperlane
-        bytes32 messageId = _sendNationalityRecordToBase(user);
+        bytes32 messageId;
+        bytes memory message;
+        (messageId, message) = _sendNationalityRecordToBase(user);
         // //bytes memory message = "test";
         // bytes memory message = abi.encode(nationalityRecords[user]);
         // celoSender.sendToBase(address(baseReceiver), message); // @dev - TODO: Replace the SC address (of the Badge Manager contract) with the actual address
@@ -280,7 +283,8 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
         emit NationalityVerified(
             user,
             nationality,
-            messageId,      // @dev - a message ID via Hyperlane to bridge from Celo to Base
+            messageId,   // @dev - a message ID via Hyperlane to bridge from Celo to Base
+            message,     // @dev - a message itself, which the NationalityRecord struct data is encoded, via Hyperlane to bridge from Celo to Base
             block.timestamp
         );
     }
@@ -289,7 +293,7 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
     /**
      * @notice - Send a message from Celo mainnet to BASE mainnet via Hyperlane
      */
-    function _sendNationalityRecordToBase(address user) internal returns(bytes32 messageId) {
+    function _sendNationalityRecordToBase(address user) internal returns(bytes32 messageId, bytes memory message) {
         // @dev - Estimate the fee for sending the message
         uint256 estimatedGasFee = mailbox.quoteDispatch(
             //BASE_MAINNET_DOMAIN, // @dev - BASE mainnet domain
@@ -306,7 +310,7 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
         //bytes memory message = "test";
         bytes memory message = abi.encode(nationalityRecords[user]);
         bytes32 messageId = celoSender.sendToBase{value: estimatedGasFee}(address(baseReceiver), message); // @dev - TODO: Replace the SC address (of the Badge Manager contract) with the actual address
-        return messageId;
+        return (messageId, message);
     }
 
     /**

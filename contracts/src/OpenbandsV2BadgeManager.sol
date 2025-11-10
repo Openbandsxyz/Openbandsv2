@@ -34,6 +34,7 @@ contract OpenbandsV2BadgeManager {
 
     /**
      * @notice - Receive a nationality record data-verified via Self.xyz, which is bridged from Celo to BASE.
+     * @param nationalityRecordViaSelfInBytes - a message, which the NationalityRecord struct data is encoded.
      */
     function receiveNationalityRecordViaSelf(bytes memory nationalityRecordViaSelfInBytes) external {
         // @dev - Only allow calls from the trusted CeloSender contract

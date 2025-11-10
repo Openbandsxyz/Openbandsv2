@@ -5,7 +5,7 @@ import type { Abi } from 'viem';
 import { createPublicClient, http, parseAbiItem } from 'viem';
 
 // @dev - Artifact of the OpenbandsV2NationalityRegistry contract
-import artifactOfOpenbandsV2NationalityRegistry from '@/lib/blockchains/evm/smart-contracts/artifacts/OpenbandsV2NationalityRegistry.sol/OpenbandsV2NationalityRegistry.json';
+import artifactOfOpenbandsV2NationalityRegistry from '@/lib/blockchains/evm/smart-contracts/artifacts/zkpassports/self/OpenbandsV2NationalityRegistry.sol/OpenbandsV2NationalityRegistry.json';
 //import artifactOfOpenbandsV2NationalityRegistry from '@/lib/blockchains/evm/smart-contracts/artifacts/nationality-registry/OpenbandsV2NationalityRegistry.json';
 
 /**
@@ -40,6 +40,16 @@ export function getNationalityRegistryAddress(chainId?: number): `0x${string}` |
   }
   // Celo Sepolia Testnet (11142220)
   if (chainId === 11142220) {
+    const address = process.env.NEXT_PUBLIC_OPENBANDS_V2_NATIONALITY_REGISTRY_ON_CELO_SEPOLIA;
+    return address ? (address as `0x${string}`) : undefined;
+  }
+  // Base Mainnet (8453)
+  if (chainId === 8453) {
+    const address = process.env.NEXT_PUBLIC_OPENBANDS_V2_NATIONALITY_REGISTRY_ON_CELO_MAINNET;
+    return address ? (address as `0x${string}`) : undefined;
+  }
+  // Base Sepolia Testnet (84532)
+  if (chainId === 84532) {
     const address = process.env.NEXT_PUBLIC_OPENBANDS_V2_NATIONALITY_REGISTRY_ON_CELO_SEPOLIA;
     return address ? (address as `0x${string}`) : undefined;
   }
@@ -213,12 +223,13 @@ export async function getUserNationality(
 /**
  * @notice Event data structure for NationalityVerified event
  * @dev Matches the event signature in OpenbandsV2NationalityRegistry.sol:
- *      event NationalityVerified(address indexed user, string nationality, bytes32 messageId, uint256 timestamp)
+ *      event NationalityVerified(address indexed user, string nationality, bytes32 messageId, bytes message, uint256 timestamp)
  */
 export interface NationalityVerifiedEvent {
   user: `0x${string}`;
   nationality: string;
-  messageId: `0x${string}`;  // Hyperlane message ID for cross-chain bridging to Base
+  messageId: `0x${string}`;  // Hyperlane "message ID" for cross-chain bridging to Base
+  message: `0x${string}`;    // Hyperlane "message" (itself) for cross-chain bridging to Base
   timestamp: bigint;
   blockNumber: bigint;
   transactionHash: `0x${string}`;
@@ -260,6 +271,10 @@ export async function queryNationalityVerifiedEvents(
       rpcUrl = process.env.NEXT_PUBLIC_CELO_MAINNET_RPC_URL || 'https://forno.celo.org';
     } else if (chainId === 11142220) {
       rpcUrl = process.env.NEXT_PUBLIC_CELO_SEPOLIA_RPC_URL || 'https://forno.celo-sepolia.celo-testnet.org';
+    } else if (chainId === 84532) { // @dev - NOTE: "Base mainnet" (8453) would just be for calling the watchNationalityVerifiedEvent() to receive the NationalityVerified event on BASE side
+      rpcUrl = process.env.NEXT_PUBLIC_BASE_MAINNET_RPC_URL || 'https://mainnet.base.org';
+    } else if (chainId === 84532) { // @dev - NOTE: "Base Sepolia" (84532) would just be for calling the watchNationalityVerifiedEvent() to receive the NationalityVerified event on BASE side
+      rpcUrl = process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org';
     } else {
       console.error(`❌ Unsupported chain ID: ${chainId}`);
       return [];
@@ -273,7 +288,7 @@ export async function queryNationalityVerifiedEvents(
     // Query logs using viem's getLogs
     const logs = await publicClient.getLogs({
       address: contractAddress,
-      event: parseAbiItem('event NationalityVerified(address indexed user, string nationality, bytes32 messageId, uint256 timestamp)'),
+      event: parseAbiItem('event NationalityVerified(address indexed user, string nationality, bytes32 messageId, bytes message, uint256 timestamp)'),
       args: {
         user: userAddress
       },
@@ -285,11 +300,12 @@ export async function queryNationalityVerifiedEvents(
 
     // Parse logs into events
     const events: NationalityVerifiedEvent[] = logs.map(log => {
-      const args = log.args as { user: `0x${string}`; nationality: string; messageId: `0x${string}`; timestamp: bigint };
+      const args = log.args as { user: `0x${string}`; nationality: string; messageId: `0x${string}`; message: `0x${string}`; timestamp: bigint };
       return {
         user: args.user,
         nationality: args.nationality,
         messageId: args.messageId,
+        message: args.message, 
         timestamp: args.timestamp,
         blockNumber: log.blockNumber,
         transactionHash: log.transactionHash
