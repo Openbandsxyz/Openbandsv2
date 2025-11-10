@@ -5,8 +5,8 @@
 
 import { useEffect, useState } from 'react';
 import { useAccount, useChainId } from 'wagmi';
-import { getNationalityRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/nationality-registry';
-import type { NationalityRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/nationality-registry';
+import { getNationalityRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/zkpassports/self/nationality-registry';
+import type { NationalityRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/zkpassports/self/nationality-registry';
 import { translateMRZToCountryName } from '@/lib/utils/country-translation';
 
 export interface NationalityBadgeData {

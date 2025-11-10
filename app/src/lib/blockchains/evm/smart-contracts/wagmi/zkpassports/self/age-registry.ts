@@ -1,5 +1,5 @@
 import { readContract, simulateContract, writeContract } from 'wagmi/actions'
-import { wagmiConfig } from '../wagmi/config'
+import { wagmiConfig } from '../../config'
 
 // Contract configuration
 export const ageRegistryContractConfig = {

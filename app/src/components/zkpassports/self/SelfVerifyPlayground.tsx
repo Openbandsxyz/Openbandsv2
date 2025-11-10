@@ -7,7 +7,13 @@ import { wagmiConfig } from "@/lib/blockchains/evm/smart-contracts/wagmi/config"
 import { VerificationStatusDisplay, VerificationStatus } from './VerificationStatusDisplay'
 
 // @dev - OpenbandsV2NationalityRegistry.sol related module
-import { storeNationalityVerification, getNationalityRecord, watchNationalityVerifiedEvent, getNationalityRegistryAddress, queryNationalityVerifiedEvents } from '@/lib/blockchains/evm/smart-contracts/wagmi/nationality-registry';
+import { 
+  storeNationalityVerification, 
+  getNationalityRecord, 
+  watchNationalityVerifiedEvent, 
+  getNationalityRegistryAddress, 
+  queryNationalityVerifiedEvents
+} from '@/lib/blockchains/evm/smart-contracts/wagmi/zkpassports/self/nationality-registry';
 
 // @dev - OpenbandsV2BadgeManagerOnCelo.sol related module
 import { getProofOfHumanRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/zkpassports/self/openbands-v2-badge-manager-on-celo';

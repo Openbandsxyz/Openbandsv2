@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAccount, useChainId } from 'wagmi';
-import { getAgeRecord, AgeRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/age-registry';
+import { getAgeRecord, AgeRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/zkpassports/self/age-registry';
 
 export interface AgeBadgeData {
   isAgeVerified: boolean;
