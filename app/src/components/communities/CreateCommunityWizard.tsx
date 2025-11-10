@@ -2,7 +2,7 @@
  * OpenBands v2 - Create Community Wizard
  * 
  * Multi-step wizard for creating communities with:
- * Step 1: Community details (name, description, about, rules, images)
+ * Step 1: Community details (name, description, about, images)
  * Step 2: Badge requirements (Age, Nationality, Email)
  * Step 3: Combination logic (if multiple badges)
  * Final: Success screen
@@ -46,7 +46,6 @@ export function CreateCommunityWizard({ onCommunityCreated, onClose }: CreateCom
     name: '',
     shortDescription: '',
     about: '',
-    rules: '',
     avatarImage: null as File | null,
     avatarPreview: null as string | null,
   });
@@ -333,7 +332,6 @@ export function CreateCommunityWizard({ onCommunityCreated, onClose }: CreateCom
         name: communityDetails.name,
         description: communityDetails.about || communityDetails.shortDescription,
         shortDescription: communityDetails.shortDescription,
-        rules: communityDetails.rules.split('\n').filter(r => r.trim()),
         badgeRequirements: badgeRequirementsForAPI,
         primaryAttestationType,
         primaryAttestationValues,
@@ -379,7 +377,6 @@ export function CreateCommunityWizard({ onCommunityCreated, onClose }: CreateCom
           name: communityDetails.name,
           description: communityDetails.about || communityDetails.shortDescription,
           shortDescription: communityDetails.shortDescription,
-          rules: communityDetails.rules.split('\n').filter(r => r.trim()),
           badgeRequirements: badgeRequirementsForAPI,
           primaryAttestationType,
           primaryAttestationValues,
@@ -442,9 +439,7 @@ export function CreateCommunityWizard({ onCommunityCreated, onClose }: CreateCom
               maxLength={80}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <p className={`text-xs mt-1 ${communityDetails.shortDescription.length < 10 ? 'text-red-500' : 'text-gray-500'}`}>
-              {communityDetails.shortDescription.length}/80 characters (minimum 10)
-            </p>
+            <p className="text-xs text-gray-500 mt-1">{communityDetails.shortDescription.length}/80 characters</p>
           </div>
 
           <div>
@@ -460,20 +455,6 @@ export function CreateCommunityWizard({ onCommunityCreated, onClose }: CreateCom
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <p className="text-xs text-gray-500 mt-1">{communityDetails.about.length}/1000 characters</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700">
-              Rules (optional)
-            </label>
-            <textarea
-              value={communityDetails.rules}
-              onChange={(e) => setCommunityDetails(prev => ({ ...prev, rules: e.target.value }))}
-              placeholder="Enter one rule per line"
-              rows={4}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <p className="text-xs text-gray-500 mt-1">Enter one rule per line</p>
           </div>
 
           <div>
