@@ -82,7 +82,7 @@ function dbPostToPost(dbPost: DbPost, commentCount: number = 0): import('@/lib/t
     authorAnonymousId: dbPost.anonymous_id,
     companyDomain: dbPost.company_domain || 'unknown.com',
     content: dbPost.content,
-    likeCount: dbPost.like_count,
+    upvoteCount: dbPost.like_count,
     commentCount,
     createdAt: new Date(dbPost.created_at).getTime(),
   };
@@ -97,7 +97,7 @@ function dbCommentToComment(dbComment: DbComment): import('@/lib/types').Comment
     authorAnonymousId: dbComment.anonymous_id,
     companyDomain: dbComment.company_domain || 'unknown.com',
     content: dbComment.content,
-    likeCount: dbComment.like_count,
+    upvoteCount: dbComment.like_count,
     createdAt: new Date(dbComment.created_at).getTime(),
   };
 }
@@ -164,7 +164,7 @@ export function usePosts(sort: 'new' | 'hot' = 'new') {
 
       const processedPosts = (postsData || []).map((post: any) => {
         const mapped = dbPostToPost(post, commentCountMap[post.id] || 0);
-        mapped.likeCount = likeCountMap[post.id] || 0;
+        mapped.upvoteCount = likeCountMap[post.id] || 0;
         return mapped;
       });
 
@@ -245,7 +245,7 @@ export function useCompanyPosts(companyDomain: string, sort: 'new' | 'hot' = 'ne
 
       const processedPosts = (postsData || []).map((post: any) => {
         const mapped = dbPostToPost(post, commentCountMap[post.id] || 0);
-        mapped.likeCount = likeCountMap[post.id] || 0;
+        mapped.upvoteCount = likeCountMap[post.id] || 0;
         return mapped;
       });
 
@@ -311,7 +311,7 @@ export function useComments(postId: string) {
 
       const processedComments = (data || []).map(dbCommentToComment).map((c: any) => ({
         ...c,
-        likeCount: likeCountMap[c.id] || 0,
+        upvoteCount: likeCountMap[c.id] || 0,
       }));
       setComments(processedComments);
     } catch (err) {
