@@ -43,3 +43,6 @@ next-env.d.ts
 
 # local planning notes
 scratchpad.md
+
+# cursor IDE files
+.cursor/
