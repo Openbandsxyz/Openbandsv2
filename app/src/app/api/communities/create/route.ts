@@ -37,7 +37,6 @@ export async function POST(req: NextRequest) {
       name, 
       description, 
       shortDescription,
-      rules, 
       // New multi-badge support
       badgeRequirements,
       primaryAttestationType,
@@ -304,7 +303,6 @@ export async function POST(req: NextRequest) {
       name,
       description,
       shortDescription: shortDescription || description,
-      rules: rules || [],
       badgeRequirements: finalBadgeRequirements,
       primaryAttestationType: finalPrimaryAttestationType,
       primaryAttestationValues: finalPrimaryAttestationValues,
@@ -500,11 +498,6 @@ export async function POST(req: NextRequest) {
     // Get creator's verification timestamp (use primary badge type)
     const creatorVerification = await verifyUserBadge(walletAddress, finalPrimaryAttestationType);
     
-    // Parse rules: rules can be an array or a string (newline-separated)
-    const rulesArray = Array.isArray(rules) 
-      ? rules.filter((r: string) => r && r.trim().length > 0)
-      : (typeof rules === 'string' ? rules.split('\n').filter((r: string) => r.trim()) : []);
-    
     // Store badge requirements and combination logic in metadata JSONB column
     const metadata = {
       shortDescription: shortDescription || description.slice(0, 80),
@@ -527,7 +520,7 @@ export async function POST(req: NextRequest) {
         required_contract_chain_id: contractInfo.chainId,
         creator_address: walletAddress.toLowerCase(),
         creator_verified_at: Number(creatorVerification.verifiedAt),
-        rules: rulesArray, // Store as TEXT[] array
+        rules: [], // Rules field removed from UI - always empty array
         metadata: metadata, // Store badge requirements and combination logic in JSONB
         avatar_url: avatarUrl || null, // Store avatar image URL (base64 data URL for now)
       })
