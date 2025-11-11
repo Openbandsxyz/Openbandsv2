@@ -14,6 +14,7 @@ library DataType {
     // }
 
     // @dev - Tentative definition for storing the nationality record, which is retrieved via Self.xyz on Celo mainnet
+    // @dev - This struct must be aligned with the NationalityRecord struct defined in the OpenbandsV2NationalityRegistry contract on Celo mainnet
     struct NationalityRecordViaSelf {
         string nationality;            // ISO 3166-1 alpha-3 country code (e.g., "USA", "GBR", "JPN")
         bool isValidNationality;      // Whether nationality was successfully verified
