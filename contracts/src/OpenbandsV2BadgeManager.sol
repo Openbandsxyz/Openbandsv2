@@ -37,15 +37,18 @@ contract OpenbandsV2BadgeManager {
      * @param nationalityRecordViaSelfInBytes - a message, which the NationalityRecord struct data is encoded.
      */
     function receiveNationalityRecordViaSelf(bytes memory nationalityRecordViaSelfInBytes) external {
-        // @dev - Only allow calls from the trusted CeloSender contract
-        //require(msg.sender == address(celoSender), "Unauthorized sender");
-
         // @dev - Handle the received message
         bytes32 celoSenderInBytes = Converter.addressToBytes32(address(celoSender));
         baseReceiver.handle(CELO_DOMAIN, celoSenderInBytes, nationalityRecordViaSelfInBytes);
 
-        // @dev - Store the nationality record
+        // @dev - Decode a given message (nationalityRecordViaSelfInBytes)
         DataType.NationalityRecordViaSelf memory nationalityRecordViaSelf = abi.decode(nationalityRecordViaSelfInBytes, (DataType.NationalityRecordViaSelf));
+
+        // @dev - Only allow calls from the trusted CeloSender contract
+        require(msg.sender == nationalityRecordViaSelf.userAddress, "A caller must be an user address when a nationality was verified via Self.xyz on Celo");
+        //require(msg.sender == address(celoSender), "Unauthorized sender");
+
+        // @dev - Store the nationality record
         nationalityRecordViaSelfs[nationalityRecordViaSelf.userAddress] = nationalityRecordViaSelf;
     }
 
