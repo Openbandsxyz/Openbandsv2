@@ -38,7 +38,7 @@ contract OpenbandsV2BadgeManager {
      */
     function receiveNationalityRecordViaSelf(bytes memory nationalityRecordViaSelfInBytes) external {
         // @dev - Only allow calls from the trusted CeloSender contract
-        require(msg.sender == address(celoSender), "Unauthorized sender");
+        //require(msg.sender == address(celoSender), "Unauthorized sender");
 
         // @dev - Handle the received message
         bytes32 celoSenderInBytes = Converter.addressToBytes32(address(celoSender));
