@@ -8,7 +8,7 @@ export interface Post {
   authorAnonymousId: string; // Anonymous display name
   companyDomain: CompanyDomain;
   content: string;
-  likeCount: number;
+  upvoteCount: number;
   commentCount: number;
   createdAt: number; // epoch ms
 }
@@ -21,7 +21,7 @@ export interface Comment {
   authorAnonymousId: string; // Anonymous display name
   companyDomain: CompanyDomain; // domain of the commenter
   content: string;
-  likeCount: number;
+  upvoteCount: number;
   createdAt: number; // epoch ms
 }
 

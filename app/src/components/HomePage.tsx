@@ -11,7 +11,7 @@ export default function HomePage() {
     <div className="flex-1 bg-white">
 
       {/* Main Content */}
-      <div className="p-6 space-y-8">
+      <div className="py-6 pl-6 space-y-8">
         {/* Hero Section */}
         <div className="text-center py-12">
           <div className="max-w-3xl mx-auto">

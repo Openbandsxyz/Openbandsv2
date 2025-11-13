@@ -154,11 +154,13 @@ export async function getNationalityRecord(
     console.log(`🔍 Reading nationality record for ${userAddress}`);
     console.log(`📋 Contract address: ${nationalityRegistryContractConfig.address}`);
     
+    const CELO_MAINNET = 42220;
     const result = await readContract(wagmiConfig, {
       address: nationalityRegistryContractConfig.address,
       abi: nationalityRegistryContractConfig.abi,
       functionName: 'getNationalityRecord',
       args: [userAddress],
+      chainId: CELO_MAINNET, // Always check on Celo Mainnet regardless of connected chain
     }) as any;
 
     console.log(`📦 Nationality record retrieved for ${userAddress}:`, result);

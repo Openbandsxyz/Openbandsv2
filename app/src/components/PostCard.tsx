@@ -14,7 +14,7 @@ interface PostCardProps {
 
 export function PostCard({ post, onLiked }: PostCardProps) {
   const [showComments, setShowComments] = useState(false);
-  const [likeCount, setLikeCount] = useState<number>(post.likeCount);
+  const [upvoteCount, setUpvoteCount] = useState<number>(post.upvoteCount);
   const [liked, setLiked] = useState<boolean>(false);
   const { isAuthenticated, anonymousId, companyDomain } = useApp();
   const { comments, refetch } = useComments(post.id);
@@ -50,7 +50,7 @@ export function PostCard({ post, onLiked }: PostCardProps) {
     try {
       // optimistic toggle
       setLiked(prev => !prev);
-      setLikeCount(prev => (liked ? Math.max(prev - 1, 0) : prev + 1));
+      setUpvoteCount(prev => (liked ? Math.max(prev - 1, 0) : prev + 1));
       await likePostSupabase(post.id, anonymousId, companyDomain);
       onLiked?.();
     } catch (error) {
@@ -116,15 +116,15 @@ export function PostCard({ post, onLiked }: PostCardProps) {
               className={`flex items-center space-x-1 text-sm ${
                 !canLike
                   ? 'text-gray-300 cursor-not-allowed'
-                  : liked || likeCount > 0 
+                  : liked || upvoteCount > 0 
                     ? 'text-blue-600 hover:text-blue-700' 
                     : 'text-gray-500 hover:text-blue-600'
               }`}
             >
-              <svg className="w-4 h-4" fill={post.likeCount > 0 ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill={post.upvoteCount > 0 ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
-              <span>{likeCount}</span>
+              <span>{upvoteCount}</span>
             </button>
 
             <button
