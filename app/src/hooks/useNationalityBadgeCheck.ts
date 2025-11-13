@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { useAccount, useChainId } from 'wagmi';
+import { useAccount } from 'wagmi';
 import { getNationalityRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/nationality-registry';
 import type { NationalityRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/nationality-registry';
 import { translateMRZToCountryName } from '@/lib/utils/country-translation';
@@ -21,14 +21,13 @@ export interface NationalityBadgeData {
 
 export const useNationalityBadgeCheck = () => {
   const { address, isConnected } = useAccount();
-  const chainId = useChainId();
   const [badgeData, setBadgeData] = useState<NationalityBadgeData | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     console.log('🔄 useNationalityBadgeCheck useEffect triggered');
-    console.log('📊 Current state:', { address, isConnected, chainId, loading, error });
+    console.log('📊 Current state:', { address, isConnected, loading, error });
     
     const checkBadge = async () => {
       if (!address || !isConnected) {
@@ -37,18 +36,9 @@ export const useNationalityBadgeCheck = () => {
         return;
       }
 
-      // Only check on Celo networks
-      // Celo Mainnet: 42220
-      // Celo Sepolia: 11142220
-      const isCeloNetwork = chainId === 42220 || chainId === 11142220;
-      
-      if (!isCeloNetwork) {
-        console.log(`⏭️ Skipping nationality badge check - not on Celo network (current chain: ${chainId})`);
-        setBadgeData(null);
-        return;
-      }
-
-      console.log(`🔍 Checking nationality badge for wallet: ${address} on chain ${chainId}`);
+      // Always check on Celo Mainnet (42220) regardless of connected chain
+      // Badges are stored on Celo, so we check there even if wallet is on Base
+      console.log(`🔍 Checking nationality badge for wallet: ${address} (checking Celo Mainnet regardless of connected chain)`);
       console.log(`📋 Contract address: ${process.env.NEXT_PUBLIC_NATIONALITY_REGISTRY_CONTRACT_ADDRESS}`);
       setLoading(true);
       setError(null);
@@ -86,7 +76,7 @@ export const useNationalityBadgeCheck = () => {
     };
 
     checkBadge();
-  }, [address, isConnected, chainId]);
+  }, [address, isConnected]); // Removed chainId dependency - always check on Celo
 
   return { badgeData, loading, error };
 };

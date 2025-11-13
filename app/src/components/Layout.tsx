@@ -1,19 +1,22 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import ConnectWalletButtonWithRainbowkit from '@/components/connect-wallets/ConnectWalletButtonWithRainbowkit';
 import { useAccount, useChainId } from 'wagmi';
+import { CreateCommunityButton } from '@/components/communities/CreateCommunityButton';
 
 interface LayoutProps {
   children: React.ReactNode;
   activeTab?: 'home' | 'badges' | 'employees' | 'communities';
   onTabChange?: (tab: 'home' | 'badges' | 'employees' | 'communities') => void;
-  onCommunitySelect?: (community: { name: string; code: string; flag: string }) => void;
+  onCommunitySelect?: (community: { name: string; code: string; flag: string; communityId?: string }) => void;
 }
 
 export default function Layout({ children, activeTab = 'home', onTabChange, onCommunitySelect }: LayoutProps) {
   const { isAuthenticated, anonymousId, companyDomain, signOut } = useApp();
   const [showCommunities, setShowCommunities] = useState(false);
+  const [communities, setCommunities] = useState<any[]>([]);
+  const [loadingCommunities, setLoadingCommunities] = useState(false);
   
   // Get wallet connection and network information
   const { isConnected } = useAccount();
@@ -35,12 +38,47 @@ export default function Layout({ children, activeTab = 'home', onTabChange, onCo
   
   const networkName = getNetworkName(chainId);
 
-  const communities = [
-    { name: 'United States', code: 'US', flag: '🇺🇸' },
-    { name: 'Germany', code: 'DE', flag: '🇩🇪' },
-    { name: 'France', code: 'FR', flag: '🇫🇷' },
-    { name: 'Japan', code: 'JP', flag: '🇯🇵' },
-  ];
+  // Fetch communities from API
+  const fetchCommunities = async () => {
+    setLoadingCommunities(true);
+    try {
+      const response = await fetch('/api/communities?limit=50');
+      const result = await response.json();
+      
+      if (result.success && result.communities) {
+        // Transform API communities to match our format
+        const transformedCommunities = result.communities.map((c: any) => ({
+          name: c.name,
+          code: c.attestation_value,
+          flag: getFlagEmoji(c.attestation_value),
+          communityId: c.community_id,
+          avatarUrl: c.avatar_url, // Include avatar URL from API
+        }));
+        setCommunities(transformedCommunities);
+      }
+    } catch (error) {
+      console.error('Failed to fetch communities:', error);
+      // Fallback to empty array on error
+      setCommunities([]);
+    } finally {
+      setLoadingCommunities(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchCommunities();
+  }, []);
+  
+  // Helper to get flag emoji from country code
+  const getFlagEmoji = (countryCode: string) => {
+    // Map of common country codes to flags
+    const flagMap: Record<string, string> = {
+      'USA': '🇺🇸', 'DEU': '🇩🇪', 'FRA': '🇫🇷', 'JPN': '🇯🇵',
+      'GBR': '🇬🇧', 'CAN': '🇨🇦', 'AUS': '🇦🇺', 'ITA': '🇮🇹',
+      'ESP': '🇪🇸', 'NLD': '🇳🇱', 'BEL': '🇧🇪', 'CHE': '🇨🇭',
+    };
+    return flagMap[countryCode] || '🌍';
+  };
 
   const handleEmployeesClick = () => {
     onTabChange?.('employees');
@@ -48,7 +86,7 @@ export default function Layout({ children, activeTab = 'home', onTabChange, onCo
     // The main content will show the "Want to share something? Sign in with your work email to post" flow
   };
 
-  const handleCommunityClick = (community: { name: string; code: string; flag: string }) => {
+  const handleCommunityClick = (community: { name: string; code: string; flag: string; communityId?: string }) => {
     // Navigate to community-specific page or filter
     onTabChange?.('communities');
     // Pass the selected community to the parent component
@@ -109,7 +147,7 @@ export default function Layout({ children, activeTab = 'home', onTabChange, onCo
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
-            <span className="font-medium">For employees</span>
+            <span className="font-medium">Company chat</span>
           </button>
 
           {/* Communities */}
@@ -141,25 +179,50 @@ export default function Layout({ children, activeTab = 'home', onTabChange, onCo
             {/* Communities List */}
             {showCommunities && (
               <div className="ml-6 space-y-1">
-                {communities.map((community) => (
-                  <button
-                    key={community.code}
-                    onClick={() => handleCommunityClick(community)}
-                    className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                  >
-                    <span className="text-lg">{community.flag}</span>
-                    <span>{community.name}</span>
-                  </button>
-                ))}
+                {loadingCommunities ? (
+                  <div className="px-3 py-2 text-sm text-gray-400">
+                    Loading...
+                  </div>
+                ) : communities.length === 0 ? (
+                  <div className="px-3 py-2 text-sm text-gray-400">
+                    No communities yet. Create one!
+                  </div>
+                ) : (
+                  communities.map((community) => (
+                    <button
+                      key={community.communityId || community.code}
+                      onClick={() => handleCommunityClick(community)}
+                      className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                    >
+                      {/* Show avatar if available, otherwise show globe emoji */}
+                      {community.avatarUrl ? (
+                        <img 
+                          src={community.avatarUrl} 
+                          alt={`${community.name} avatar`} 
+                          className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <span className="text-lg flex-shrink-0">🌍</span>
+                      )}
+                      <span className="truncate">{community.name}</span>
+                    </button>
+                  ))
+                )}
               </div>
             )}
+          </div>
+          
+          {/* Create Community Button */}
+          <div className="mt-4 px-3">
+            <CreateCommunityButton onCommunityCreated={fetchCommunities} />
           </div>
         </nav>
 
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col pl-8 pr-8">
         {/* Top Right Wallet Button */}
         <div className="absolute top-4 right-4 z-10">
           <div className="flex flex-col items-end space-y-2">

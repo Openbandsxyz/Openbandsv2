@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAccount, useChainId } from 'wagmi';
+import { useAccount } from 'wagmi';
 import { getAgeRecord, AgeRecord } from '@/lib/blockchains/evm/smart-contracts/wagmi/age-registry';
 
 export interface AgeBadgeData {
@@ -11,14 +11,13 @@ export interface AgeBadgeData {
 
 export const useAgeBadgeCheck = () => {
   const { address, isConnected } = useAccount();
-  const chainId = useChainId();
   const [badgeData, setBadgeData] = useState<AgeBadgeData | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     console.log('🔄 useAgeBadgeCheck useEffect triggered');
-    console.log('📊 Current state:', { address, isConnected, chainId, loading, error });
+    console.log('📊 Current state:', { address, isConnected, loading, error });
     
     const checkBadge = async () => {
       if (!address || !isConnected) {
@@ -27,18 +26,13 @@ export const useAgeBadgeCheck = () => {
         return;
       }
 
-      // Only check on Celo networks (Mainnet or Sepolia)
-      if (chainId !== 42220 && chainId !== 44787) {
-        console.log('⏭️ Skipping age badge check - not on Celo network (current chain:', chainId, ')');
-        setBadgeData(null);
-        return;
-      }
-
+      // Always check on Celo Mainnet (42220) regardless of connected chain
+      // Badges are stored on Celo, so we check there even if wallet is on Base
       setLoading(true);
       setError(null);
 
       try {
-        console.log('🔍 Checking age badge for wallet:', address, 'on chain', chainId);
+        console.log('🔍 Checking age badge for wallet:', address, '(checking Celo Mainnet regardless of connected chain)');
         
         const record: AgeRecord = await getAgeRecord(address);
         console.log('📦 Age record from contract:', record);
@@ -69,7 +63,7 @@ export const useAgeBadgeCheck = () => {
     };
 
     checkBadge();
-  }, [address, isConnected, chainId]); // Dependencies
+  }, [address, isConnected]); // Removed chainId dependency - always check on Celo
 
   return {
     ageBadge: badgeData,

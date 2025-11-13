@@ -117,11 +117,13 @@ export async function getAgeRecord(
     console.log(`🔍 Reading age record for ${userAddress}`);
     console.log(`📋 Contract address: ${ageRegistryContractConfig.address}`);
     
+    const CELO_MAINNET = 42220;
     const result = await readContract(wagmiConfig, {
       address: ageRegistryContractConfig.address,
       abi: ageRegistryContractConfig.abi,
       functionName: 'getAgeRecord',
       args: [userAddress],
+      chainId: CELO_MAINNET, // Always check on Celo Mainnet regardless of connected chain
     }) as any;
 
     console.log(`📦 Age record retrieved for ${userAddress}:`, result);

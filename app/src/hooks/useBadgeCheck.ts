@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAccount, useChainId } from 'wagmi';
+import { useAccount } from 'wagmi';
 import { readContract } from '@wagmi/core';
 import { wagmiConfig } from '@/lib/blockchains/evm/smart-contracts/wagmi/config';
 import {
@@ -16,7 +16,6 @@ interface BadgeData {
 
 export function useBadgeCheck() {
   const { address } = useAccount();
-  const chainId = useChainId();
   const [badgeData, setBadgeData] = useState<BadgeData>({
     domain: null,
     walletAddress: '',
@@ -38,20 +37,8 @@ export function useBadgeCheck() {
         return;
       }
 
-      // Only check badges on Base Mainnet (where ZkJwtProofManager is deployed)
-      // Skip on other networks like Celo Sepolia
-      const BASE_MAINNET_CHAIN_ID = 8453;
-      if (chainId !== BASE_MAINNET_CHAIN_ID) {
-        console.log(`⏭️ Skipping badge check - not on Base Mainnet (current chain: ${chainId})`);
-        setBadgeData({
-          domain: null,
-          walletAddress: address,
-          hasVerifiedBadge: false,
-          createdAt: null,
-        });
-        return;
-      }
-
+      // Always check on Base Mainnet (8453) regardless of connected chain
+      // Badges are stored on Base, so we check there even if wallet is on Celo
       setLoading(true);
       setError(null);
 
@@ -60,7 +47,7 @@ export function useBadgeCheck() {
         const { zkJwtProofManagerContractAddress, zkJwtProofManagerAbi } = 
           setZkJwtProofManagerContractInstance();
 
-        console.log('Checking badge for wallet:', address);
+        console.log(`Checking badge for wallet: ${address} (checking Base Mainnet regardless of connected chain)`);
 
         // Get all public inputs from the contract
         // This returns an array of DataType.PublicInput structs containing:
@@ -69,10 +56,12 @@ export function useBadgeCheck() {
         // - emailHash (string): hashed email
         // - walletAddress (address): connected wallet that verified the email
         // - createdAt (string): timestamp of verification
+        const BASE_MAINNET_CHAIN_ID = 8453;
         const allPublicInputs = await readContract(wagmiConfig, {
           abi: zkJwtProofManagerAbi,
           address: zkJwtProofManagerContractAddress as `0x${string}`,
           functionName: 'getPublicInputsOfAllProofs',
+          chainId: BASE_MAINNET_CHAIN_ID, // Always check on Base Mainnet regardless of connected chain
         }) as PublicInputs[];
 
         console.log('All public inputs from contract:', allPublicInputs);
@@ -124,7 +113,7 @@ export function useBadgeCheck() {
     };
 
     checkBadge();
-  }, [address, chainId]);
+  }, [address]); // Removed chainId dependency - always check on Base
 
   return { badgeData, loading, error };
 }

@@ -148,15 +148,15 @@ export function CommentsModal({ post, isOpen, onClose }: CommentsModalProps) {
                   <button
                     onClick={() => handleLikeComment(comment.id)}
                     className={`flex items-center space-x-1 text-xs ${
-                      comment.likeCount > 0 
+                      comment.upvoteCount > 0 
                         ? 'text-blue-600' 
                         : 'text-gray-500 hover:text-blue-600'
                     }`}
                   >
-                    <svg className="w-3 h-3" fill={comment.likeCount > 0 ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3 h-3" fill={comment.upvoteCount > 0 ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                     </svg>
-                    <span>{comment.likeCount}</span>
+                    <span>{comment.upvoteCount}</span>
                   </button>
                 </div>
               </div>
