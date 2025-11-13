@@ -34,12 +34,23 @@ contract OpenbandsV2BadgeManager {
 
     /**
      * @notice - Receive a nationality record data-verified via Self.xyz, which is bridged from Celo to BASE.
+     * @dev - The handle() must be called by the Hyperlane Mailbox (msg.sender != address(MAILBOX))
+     *      - => Should I implement the own Mailbox contract on BASE? (And should the own own Mailbox coontract calls the handle())
+     *      - => However, as long as I check the setup() in the CeloToBase.t.sol, the Mailbox contract is the BaseReceiver cntract.
      * @param nationalityRecordViaSelfInBytes - a message, which the NationalityRecord struct data is encoded.
      */
     function receiveNationalityRecordViaSelf(bytes memory nationalityRecordViaSelfInBytes) external {
         // @dev - Handle the received message
+        // @dev - The handle() must be called by the Hyperlane Mailbox (msg.sender != address(MAILBOX))
         bytes32 celoSenderInBytes = Converter.addressToBytes32(address(celoSender));
-        baseReceiver.handle(CELO_DOMAIN, celoSenderInBytes, nationalityRecordViaSelfInBytes);
+        baseReceiver.handle(CELO_DOMAIN, celoSenderInBytes, nationalityRecordViaSelfInBytes); // [NOTE]: The caller must be the Hyperlane Mailbox
+
+        /////////////////////////////////////////////////////////////////////////////////// 
+        // @dev - Example from the CeloToBase.t.sol: Simulate mailbox calling handle
+        // vm.prank(mockBaseMailbox);
+        // baseReceiver.handle(CELO_SEPOLIA_DOMAIN, sender, message);
+        ////////////////////////////////////////////////////////////////////////////////////
+
 
         // @dev - Decode a given message (nationalityRecordViaSelfInBytes)
         DataType.NationalityRecordViaSelf memory nationalityRecordViaSelf = abi.decode(nationalityRecordViaSelfInBytes, (DataType.NationalityRecordViaSelf));

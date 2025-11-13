@@ -302,9 +302,17 @@ contract OpenbandsV2NationalityRegistry is SelfVerificationRoot, Ownable {
             abi.encode(nationalityRecords[user])
         );
 
+        // @dev - Calculate the buffered fee
+        uint256 bufferedGasFee = (estimatedGasFee * 30) / 100; // 30% buffer
+
+        // @dev - Total estimated gas fee with buffer
+        uint256 totalGasFee = estimatedGasFee + bufferedGasFee;
+
         // @dev - Top up a native tokens ($CELO) from the OpenbandsV2GasFeePayer contract to cover the message fee using Hyperlane.
-        openbandsV2GasFeePayer.topUpGasFeeFromOpenbandsV2GasFeePayer(payable(address(this)), estimatedGasFee);
-        require(address(this).balance >= estimatedGasFee, "Insufficient $CELO balance of the OpenbandsV2NationalityRegistry contract to cover the message fee via Hyperlane");
+        openbandsV2GasFeePayer.topUpGasFeeFromOpenbandsV2GasFeePayer(payable(address(this)), totalGasFee);
+        //openbandsV2GasFeePayer.topUpGasFeeFromOpenbandsV2GasFeePayer(payable(address(this)), estimatedGasFee);
+        require(address(this).balance >= totalGasFee, "Insufficient $CELO balance of the OpenbandsV2NationalityRegistry contract to cover the total gas fee via Hyperlane");
+        //require(address(this).balance >= estimatedGasFee, "Insufficient $CELO balance of the OpenbandsV2NationalityRegistry contract to cover the message fee via Hyperlane");
 
         // @dev - Send a message from Celo mainnet to BASE mainnet via Hyperlane
         //bytes memory message = "test";
