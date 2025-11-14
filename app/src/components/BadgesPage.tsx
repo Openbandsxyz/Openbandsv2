@@ -379,7 +379,7 @@ export default function BadgesPage() {
       <div className="border-b border-gray-200 py-6 pl-6">
         <h1 className="text-2xl font-bold text-gray-900">My Badges</h1>
         <p className="text-gray-600 mt-2">
-          Manage and customize your badges here. You can manage visibility, add new badges, reverify or remove ones you no longer want.
+          Manage and and add new badges to your profile here.
         </p>
       </div>
 
