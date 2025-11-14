@@ -16,10 +16,10 @@ export default function HomePage() {
         <div className="text-center py-12">
           <div className="max-w-3xl mx-auto">
             <h2 className="text-4xl font-bold text-gray-900 mb-6">
-            The trusted anon forum for everyone
+            Building communities of real humans
             </h2>
             <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-              Prove real world attestations without revealing your identity.<br/>
+              Prove real world attributes without revealing your identity.<br/>
               Join communities with verified peers.<br/> No room for bots, fakes and misinformation.              
             </p>
           </div>
@@ -35,7 +35,7 @@ export default function HomePage() {
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Verified</h3>
             <p className="text-gray-600 text-sm">
-              Prove real world attestations without revealing your identity.
+              Prove real world attributes such as nationality, age or company affiliation.
             </p>
           </div>
 
@@ -59,7 +59,7 @@ export default function HomePage() {
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Authentic</h3>
             <p className="text-gray-600 text-sm">
-              See what&apos;s trending inside your company, filter by New or Hot.
+              Discuss political, social or company-specific topics with your verified peers.
             </p>
           </div>
 
@@ -74,14 +74,14 @@ export default function HomePage() {
                 <span className="text-2xl font-bold text-white">1</span>
               </div>
               <h4 className="text-lg font-semibold text-gray-900 mb-2">Connect Wallet</h4>
-              <p className="text-gray-600 text-sm">Use your EVM wallet to connect and verify attestations onchain</p>
+              <p className="text-gray-600 text-sm">Use your EVM wallet to connect and verify attributes onchain</p>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl font-bold text-white">2</span>
               </div>
-              <h4 className="text-lg font-semibold text-gray-900 mb-2">Verify Attestations</h4>
-              <p className="text-gray-600 text-sm">Prove real world credentials without revealing personal information</p>
+              <h4 className="text-lg font-semibold text-gray-900 mb-2">Verify Attributes</h4>
+              <p className="text-gray-600 text-sm">Prove real world attributes without revealing personal information</p>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
